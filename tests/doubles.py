@@ -31,7 +31,7 @@ class RecordingRealizer:
         self.calls: list[tuple[Decision, ChildProfile, list]] = []
         self._inner = TemplateRealizer()
 
-    def realize(self, decision, profile, history) -> Realization:
+    def realize(self, decision, profile, history, attempt=0) -> Realization:
         self.calls.append((decision, profile, history))
         return self._inner.realize(decision, profile, history)
 

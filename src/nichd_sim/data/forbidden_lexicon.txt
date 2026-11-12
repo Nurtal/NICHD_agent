@@ -1,0 +1,30 @@
+# Lexique interdit dans les réponses de l'enfant (v1 : aucun contenu sexuel ni description
+# explicite). Un terme par ligne, comparé sans accents ni casse, en mot entier.
+# Un `*` final fait correspondre le terme comme préfixe de mot.
+# Liste conservatrice : un faux positif ne coûte qu'une régénération ou une réponse type.
+sexe
+sexuel*
+penis
+vagin*
+zizi*
+zezette*
+foufoune*
+quequette*
+nichon*
+viol
+viole
+violee
+violait
+violer
+masturb*
+ejacul*
+fellation*
+sodom*
+porno*
+nu
+nue
+nus
+egorg*
+eventr*
+decapit*
+cadavre*

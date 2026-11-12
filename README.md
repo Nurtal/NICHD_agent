@@ -12,6 +12,8 @@ déterministe décide de ce que dit l'enfant simulé, un LLM local ne fait que l
 uv sync
 uv run pytest
 uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer
+# voix de l'enfant par LLM local (Ollama, qwen3.8 par défaut)
+uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --realizer llm
 ```
 
 En classification manuelle (par défaut), préfixez chaque énoncé par son type :

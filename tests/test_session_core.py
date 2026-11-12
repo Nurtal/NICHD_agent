@@ -102,7 +102,7 @@ def test_realizer_only_receives_the_decision_and_profile():
     ask(s, clf, "Raconte.", C("invitation"))
     decision, profile, history = real.calls[0]
     assert {u.id for u in decision.allowed_units} == {"b_mamie", "b_parc"}
-    assert profile.age == 5 and history == []
+    assert profile.age == 5 and history == [("interviewer", "Raconte.")]
 
 
 def test_classifier_context_tracks_revealed_units_and_history():

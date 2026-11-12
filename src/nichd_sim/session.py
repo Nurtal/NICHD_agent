@@ -10,9 +10,22 @@ from pydantic import BaseModel
 
 from nichd_sim.classification import Classification, ClassificationContext, Classifier
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState
+from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
-from nichd_sim.realization import Realizer
+from nichd_sim.realization import Realizer, TemplateRealizer
 from nichd_sim.scenario import Scenario
+
+MAX_REALIZATION_ATTEMPTS = 2  # first try + one regeneration, then fallback response
+
+
+class AttemptRecord(BaseModel):
+    text: str
+    prompt: str | None = None
+    ok: bool
+    forbidden_terms: list[str] = []
+    leaked_units: list[str] = []
+    missing_units: list[str] = []
+    meta: dict = {}
 
 
 class TurnRecord(BaseModel):
@@ -22,8 +35,13 @@ class TurnRecord(BaseModel):
     state_before: EngineState
     decision: Decision
     state_after: EngineState
-    prompt: str | None = None
+    attempts: list[AttemptRecord] = []
+    fallback_used: bool = False
     response: str
+
+    @property
+    def prompt(self) -> str | None:
+        return self.attempts[-1].prompt if self.attempts else None
 
 
 class SessionLog(BaseModel):
@@ -45,6 +63,7 @@ class TurnResult(BaseModel):
     classification: Classification
     decision: Decision
     state: EngineState
+    fallback_used: bool = False
 
 
 class SessionEnded(RuntimeError):
@@ -60,6 +79,7 @@ class Session:
         *,
         seed: int = 0,
         params: Parameters | None = None,
+        output_filter: OutputFilter | None = None,
         log_dir: str | Path | None = None,
     ):
         self.scenario = scenario
@@ -67,6 +87,7 @@ class Session:
         self.realizer = realizer
         self.seed = seed
         self.params = params or Parameters.load(scenario.child_profile.age_band, scenario.parameter_overrides)
+        self.output_filter = output_filter or OutputFilter(scenario)
         self.log_dir = Path(log_dir) if log_dir else None
         self.engine = BehaviorEngine(scenario, self.params, seed)
         self.history: list[tuple[str, str]] = []
@@ -78,8 +99,8 @@ class Session:
             seed=seed,
             parameters=self.params.snapshot(),
             components={
-                "classifier": type(classifier).__name__,
-                "realizer": type(realizer).__name__,
+                "classifier": _describe(classifier),
+                "realizer": _describe(realizer),
             },
         )
         self._ended = False
@@ -97,13 +118,15 @@ class Session:
             history=list(self.history),
         )
         classification = self.classifier.classify(utterance, context)
+        heard = classification.clean_text or utterance
         before = self.state
         decision = self.engine.decide(classification)
-        realization = self.realizer.realize(decision, self.scenario.child_profile, list(self.history))
         after = self.state
 
-        heard = classification.clean_text or utterance
-        self.history += [("interviewer", heard), ("child", realization.text)]
+        history = self.history + [("interviewer", heard)]
+        attempts, response, fallback = self._realize(decision, history, known=before.revealed)
+
+        self.history = history + [("child", response)]
         self.log.turns.append(
             TurnRecord(
                 index=len(self.log.turns) + 1,
@@ -112,11 +135,36 @@ class Session:
                 state_before=before,
                 decision=decision,
                 state_after=after,
-                prompt=realization.prompt,
-                response=realization.text,
+                attempts=attempts,
+                fallback_used=fallback,
+                response=response,
             )
         )
-        return TurnResult(response=realization.text, classification=classification, decision=decision, state=after)
+        return TurnResult(
+            response=response, classification=classification, decision=decision, state=after, fallback_used=fallback
+        )
+
+    def _realize(self, decision: Decision, history, known: list[str]) -> tuple[list[AttemptRecord], str, bool]:
+        attempts: list[AttemptRecord] = []
+        for attempt in range(MAX_REALIZATION_ATTEMPTS):
+            r = self.realizer.realize(decision, self.scenario.child_profile, list(history), attempt=attempt)
+            verdict = self.output_filter.check(r.text, decision, known_unit_ids=known)
+            attempts.append(
+                AttemptRecord(
+                    text=r.text,
+                    prompt=r.prompt,
+                    ok=verdict.ok,
+                    forbidden_terms=verdict.forbidden_terms,
+                    leaked_units=verdict.leaked_units,
+                    missing_units=verdict.missing_units,
+                    meta=r.meta,
+                )
+            )
+            if verdict.ok:
+                return attempts, r.text, False
+        # Fallback: authored unit values / canned response — safe by construction.
+        fallback = TemplateRealizer().realize(decision, self.scenario.child_profile, list(history)).text
+        return attempts, fallback, True
 
     def end(self) -> SessionLog:
         if not self._ended:
@@ -132,6 +180,13 @@ class Session:
         path = directory / f"session_{self.log.session_id}.json"
         path.write_text(self.log.model_dump_json(indent=2), encoding="utf-8")
         return path
+
+
+def _describe(component) -> str:
+    name = type(component).__name__
+    client = getattr(component, "client", None)
+    model = getattr(client, "model", None)
+    return f"{name}({model})" if model else name
 
 
 def _now() -> str:
