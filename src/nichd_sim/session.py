@@ -49,7 +49,11 @@ class TurnRecord(BaseModel):
         return self.attempts[-1].prompt if self.attempts else None
 
 
+LOG_FORMAT = 1
+
+
 class SessionLog(BaseModel):
+    log_format: int = LOG_FORMAT
     session_id: str
     started_at: str
     ended_at: str | None = None
