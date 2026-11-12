@@ -52,7 +52,7 @@ def test_request_uses_skill_schema_temperature_zero_and_scenario_catalog():
     s = session(chat)
     s.turn("Raconte-moi.")
     call = chat.calls[0]
-    assert call["temperature"] == 0 and call["think"] is False
+    assert call["temperature"] == 0 and call["think"] == "medium"  # most accurate measured setting
     assert call["format"] == Skill.load().schema
     system, user = call["messages"][0]["content"], call["messages"][1]["content"]
     assert "cued_invitation" in system and "Exemples" in system
@@ -104,7 +104,7 @@ def test_skill_version_and_latencies_are_logged(tmp_path):
     s.end()
     data = json.loads(next(tmp_path.glob("*.json")).read_text())
     assert data["components"]["skill_version"] == Skill.load().version
-    assert data["components"]["classifier"] == "LLMClassifier(fake-classifier)"
+    assert data["components"]["classifier"] == "LLMClassifier(fake-classifier, réflexion medium)"
     assert set(data["turns"][0]["latency_s"]) == {"classification", "realization", "total"}
     assert data["turns"][0]["classification"]["meta"]["latency_s"] == 0.01
 

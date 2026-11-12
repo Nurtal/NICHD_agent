@@ -70,12 +70,17 @@ def build_user_prompt(utterance: str, context: ClassificationContext, history_tu
     )
 
 
-DEFAULT_CLASSIFIER_THINK = "off"
-"""Thinking level of the classifier ("off", "low", "medium", "high"): precision vs latency."""
+DEFAULT_CLASSIFIER_THINK = "medium"
+"""Thinking level of the classifier ("off", "low", "medium", "high"): precision vs latency.
+"medium" is the most accurate measured (docs/evaluations/README.md); precision is the
+priority for now, latency will be optimized later."""
 
 
 class LLMClassifier:
-    def __init__(self, client: ChatClient, *, skill: Skill | None = None, think: bool | str = False, history_turns: int = 3):
+    def __init__(
+        self, client: ChatClient, *, skill: Skill | None = None, think: bool | str = DEFAULT_CLASSIFIER_THINK,
+        history_turns: int = 3,
+    ):
         self.client = client
         self.skill = skill or Skill.load()
         self.think = think
