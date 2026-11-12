@@ -8,7 +8,7 @@ from pathlib import Path
 
 from nichd_sim.classifiers.llm import LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
-from nichd_sim.feedback import LLMRephraser, render_text
+from nichd_sim.feedback import LLMRephraser, LLMSummaryMatcher, render_text
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
@@ -48,6 +48,7 @@ def play(args: argparse.Namespace) -> int:
         seed=args.seed,
         log_dir=args.log_dir,
         rephraser=None if args.no_rephrase else LLMRephraser(OllamaClient(args.model, args.ollama_url)),
+        summary_matcher=LLMSummaryMatcher(OllamaClient(args.model, args.ollama_url)) if args.summary else None,
     )
     child = scenario.child_profile.name
     print(f"=== {scenario.title} ===\n{scenario.intake_context.strip()}\n")
@@ -105,7 +106,20 @@ def play(args: argparse.Namespace) -> int:
         print(f"{child} > {result.response}")
         for notice in result.notices:
             print(f"  ⓘ {notice}")
-    log = session.end()
+    summary = None
+    if args.summary:
+        print("\nRédigez votre synthèse de ce que l'enfant a dit (ligne vide pour terminer) :")
+        lines = []
+        while True:
+            try:
+                ln = input("  ")
+            except EOFError:
+                break
+            if not ln.strip():
+                break
+            lines.append(ln)
+        summary = " ".join(lines) or None
+    log = session.end(learner_summary=summary)
     print(render_text(log.feedback))
     if args.log_dir:
         print(f"Journal : {Path(args.log_dir) / f'session_{session.log.session_id}.json'}")
@@ -141,6 +155,40 @@ def export_cmd(args: argparse.Namespace) -> int:
     return 0
 
 
+def ui_cmd(args: argparse.Namespace) -> int:
+    import subprocess
+
+    app = Path(__file__).resolve().parent / "ui" / "app.py"
+    cmd = [sys.executable, "-m", "streamlit", "run", str(app), "--server.port", str(args.port)]
+    if args.headless:
+        cmd += ["--server.headless", "true"]
+    return subprocess.call(cmd)
+
+
+def eval_cmd(args: argparse.Namespace) -> int:
+    from nichd_sim.evaluation import evaluate, load_scenarios, load_testset
+
+    items = load_testset()
+    if args.limit:
+        items = items[: args.limit]
+    clf = LLMClassifier(OllamaClient(args.model, args.ollama_url))
+
+    def progress(k, n, r):
+        mark = "✓" if r.type_ok and (r.gold["target"] is None or r.target_ok) else "✗"
+        print(f"\r[{k}/{n}] {mark} {r.id}", end="", flush=True)
+
+    report = evaluate(clf, items, load_scenarios(args.scenarios_dir), model=args.model,
+                      skill_version=clf.skill_version, progress=progress)
+    print()
+    md = report.to_markdown()
+    if args.output:
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.output).write_text(md, encoding="utf-8")
+        print(f"Rapport : {args.output}")
+    print("\n".join(md.splitlines()[:9]))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nichd-sim", description="Simulateur d'audition NICHD")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -155,6 +203,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--log-dir", default="sessions")
     p.add_argument("--trainer", action="store_true", help="mode formateur : affiche classification et décision")
     p.add_argument("--no-rephrase", action="store_true", help="pas de reformulations LLM dans le retour (hors ligne)")
+    p.add_argument("--summary", action="store_true", help="rédiger une synthèse en fin d'entretien, confrontée aux faits")
     p.set_defaults(func=play)
 
     r = sub.add_parser("replay", help="rejouer une session depuis son journal, sans LLM")
@@ -167,6 +216,19 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("log", help="journal JSON de session")
     e.add_argument("-o", "--output", help="fichier CSV de sortie")
     e.set_defaults(func=export_cmd)
+
+    u = sub.add_parser("ui", help="lancer l'interface web (Streamlit)")
+    u.add_argument("--port", type=int, default=8501)
+    u.add_argument("--headless", action="store_true")
+    u.set_defaults(func=ui_cmd)
+
+    v = sub.add_parser("eval-classifier", help="évaluer le classifieur LLM sur le jeu de test du skill")
+    v.add_argument("--model", default=DEFAULT_MODEL)
+    v.add_argument("--ollama-url", default=DEFAULT_URL)
+    v.add_argument("--scenarios-dir", default="scenarios")
+    v.add_argument("--limit", type=int, default=None)
+    v.add_argument("-o", "--output", help="rapport Markdown")
+    v.set_defaults(func=eval_cmd)
 
     args = parser.parse_args(argv)
     return args.func(args)

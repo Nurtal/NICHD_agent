@@ -8,9 +8,21 @@ déterministe décide de ce que dit l'enfant simulé, un LLM local ne fait que l
 
 ## Démarrage
 
+Prérequis : Python 3.12, [uv](https://docs.astral.sh/uv/), et pour la voix et la classification
+automatiques un serveur [Ollama](https://ollama.com) local avec le modèle `qwen3.8`.
+
 ```bash
 uv sync
 uv run pytest
+# interface web (entretien, mode formateur, retour)
+uv run nichd-sim ui
+# même interface sans LLM (voix gabarit, classification manuelle)
+NICHD_OFFLINE=1 uv run nichd-sim ui
+```
+
+### En ligne de commande
+
+```bash
 uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer
 # voix de l'enfant par LLM local (Ollama, qwen3.8 par défaut)
 uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --realizer llm
@@ -20,11 +32,26 @@ uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --classifier llm
 
 En classification manuelle (par défaut), préfixez chaque énoncé par son type :
 `[inv] Dis-moi tout ce qui s'est passé.`, `[dir:d_pousse] Qui a poussé ?` (tapez `/aide`, `/unites`).
-Les journaux de session sont écrits dans `sessions/`.
+Options utiles : `--summary` (rédiger une synthèse confrontée aux faits), `--no-rephrase`
+(retour sans reformulations LLM). Les journaux de session sont écrits dans `sessions/`.
 
 ```bash
 # rejouer une session à l'identique depuis son journal (sans LLM)
 uv run nichd-sim replay sessions/session_<id>.json
 # transcription vierge (CSV ;) pour des codeurs humains
 uv run nichd-sim export sessions/session_<id>.json -o codage.csv
+# évaluer le classifieur sur le jeu de test du skill (kappa de Cohen)
+uv run nichd-sim eval-classifier -o docs/evaluations/rapport.md
 ```
+
+## Organisation
+
+| Chemin | Rôle |
+|---|---|
+| `scenarios/` | fiches de scénario (YAML), en attente de validation par un formateur |
+| `src/nichd_sim/session.py` | façade `Session`, unique point d'entrée (CLI, interface, tests) |
+| `src/nichd_sim/engine.py` | moteur de comportement déterministe |
+| `src/nichd_sim/phases.py` | suivi des phases et écarts au protocole |
+| `src/nichd_sim/skill/` | skill NICHD versionné : spécification, exemples, schéma, jeu de test |
+| `src/nichd_sim/data/parameters.yaml` | paramètres de comportement sourcés |
+| `docs/evaluations/` | rapports d'évaluation du classifieur |
