@@ -26,7 +26,7 @@ def app(tmp_path, monkeypatch):
 def test_full_session_with_trainer_mode_and_feedback(app, tmp_path):
     at = app
     assert not at.exception
-    assert len(at.selectbox[0].options) == 3
+    assert len(at.selectbox[0].options) == len(list((ROOT / "scenarios").glob("*.yaml")))
     button(at, "Nouvel entretien").click().run()
     at.toggle(key="trainer").set_value(True).run()
 

@@ -1,0 +1,151 @@
+# Scénario n° 4 — enfant de 6 ans, réticente, témoin de violences conjugales.
+# Révélations volontairement non explicites.
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s04_violences_conjugales
+version: 0.1.0
+title: Lina, 6 ans — témoin de violences conjugales
+status: draft
+intake_context: Lina, 6 ans, est entendue comme témoin après une intervention de police au domicile familial,
+  à la suite d'un appel d'une voisine. Elle n'a rien raconté jusqu'ici.
+child_profile:
+  name: Lina
+  age: 6
+  reluctance: 0.55
+  verbal_skills: 0.35
+  suggestibility: 0.6
+target_event:
+  segments:
+  - id: before
+    units:
+    - id: b_nuit
+      category: when
+      centrality: peripheral
+      value: c'était la nuit, j'étais dans mon lit
+      anchors:
+      - nuit
+      - lit
+    - id: b_salon
+      category: where
+      centrality: central
+      value: ça se passait dans le salon
+      anchors:
+      - salon
+    - id: b_bruit
+      category: what
+      centrality: central
+      value: j'ai entendu des grands cris
+      anchors:
+      - entendu
+      - cris
+  - id: during
+    units:
+    - id: d_dispute
+      category: who
+      centrality: central
+      value: papa et maman se disputaient
+      anchors:
+      - disputaient
+      - dispute
+    - id: d_gros_mots
+      category: what
+      centrality: central
+      value: papa criait des gros mots
+      anchors:
+      - gros mots
+    - id: d_mur
+      category: what
+      centrality: central
+      value: papa a poussé maman contre le mur
+      anchors:
+      - poussé
+      - mur
+    - id: d_vase
+      category: what
+      centrality: peripheral
+      value: le vase bleu est tombé et il s'est cassé
+      anchors:
+      - vase
+      - cassé
+    - id: d_porte
+      category: where
+      centrality: peripheral
+      value: je regardais par la porte de ma chambre
+      anchors:
+      - porte
+    - id: d_doudou
+      category: what
+      centrality: peripheral
+      value: je tenais mon doudou lapin
+      anchors:
+      - doudou
+      - lapin
+    - id: d_frequence
+      category: frequency
+      centrality: central
+      value: ça arrive souvent quand papa rentre tard
+      anchors:
+      - souvent
+      - rentre tard
+  - id: after
+    units:
+    - id: a_pleure
+      category: what
+      centrality: central
+      value: maman pleurait dans la cuisine
+      anchors:
+      - pleurait
+    - id: a_voisine
+      category: who
+      centrality: central
+      value: la voisine Madame Roux a sonné chez nous
+      anchors:
+      - Roux
+      - sonné
+    - id: a_pas_grave
+      category: what
+      centrality: peripheral
+      value: maman m'a dit que c'était pas grave
+      anchors:
+      - pas grave
+neutral_event:
+  segments:
+  - id: before
+    units:
+    - id: n_kermesse
+      category: what
+      centrality: central
+      value: samedi il y avait la kermesse
+      anchors:
+      - kermesse
+    - id: n_sonia
+      category: who
+      centrality: central
+      value: j'y suis allée avec ma tata Sonia
+      anchors:
+      - Sonia
+      - tata
+  - id: during
+    units:
+    - id: n_canards
+      category: what
+      centrality: central
+      value: j'ai gagné à la pêche aux canards
+      anchors:
+      - canards
+    - id: n_papillon
+      category: what
+      centrality: peripheral
+      value: on m'a maquillée en papillon
+      anchors:
+      - papillon
+      - maquillée
+  - id: after
+    units:
+    - id: n_barbe
+      category: what
+      centrality: central
+      value: après on a mangé une barbe à papa
+      anchors:
+      - barbe à papa

@@ -1,0 +1,151 @@
+# Scénario n° 6 — enfant de 10 ans, gênée, peu suggestible, victime de racket (faits répétés).
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s06_racket
+version: 0.1.0
+title: Yasmine, 10 ans — racket sur le chemin du gymnase
+status: draft
+intake_context: 'Yasmine, 10 ans, est entendue après que sa mère a porté plainte : sa fille rentre régulièrement
+  sans l''argent de la cantine.'
+child_profile:
+  name: Yasmine
+  age: 10
+  reluctance: 0.45
+  verbal_skills: 0.6
+  suggestibility: 0.25
+target_event:
+  segments:
+  - id: before
+    units:
+    - id: b_jeudi
+      category: when
+      centrality: central
+      value: c'était jeudi à la sortie des cours, vers seize heures trente
+      anchors:
+      - jeudi
+      - seize heures
+    - id: b_gymnase
+      category: where
+      centrality: central
+      value: sur le chemin du gymnase, derrière le parking
+      anchors:
+      - gymnase
+      - parking
+    - id: b_seule
+      category: what
+      centrality: peripheral
+      value: j'étais toute seule ce jour-là
+      anchors:
+      - toute seule
+  - id: during
+    units:
+    - id: d_collegiens
+      category: who
+      centrality: central
+      value: deux grands du collège, un avec une casquette noire
+      anchors:
+      - collège
+      - casquette
+    - id: d_argent
+      category: what
+      centrality: central
+      value: ils m'ont demandé de leur donner mon argent
+      anchors:
+      - argent
+    - id: d_menace
+      category: what
+      centrality: central
+      value: le grand a dit qu'il allait me frapper si je donnais rien
+      anchors:
+      - frapper
+      - menacé
+    - id: d_euros
+      category: what
+      centrality: central
+      value: je leur ai donné les dix euros de la cantine
+      anchors:
+      - dix euros
+      - euros
+    - id: d_telephone
+      category: what
+      centrality: peripheral
+      value: ils ont regardé mon téléphone mais ils l'ont pas gardé
+      anchors:
+      - téléphone
+    - id: d_kevin
+      category: who
+      centrality: peripheral
+      value: l'autre, il l'appelait Kevin
+      anchors:
+      - Kevin
+    - id: d_frequence
+      category: frequency
+      centrality: central
+      value: c'était la troisième fois depuis les vacances
+      anchors:
+      - troisième fois
+      - vacances
+  - id: after
+    units:
+    - id: a_rigolant
+      category: what
+      centrality: central
+      value: ils sont partis en rigolant vers le centre commercial
+      anchors:
+      - rigolant
+      - centre commercial
+    - id: a_mere
+      category: who
+      centrality: central
+      value: le soir j'ai tout raconté à ma mère
+      anchors:
+      - raconté à ma mère
+    - id: a_honte
+      category: what
+      centrality: peripheral
+      value: j'avais honte et j'osais pas le dire avant
+      anchors:
+      - honte
+      - osais
+neutral_event:
+  segments:
+  - id: before
+    units:
+    - id: n_spectacle
+      category: what
+      centrality: central
+      value: samedi j'ai fait le spectacle de danse
+      anchors:
+      - spectacle
+      - danse
+  - id: during
+    units:
+    - id: n_costume
+      category: what
+      centrality: central
+      value: j'avais un costume avec des paillettes
+      anchors:
+      - costume
+      - paillettes
+    - id: n_trac
+      category: what
+      centrality: peripheral
+      value: au début j'avais le trac
+      anchors:
+      - trac
+    - id: n_bouquet
+      category: who
+      centrality: central
+      value: ma grand-mère m'a offert un bouquet
+      anchors:
+      - bouquet
+      - grand-mère
+  - id: after
+    units:
+    - id: n_restaurant
+      category: what
+      centrality: peripheral
+      value: après on est allés au restaurant
+      anchors:
+      - restaurant
