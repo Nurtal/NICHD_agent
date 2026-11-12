@@ -30,6 +30,7 @@ class AttemptRecord(BaseModel):
     leaked_units: list[str] = []
     missing_units: list[str] = []
     empty: bool = False
+    too_long: bool = False
     meta: dict = {}
 
 
@@ -222,6 +223,7 @@ class Session:
                     leaked_units=verdict.leaked_units,
                     missing_units=verdict.missing_units,
                     empty=verdict.empty,
+                    too_long=verdict.too_long,
                     meta=r.meta,
                 )
             )

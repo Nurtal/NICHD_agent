@@ -99,7 +99,7 @@ def play(args: argparse.Namespace) -> int:
                 print(f"  [formateur] classification en repli : {c.meta['error']}")
             for i, a in enumerate(turn.attempts):
                 if not a.ok:
-                    print(f"  [filtre] essai {i + 1} rejeté : {a.forbidden_terms + a.leaked_units + ['manque:' + m for m in a.missing_units] + (['vide'] if a.empty else [])} — {a.text!r}")
+                    print(f"  [filtre] essai {i + 1} rejeté : {a.forbidden_terms + a.leaked_units + ['manque:' + m for m in a.missing_units] + (['vide'] if a.empty else []) + (['trop long'] if a.too_long else [])} — {a.text!r}")
             if turn.fallback_used:
                 print("  [filtre] réponse de repli utilisée")
         print(f"{child} > {result.response}")

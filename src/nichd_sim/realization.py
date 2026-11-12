@@ -123,13 +123,24 @@ class LLMRealizer:
 
     def realize(self, decision, profile, history, attempt=0) -> Realization:
         system = build_system_prompt(decision, profile)
-        messages = [{"role": "system", "content": system}]
-        recent = history[-2 * self.history_turns :]
-        for speaker, text in recent:
-            messages.append({"role": "user" if speaker == "interviewer" else "assistant", "content": text})
-        # The current interviewer utterance is the last history entry when called by Session.
+        temperature = self.temperature
+        if attempt > 0:  # the previous attempt was rejected by the filter: be stricter
+            temperature = min(temperature, 0.3)
+            system += (
+                "\nATTENTION : ta réponse précédente a été refusée. Respecte la consigne à la lettre ; "
+                "si besoin, reprends presque mot pour mot les phrases de la liste."
+            )
+        # History is given as plain text in one user message: as chat turns, a run of short
+        # child answers ("je sais pas"…) makes the model stop after a couple of tokens.
+        *past, (_, current) = history if history else [("interviewer", "")]
+        recent = past[-2 * self.history_turns :]
+        lines = [f"{'Adulte' if s == 'interviewer' else 'Toi'} : {t}" for s, t in recent]
+        user = (f"Conversation récente :\n" + "\n".join(lines) + "\n\n" if lines else "") + (
+            f"L'adulte te dit maintenant : « {current} »\nTa réponse :"
+        )
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
         seed = self.seed * 1000 + len(history) * 10 + attempt
-        result = self.client.chat(messages, temperature=self.temperature, seed=seed, think=False)
+        result = self.client.chat(messages, temperature=temperature, seed=seed, think=False)
         text = " ".join(result.content.split())
         return Realization(text=text, prompt=_render(messages), meta=result.meta)
 

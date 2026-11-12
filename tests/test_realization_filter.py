@@ -106,7 +106,8 @@ def test_llm_prompt_contains_only_allowed_facts():
             assert unit.value not in prompt
             assert not any(a.lower() in prompt.lower() for a in unit.anchors if a not in ("école",)), unit.id
     assert call["think"] is False and call["temperature"] == 0.7
-    assert call["messages"][-1] == {"role": "user", "content": "Raconte-moi tout."}
+    assert len(call["messages"]) == 2
+    assert "« Raconte-moi tout. »" in call["messages"][1]["content"]
     assert "5 ans" in call["messages"][0]["content"]
 
 
@@ -170,3 +171,20 @@ def test_empty_response_is_rejected():
     r = ask(s, clf, "Il avait quelle voiture ?", C("directive", "out_of_scenario"))
     assert r.fallback_used and r.response == "Je sais pas."
     assert s.log.turns[0].attempts[0].empty
+
+
+def test_content_free_act_that_runs_on_is_rejected():
+    long = "et après j'ai dit à la maîtresse que c'était un accident avec la chaise de la cuisine"
+    s, clf = session_with(ScriptedRealizer(long, "Je sais pas."))
+    r = ask(s, clf, "Il avait quelle voiture ?", C("directive", "out_of_scenario"))
+    assert r.response == "Je sais pas."
+    assert s.log.turns[0].attempts[0].too_long
+
+
+def test_regeneration_is_stricter_and_cooler():
+    chat = FakeChat(reply="Le chien aboyait.")  # always leaks → 2 attempts
+    s, clf = session_with(LLMRealizer(chat, seed=3))
+    ask(s, clf, "Raconte.", C("invitation"))
+    first, second = chat.calls
+    assert first["temperature"] == 0.7 and second["temperature"] == 0.3
+    assert "refusée" in second["messages"][0]["content"] and "refusée" not in first["messages"][0]["content"]
