@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from nichd_sim.classifiers.llm import LLMClassifier
+from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
 from nichd_sim.feedback import LLMRephraser, LLMSummaryMatcher, render_text
 from nichd_sim.phases import VIOLATION_LABELS
@@ -23,8 +23,15 @@ def build_classifier(args: argparse.Namespace):
     if args.classifier == "manual":
         return ManualClassifier()
     if args.classifier == "llm":
-        return LLMClassifier(OllamaClient(args.classifier_model or args.model, args.ollama_url))
+        return LLMClassifier(
+            OllamaClient(args.classifier_model or args.model, args.ollama_url), think=parse_think(args.classifier_think)
+        )
     raise SystemExit(f"classifieur inconnu : {args.classifier}")
+
+
+def parse_think(value: str) -> bool | str:
+    """'off' → no thinking; otherwise an Ollama thinking level (low, medium, high)."""
+    return False if value in ("off", "false", "0") else value
 
 
 def build_realizer(args: argparse.Namespace):
@@ -176,13 +183,13 @@ def eval_cmd(args: argparse.Namespace) -> int:
     items = load_testset()
     if args.limit:
         items = items[: args.limit]
-    clf = LLMClassifier(OllamaClient(args.model, args.ollama_url))
+    clf = LLMClassifier(OllamaClient(args.model, args.ollama_url), think=parse_think(args.think))
 
     def progress(k, n, r):
         mark = "✓" if r.type_ok and (r.gold["target"] is None or r.target_ok) else "✗"
         print(f"\r[{k}/{n}] {mark} {r.id}", end="", flush=True)
 
-    report = evaluate(clf, items, load_scenarios(args.scenarios_dir), model=args.model,
+    report = evaluate(clf, items, load_scenarios(args.scenarios_dir), model=f"{args.model} (réflexion : {args.think})",
                       skill_version=clf.skill_version, progress=progress)
     print()
     md = report.to_markdown()
@@ -202,6 +209,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--classifier", default="manual", choices=["manual", "llm"])
     p.add_argument("--classifier-model", default=None, help="modèle Ollama du classifieur (défaut : --model)")
+    p.add_argument("--classifier-think", default=DEFAULT_CLASSIFIER_THINK,
+                   help="réflexion du classifieur : off, low, medium, high")
     p.add_argument("--realizer", default="template", choices=["template", "llm"])
     p.add_argument("--model", default=DEFAULT_MODEL, help="modèle Ollama")
     p.add_argument("--ollama-url", default=DEFAULT_URL)
@@ -233,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--ollama-url", default=DEFAULT_URL)
     v.add_argument("--scenarios-dir", default="scenarios")
     v.add_argument("--limit", type=int, default=None)
+    v.add_argument("--think", default=DEFAULT_CLASSIFIER_THINK, help="réflexion du classifieur : off, low, medium, high")
     v.add_argument("-o", "--output", help="rapport Markdown")
     v.set_defaults(func=eval_cmd)
 

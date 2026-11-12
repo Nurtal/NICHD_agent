@@ -260,6 +260,9 @@ def _describe(component) -> str:
     name = type(component).__name__
     client = getattr(component, "client", None)
     model = getattr(client, "model", None)
+    think = getattr(component, "think", None)
+    if think:
+        model = f"{model}, réflexion {think}"
     return f"{name}({model})" if model else name
 
 
