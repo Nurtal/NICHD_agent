@@ -3,7 +3,7 @@
 # Personnages et faits entièrement fictifs.
 
 id: s01_bagarre_parc
-version: "0.2.0"
+version: "0.2.1"
 title: "Léo, 5 ans — témoin d'une bagarre au parc"
 status: draft  # en attente de validation par un formateur NICHD
 intake_context: >
@@ -91,7 +91,7 @@ target_event:
           category: what
           centrality: central
           value: "le monsieur au blouson rouge est parti en courant"
-          anchors: [parti, courant, couru]
+          anchors: [courant, couru]
         - id: a_telephone
           category: what
           centrality: central

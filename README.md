@@ -51,7 +51,7 @@ uv run nichd-sim eval-classifier -o docs/evaluations/rapport.md
 
 | Chemin | Rôle |
 |---|---|
-| `scenarios/` | fiches de scénario (YAML), en attente de validation par un formateur |
+| `scenarios/` | fiches de scénario (YAML), en attente de validation par un formateur — voir [docs/guide-scenarios.md](docs/guide-scenarios.md) et `nichd-sim check-scenario` |
 | `src/nichd_sim/session.py` | façade `Session`, unique point d'entrée (CLI, interface, tests) |
 | `src/nichd_sim/engine.py` | moteur de comportement déterministe |
 | `src/nichd_sim/phases.py` | suivi des phases et écarts au protocole |

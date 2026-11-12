@@ -162,6 +162,27 @@ def export_cmd(args: argparse.Namespace) -> int:
     return 0
 
 
+def check_cmd(args: argparse.Namespace) -> int:
+    from nichd_sim.scenario_check import Level, check_scenario
+
+    paths = args.paths or sorted(str(p) for p in Path("scenarios").glob("*.yaml"))
+    errors = 0
+    for path in paths:
+        try:
+            findings = check_scenario(load_scenario(path))
+        except ScenarioError as e:
+            print(e)
+            errors += 1
+            continue
+        n_err = sum(f.level == Level.ERROR for f in findings)
+        n_warn = sum(f.level == Level.WARNING for f in findings)
+        print(f"{path} : {n_err} erreur(s), {n_warn} avertissement(s)")
+        for f in findings:
+            print(f"  - {f}")
+        errors += n_err
+    return 1 if errors else 0
+
+
 def ui_cmd(args: argparse.Namespace) -> int:
     import subprocess
 
@@ -230,6 +251,10 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("log", help="journal JSON de session")
     e.add_argument("-o", "--output", help="fichier CSV de sortie")
     e.set_defaults(func=export_cmd)
+
+    k = sub.add_parser("check-scenario", help="vérifier des fiches de scénario (défaut : scenarios/*.yaml)")
+    k.add_argument("paths", nargs="*")
+    k.set_defaults(func=check_cmd)
 
     u = sub.add_parser("ui", help="lancer l'interface web (Streamlit)")
     u.add_argument("--port", type=int, default=8501)
