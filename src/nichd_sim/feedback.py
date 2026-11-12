@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel
@@ -70,6 +71,71 @@ class LLMRephraser:
         return " ".join(result.content.split())
 
 
+class SummaryMatch(BaseModel):
+    """How the learner's written summary maps onto what the child said."""
+
+    retained_true: list[str] = []
+    """True unit ids the child said and the learner reported."""
+    retained_contaminated: list[str] = []
+    """Contaminated unit ids (false details) the learner reported as facts."""
+    not_said_by_child: list[str] = []
+    """Statements of the summary that match nothing the child said."""
+
+
+class SummaryMatcher(Protocol):
+    def match(self, summary: str, said_true: list[tuple[str, str]], said_false: list[tuple[str, str]]) -> SummaryMatch: ...
+
+
+SUMMARY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "retained_true": {"type": "array", "items": {"type": "string"}},
+        "retained_contaminated": {"type": "array", "items": {"type": "string"}},
+        "not_said_by_child": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["retained_true", "retained_contaminated", "not_said_by_child"],
+}
+
+
+class LLMSummaryMatcher:
+    """Matches a learner's summary against the child's statements with the local LLM."""
+
+    def __init__(self, client: ChatClient):
+        self.client = client
+
+    def match(self, summary, said_true, said_false) -> SummaryMatch:
+        catalog = "\n".join(f"- {i} : {v}" for i, v in said_true + said_false) or "- (rien)"
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Tu compares la synthèse écrite par un enquêteur avec ce qu'un enfant a réellement dit "
+                    "pendant une audition. Pour chaque élément de la liste que la synthèse rapporte (même "
+                    "reformulé), donne son identifiant : dans `retained_true` si l'identifiant ne commence pas "
+                    "par « c », dans `retained_contaminated` s'il commence par « c ». Dans `not_said_by_child`, "
+                    "recopie brièvement chaque affirmation de la synthèse qui ne correspond à rien de la liste. "
+                    "Réponds uniquement en JSON."
+                ),
+            },
+            {"role": "user", "content": f"Ce que l'enfant a dit :\n{catalog}\n\nSynthèse de l'enquêteur :\n{summary}"},
+        ]
+        result = self.client.chat(messages, temperature=0, seed=0, think=False, format=SUMMARY_SCHEMA)
+        try:
+            return SummaryMatch.model_validate(json.loads(result.content))
+        except ValueError:
+            return SummaryMatch()
+
+
+class LearnerSummaryResult(BaseModel):
+    summary: str
+    retained_true: list[str]
+    retained_contaminated: list[str]
+    not_said_by_child: list[str]
+    true_said: int
+    recall: float | None
+    """Share of the true units the child said that the learner reported."""
+
+
 class Rephrasing(BaseModel):
     turn: int
     question: str
@@ -104,9 +170,38 @@ class FeedbackReport(BaseModel):
     """Closed/suggestive questions that happened to be true: still technique faults."""
     off_protocol: list[FlaggedTurn]
     disclosed: bool
+    learner_summary: LearnerSummaryResult | None = None
 
 
-def build_feedback(log: SessionLog, scenario: Scenario, rephraser: Rephraser | None = None) -> FeedbackReport:
+def match_summary(summary: str, log: SessionLog, scenario: Scenario, matcher: SummaryMatcher) -> LearnerSummaryResult:
+    final = log.turns[-1].state_after if log.turns else None
+    said_true = [(u, scenario.unit(u).value) for u in (final.revealed if final else []) if scenario.is_target_unit(u)]
+    said_false = [(cu.id, cu.value) for cu in (final.contaminated if final else [])]
+    try:
+        m = matcher.match(summary, said_true, said_false)
+    except LLMError:
+        m = SummaryMatch()
+    true_ids = {i for i, _ in said_true}
+    false_ids = {i for i, _ in said_false}
+    retained_true = [i for i in dict.fromkeys(m.retained_true) if i in true_ids]
+    retained_false = [i for i in dict.fromkeys(m.retained_contaminated) if i in false_ids]
+    return LearnerSummaryResult(
+        summary=summary,
+        retained_true=retained_true,
+        retained_contaminated=retained_false,
+        not_said_by_child=[s for s in m.not_said_by_child if s.strip()],
+        true_said=len(true_ids),
+        recall=len(retained_true) / len(true_ids) if true_ids else None,
+    )
+
+
+def build_feedback(
+    log: SessionLog,
+    scenario: Scenario,
+    rephraser: Rephraser | None = None,
+    learner_summary: str | None = None,
+    summary_matcher: SummaryMatcher | None = None,
+) -> FeedbackReport:
     transcript, rephrasings, lucky, off = [], [], [], []
     child_said: list[str] = []
     for t in log.turns:
@@ -147,6 +242,11 @@ def build_feedback(log: SessionLog, scenario: Scenario, rephraser: Rephraser | N
         lucky_suggestions=lucky,
         off_protocol=off,
         disclosed=bool(log.turns and log.turns[-1].state_after.disclosed),
+        learner_summary=(
+            match_summary(learner_summary, log, scenario, summary_matcher)
+            if learner_summary and learner_summary.strip() and summary_matcher is not None
+            else None
+        ),
     )
 
 
@@ -172,6 +272,14 @@ def render_text(report: FeedbackReport) -> str:
         out.append(f"  - « {e.value} » — introduit au tour {e.source_turn} ({TYPE_LABELS[e.source_type]}) : « {e.source_utterance} »")
     if not report.disclosed:
         out.append("L'enfant n'a pas dévoilé l'événement : c'est un résultat possible et légitime.")
+    ls = report.learner_summary
+    if ls is not None:
+        out.append("")
+        out.append(f"Votre synthèse : {_pct(ls.recall)} des faits dits par l'enfant retenus ({len(ls.retained_true)}/{ls.true_said})")
+        if ls.retained_contaminated:
+            out.append(f"  ⚠ {len(ls.retained_contaminated)} faux détail(s) repris comme des faits : {', '.join(ls.retained_contaminated)}")
+        for item in ls.not_said_by_child:
+            out.append(f"  ⚠ jamais dit par l'enfant : « {item} »")
     out.append("")
     out.append("Phases : " + " → ".join(PHASE_LABELS[p] for p in report.phases_visited))
     if report.phase_violations:
