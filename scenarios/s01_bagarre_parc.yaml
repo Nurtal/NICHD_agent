@@ -106,3 +106,38 @@ target_event:
           centrality: peripheral
           value: "après on est rentrés à la maison pour le goûter"
           anchors: [goûter, maison]
+
+# Événement neutre récent, pour la pratique narrative.
+neutral_event:
+  segments:
+    - id: before
+      units:
+        - id: n_anniversaire
+          category: when
+          centrality: central
+          value: "c'était mon anniversaire, samedi"
+          anchors: [anniversaire, samedi]
+    - id: during
+      units:
+        - id: n_copains
+          category: who
+          centrality: central
+          value: "il y avait mes copains Tom et Inès"
+          anchors: [Tom, Inès, copains]
+        - id: n_gateau
+          category: what
+          centrality: central
+          value: "on a mangé un gâteau au chocolat"
+          anchors: [gâteau, chocolat]
+        - id: n_loup
+          category: what
+          centrality: peripheral
+          value: "on a joué au loup dans le jardin"
+          anchors: [loup, jardin]
+    - id: after
+      units:
+        - id: n_cadeau
+          category: what
+          centrality: central
+          value: "j'ai eu un camion de pompiers en cadeau"
+          anchors: [camion, pompiers, cadeau]

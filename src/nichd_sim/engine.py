@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict
 
 from nichd_sim.classification import OUT_OF_SCENARIO, Classification, QuestionType
 from nichd_sim.parameters import Parameters
-from nichd_sim.scenario import Centrality, InfoUnit, Scenario
+from nichd_sim.scenario import Centrality, EventKind, InfoUnit, Scenario
 from nichd_sim.text import mentions, normalize
 
 
@@ -26,6 +26,8 @@ class SpeechAct(StrEnum):
     DENY = "deny"
     CONFABULATE = "confabulate"
     ACKNOWLEDGE = "acknowledge"
+    SMALL_TALK = "small_talk"
+    """Rapport chit-chat about the child's life, without any scenario fact."""
     CONFUSION = "confusion"
     SILENCE = "silence"
 
@@ -84,6 +86,9 @@ def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
     return any(mentions(norm, a) for a in unit.anchors)
 
 
+_FROM_HINT = object()  # sentinel: derive the topic from the utterance's phase hint
+
+
 class BehaviorEngine:
     def __init__(self, scenario: Scenario, params: Parameters, seed: int):
         self.scenario = scenario
@@ -95,7 +100,10 @@ class BehaviorEngine:
             verbosity=profile.verbal_skills,
             acquiescence=profile.suggestibility,
         )
-        self._order: list[InfoUnit] = [u for _, u in scenario.all_units()]
+        self._orders: dict[EventKind, list[InfoUnit]] = {
+            EventKind.TARGET: [u for _, u in scenario.target_units()],
+            EventKind.NEUTRAL: [u for _, u in scenario.neutral_units()],
+        }
 
     # -- public -------------------------------------------------------------
 
@@ -172,27 +180,53 @@ class BehaviorEngine:
         cu.times_said += 1
         return AllowedUnit(id=cu.id, value=cu.value, contaminated=True, new=False)
 
-    def _invitation(self, c: Classification, t: QuestionType) -> Decision:
-        fresh = self._unrevealed(self._order)
+    def _topic(self, c: Classification) -> EventKind | None:
+        """Which event an open prompt is about, from the utterance's phase hint.
+        None means rapport chit-chat. Default (no hint): the target event."""
+        hint = c.phase_hints[0] if c.phase_hints else None
+        if hint in ("rapport", "ground_rules"):
+            return None
+        if hint == "narrative_practice" and self.scenario.neutral_event is not None:
+            return EventKind.NEUTRAL
+        return EventKind.TARGET
+
+    def _segment_pool(self, unit_id: str | None) -> tuple[EventKind, list[InfoUnit], str] | None:
+        loc = self.scenario.locate(unit_id) if unit_id else None
+        if loc is None:
+            return None
+        kind, segment = loc
+        event = self.scenario.event(kind)
+        pool = [u for s, u in event.units() if s == segment]
+        return kind, pool, str(segment)
+
+    def _invitation(self, c: Classification, t: QuestionType, topic=_FROM_HINT) -> Decision:
+        if topic is _FROM_HINT:
+            topic = self._topic(c)
+        if topic is None:
+            return Decision(speech_act=SpeechAct.SMALL_TALK, reason="invitation de rapport")
+        fresh = self._unrevealed(self._orders[topic])
         central_left = [u for u in fresh if u.centrality == Centrality.CENTRAL]
-        return self._narrate(central_left or fresh, self._invitation_size(), "invitation", recall_contamination=True)
+        label = "invitation" if topic == EventKind.TARGET else "invitation (événement neutre)"
+        return self._narrate(
+            central_left or fresh, self._invitation_size(), label, recall_contamination=topic == EventKind.TARGET
+        )
 
     def _cued_invitation(self, c: Classification, t: QuestionType) -> Decision:
-        segment = self.scenario.segment_of(c.target) if c.target else None
-        if segment is None:
-            return self._invitation(c, t)
-        pool = [u for s, u in self.scenario.all_units() if s == segment]
-        if not self._unrevealed(pool):
-            return self._invitation(c, t)
-        return self._narrate(pool, self._invitation_size(), f"invitation indicée (segment {segment})", recall_contamination=True)
+        found = self._segment_pool(c.target)
+        if found is None or not self._unrevealed(found[1]):
+            return self._invitation(c, t, topic=found[0] if found else _FROM_HINT)
+        kind, pool, segment = found
+        return self._narrate(
+            pool, self._invitation_size(), f"invitation indicée (segment {segment})",
+            recall_contamination=kind == EventKind.TARGET,
+        )
 
     def _facilitator(self, c: Classification, t: QuestionType) -> Decision:
-        segment = self.scenario.segment_of(self.state.last_unit) if self.state.last_unit else None
-        if segment is not None:
-            pool = [u for s, u in self.scenario.all_units() if s == segment]
-            if self._unrevealed(pool):
-                return self._narrate(pool, 1, "facilitateur (suite du segment)")
-        return self._narrate(self._order, 1, "facilitateur")
+        found = self._segment_pool(self.state.last_unit)
+        if found is not None and self._unrevealed(found[1]):
+            return self._narrate(found[1], 1, "facilitateur (suite du segment)")
+        kind = found[0] if found else (self._topic(c) or EventKind.TARGET)
+        return self._narrate(self._orders[kind], 1, "facilitateur")
 
     # -- focused questions --------------------------------------------------
 

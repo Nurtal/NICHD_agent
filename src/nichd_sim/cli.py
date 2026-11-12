@@ -8,6 +8,7 @@ from pathlib import Path
 
 from nichd_sim.classifiers.llm import LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
+from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
 from nichd_sim.scenario import ScenarioError, load_scenario
@@ -82,11 +83,13 @@ def play(args: argparse.Namespace) -> int:
             c, d = result.classification, result.decision
             turn = session.log.turns[-1]
             inner = f" ({c.inner_type})" if c.inner_type else ""
-            phase = f" [{c.phase_hints[0]}]" if c.phase_hints else ""
+            phase = f" [indice {c.phase_hints[0]}]" if c.phase_hints else ""
             print(
                 f"  [formateur] {c.type}{inner}{' → ' + c.target if c.target else ''}{phase}"
-                f" | {d.speech_act} | {d.reason} | {turn.latency_s.get('total', 0):.1f}s"
+                f" | {d.speech_act} | {d.reason} | phase {result.phase} | {turn.latency_s.get('total', 0):.1f}s"
             )
+            for v in result.violations:
+                print(f"  [formateur] ⚠ {VIOLATION_LABELS[v.kind]} : {v.phase}{' — ' + v.detail if v.detail else ''}")
             if c.suggested_proposition:
                 print(f"  [formateur] proposition suggérée : {c.suggested_proposition}")
             if "error" in c.meta:
@@ -97,7 +100,12 @@ def play(args: argparse.Namespace) -> int:
             if turn.fallback_used:
                 print("  [filtre] réponse de repli utilisée")
         print(f"{child} > {result.response}")
-    session.end()
+    log = session.end()
+    if log.phase_violations:
+        print("\nÉcarts au protocole :")
+        for v in log.phase_violations:
+            where = f"tour {v.turn}" if v.turn else "fin"
+            print(f"  - {VIOLATION_LABELS[v.kind]} ({v.phase}, {where}){' — ' + v.detail if v.detail else ''}")
     if args.log_dir:
         print(f"Journal : {Path(args.log_dir) / f'session_{session.log.session_id}.json'}")
     return 0

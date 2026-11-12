@@ -107,6 +107,11 @@ class Event(_Strict):
                 yield seg.id, unit
 
 
+class EventKind(StrEnum):
+    TARGET = "target"
+    NEUTRAL = "neutral"
+
+
 class Scenario(_Strict):
     id: str = Field(min_length=1)
     version: str = Field(min_length=1)
@@ -114,6 +119,9 @@ class Scenario(_Strict):
     intake_context: str = Field(min_length=1, description="Contexte de saisine montré à l'apprenant (sans les faits).")
     child_profile: ChildProfile
     target_event: Event
+    neutral_event: Event | None = Field(
+        default=None, description="Événement neutre récent, pour la pratique narrative."
+    )
     parameter_overrides: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -125,14 +133,41 @@ class Scenario(_Strict):
             seen.add(unit.id)
         return self
 
-    def all_units(self) -> Iterator[tuple[SegmentId, InfoUnit]]:
+    def event(self, kind: EventKind) -> Event | None:
+        return self.target_event if kind == EventKind.TARGET else self.neutral_event
+
+    def target_units(self) -> Iterator[tuple[SegmentId, InfoUnit]]:
         yield from self.target_event.units()
+
+    def neutral_units(self) -> Iterator[tuple[SegmentId, InfoUnit]]:
+        if self.neutral_event is not None:
+            yield from self.neutral_event.units()
+
+    def all_units(self) -> Iterator[tuple[SegmentId, InfoUnit]]:
+        """Units of both events (target first)."""
+        yield from self.target_units()
+        yield from self.neutral_units()
 
     def unit(self, unit_id: str) -> InfoUnit | None:
         return next((u for _, u in self.all_units() if u.id == unit_id), None)
 
+    def locate(self, unit_id: str) -> tuple[EventKind, SegmentId] | None:
+        for kind in EventKind:
+            event = self.event(kind)
+            if event is None:
+                continue
+            for seg, u in event.units():
+                if u.id == unit_id:
+                    return kind, seg
+        return None
+
     def segment_of(self, unit_id: str) -> SegmentId | None:
-        return next((s for s, u in self.all_units() if u.id == unit_id), None)
+        loc = self.locate(unit_id)
+        return loc[1] if loc else None
+
+    def is_target_unit(self, unit_id: str | None) -> bool:
+        loc = self.locate(unit_id) if unit_id else None
+        return loc is not None and loc[0] == EventKind.TARGET
 
 
 def load_scenario(path: str | Path) -> Scenario:
