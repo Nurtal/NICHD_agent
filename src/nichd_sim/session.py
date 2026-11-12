@@ -10,7 +10,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from nichd_sim.classification import Classification, ClassificationContext, Classifier
-from nichd_sim.engine import BehaviorEngine, Decision, EngineState
+from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
 from nichd_sim.realization import Realizer, TemplateRealizer
@@ -26,6 +26,7 @@ class AttemptRecord(BaseModel):
     forbidden_terms: list[str] = []
     leaked_units: list[str] = []
     missing_units: list[str] = []
+    empty: bool = False
     meta: dict = {}
 
 
@@ -126,10 +127,12 @@ class Session:
         heard = classification.clean_text or utterance
         before = self.state
         decision = self.engine.decide(classification)
-        after = self.state
 
         history = self.history + [("interviewer", heard)]
         attempts, response, fallback = self._realize(decision, history, known=before.revealed)
+        if decision.speech_act == SpeechAct.CONFABULATE and decision.new_contamination:
+            self.engine.record_confabulation(decision.new_contamination, response)
+        after = self.state
         t2 = time.perf_counter()
 
         self.history = history + [("child", response)]
@@ -168,6 +171,7 @@ class Session:
                     forbidden_terms=verdict.forbidden_terms,
                     leaked_units=verdict.leaked_units,
                     missing_units=verdict.missing_units,
+                    empty=verdict.empty,
                     meta=r.meta,
                 )
             )

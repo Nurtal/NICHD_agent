@@ -2,7 +2,8 @@
 
 Syntax: `[tag] text` or `[tag:target] text`, e.g. `[dir:p_pousse] Qui a poussé ?`.
 `target` is an info unit id, or `hors` for out-of-scenario. For suggestive
-questions: `[sug:unit=proposition]`. For option-posing: `[choix:unit=opt1|opt2]`.
+questions: `[sug:unit=proposition]`. For option-posing: `[choix:unit=opt1|opt2]`, or
+`[choix:unit=proposition]` for a yes/no question.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ HELP = """Préfixez chaque énoncé par son type :
   [ind:unité]        invitation indicée     [regle]    énoncé de règle
   [dir:unité|hors]   question directive     [soutien]  soutien / rapport
   [choix:unité=a|b]  question à choix       [autre]    autre
+  [choix:unité=prop] question oui/non
   [sug:unité=prop]   question suggestive    [comp:unité] question composée"""
 
 _PATTERN = re.compile(r"^\s*\[(?P<tag>[a-z]+)(?::(?P<target>[^\]=]+)(?:=(?P<extra>[^\]]*))?)?\]\s*(?P<text>.*)$", re.S)
@@ -54,8 +56,10 @@ class ManualClassifier:
         return Classification(
             type=qtype,
             target=target,
-            suggested_proposition=extra if qtype == QuestionType.SUGGESTIVE else None,
-            options=extra.split("|") if extra and qtype == QuestionType.OPTION_POSING else None,
+            suggested_proposition=extra if extra and (
+                qtype == QuestionType.SUGGESTIVE or (qtype == QuestionType.OPTION_POSING and "|" not in extra)
+            ) else None,
+            options=extra.split("|") if extra and "|" in extra and qtype == QuestionType.OPTION_POSING else None,
             clean_text=m["text"].strip(),
         )
 

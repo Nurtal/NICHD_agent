@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 from typing import Any, Mapping
@@ -51,11 +52,9 @@ class Parameters:
     @classmethod
     def load(cls, band: AgeBand, overrides: Mapping[str, Any] | None = None, path: str | Path | None = None) -> Parameters:
         if path is None:
-            text = resources.files("nichd_sim.data").joinpath("parameters.yaml").read_text(encoding="utf-8")
+            table = _default_table()
         else:
-            text = Path(path).read_text(encoding="utf-8")
-        raw = yaml.safe_load(text) or {}
-        table = {name: Parameter.model_validate(spec) for name, spec in raw.items()}
+            table = _parse(Path(path).read_text(encoding="utf-8"))
         return cls(table, band, overrides)
 
     def __getitem__(self, name: str) -> Any:
@@ -72,3 +71,13 @@ class Parameters:
     def snapshot(self) -> dict[str, Any]:
         """Resolved values, for the session log."""
         return {name: self[name] for name in sorted(self.table)}
+
+
+def _parse(text: str) -> dict[str, Parameter]:
+    raw = yaml.safe_load(text) or {}
+    return {name: Parameter.model_validate(spec) for name, spec in raw.items()}
+
+
+@lru_cache(maxsize=1)
+def _default_table() -> dict[str, Parameter]:
+    return _parse(resources.files("nichd_sim.data").joinpath("parameters.yaml").read_text(encoding="utf-8"))
