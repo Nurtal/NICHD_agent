@@ -1,0 +1,26 @@
+# Paramètres de comportement par défaut, par bande d'âge (4_6, 7_9, 10_12).
+#
+# Chaque paramètre cite sa source. `estimated: true` signale une valeur extrapolée
+# (la littérature donne surtout des ordres de grandeur) : à relire par un chercheur
+# ou un formateur NICHD. Les scénarios peuvent surcharger une valeur
+# (`parameter_overrides`), globalement ou par bande.
+
+units_per_invitation:
+  description: >
+    Nombre d'unités d'information nouvelles livrées en réponse à une invitation
+    ouverte, avant modulation par la verbosité.
+  values: {"4_6": 2, "7_9": 3, "10_12": 4}
+  source: >
+    Lamb, Sternberg, Orbach, Esplin, Stewart & Mitchell (2003), Age differences in
+    young children's responses to open-ended invitations in the course of forensic
+    interviews, J. Consult. Clin. Psychol. 71(5) — le nombre de détails par réponse
+    à une invitation croît avec l'âge.
+  estimated: true
+
+verbosity_multiplier_range:
+  description: >
+    Bornes [min, max] du multiplicateur appliqué à units_per_invitation selon la
+    verbosité de l'enfant (0 → min, 1 → max).
+  value: [0.5, 1.5]
+  source: Choix de modélisation (aucune valeur publiée directement exploitable).
+  estimated: true

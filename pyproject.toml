@@ -1,0 +1,26 @@
+[project]
+name = "nichd-sim"
+version = "0.1.0"
+description = "Simulateur d'audition NICHD : moteur de comportement déterministe et LLM local pour la réalisation linguistique"
+readme = "README.md"
+authors = [{ name = "Nurtal" }]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.14.3",
+    "pyyaml>=6.0.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.15,<0.12.0"]
+build-backend = "uv_build"
+
+[project.scripts]
+nichd-sim = "nichd_sim.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]

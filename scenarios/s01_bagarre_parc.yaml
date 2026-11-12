@@ -1,0 +1,108 @@
+# Scénario n° 1 — enfant de 5 ans, peu réticent, très suggestible, témoin d'une bagarre.
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s01_bagarre_parc
+version: "0.1.0"
+title: "Léo, 5 ans — témoin d'une bagarre au parc"
+intake_context: >
+  Léo, 5 ans, est entendu comme témoin d'un incident survenu dans un parc
+  de son quartier. Sa grand-mère, présente ce jour-là, a signalé les faits.
+
+child_profile:
+  name: Léo
+  age: 5
+  reluctance: 0.2
+  verbal_skills: 0.4
+  suggestibility: 0.8
+
+target_event:
+  segments:
+    - id: before
+      units:
+        - id: b_quand
+          category: when
+          centrality: peripheral
+          value: "c'était un mercredi, il y avait pas école"
+          anchors: [mercredi, école]
+        - id: b_mamie
+          category: who
+          centrality: central
+          value: "j'étais au parc avec ma mamie"
+          anchors: [mamie, grand-mère]
+        - id: b_parc
+          category: where
+          centrality: central
+          value: "c'était au parc à côté de l'école"
+          anchors: [parc]
+        - id: b_toboggan
+          category: what
+          centrality: peripheral
+          value: "je faisais du toboggan"
+          anchors: [toboggan]
+
+    - id: during
+      units:
+        - id: d_messieurs
+          category: who
+          centrality: central
+          value: "il y avait deux messieurs, Monsieur Bertin le voisin et un monsieur avec un blouson rouge"
+          anchors: [Bertin, voisin, blouson rouge, deux messieurs]
+        - id: d_crient
+          category: what
+          centrality: central
+          value: "les deux messieurs criaient très fort"
+          anchors: [criaient, crier, cris]
+        - id: d_pousse
+          category: what
+          centrality: central
+          value: "le monsieur au blouson rouge a poussé Monsieur Bertin"
+          anchors: [poussé, pousser]
+        - id: d_tombe
+          category: what
+          centrality: central
+          value: "Monsieur Bertin est tombé par terre"
+          anchors: [tombé, par terre]
+        - id: d_banc
+          category: where
+          centrality: peripheral
+          value: "c'était à côté du banc vert"
+          anchors: [banc]
+        - id: d_chien
+          category: what
+          centrality: peripheral
+          value: "le chien de Monsieur Bertin aboyait"
+          anchors: [chien, aboyait]
+        - id: d_lunettes
+          category: what
+          centrality: peripheral
+          value: "les lunettes de Monsieur Bertin sont tombées"
+          anchors: [lunettes]
+        - id: d_frequence
+          category: frequency
+          centrality: peripheral
+          value: "une autre fois déjà ils s'étaient disputés devant chez nous"
+          anchors: [autre fois, déjà]
+
+    - id: after
+      units:
+        - id: a_part
+          category: what
+          centrality: central
+          value: "le monsieur au blouson rouge est parti en courant"
+          anchors: [parti, courant, couru]
+        - id: a_telephone
+          category: what
+          centrality: central
+          value: "mamie a téléphoné à quelqu'un"
+          anchors: [téléphone, téléphoné]
+        - id: a_peur
+          category: what
+          centrality: peripheral
+          value: "j'ai eu peur et j'ai pleuré"
+          anchors: [peur, pleuré]
+        - id: a_gouter
+          category: when
+          centrality: peripheral
+          value: "après on est rentrés à la maison pour le goûter"
+          anchors: [goûter, maison]
