@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["invitation", "cued_invitation", "directive", "option_posing", "suggestive",
+               "facilitator", "ground_rule", "support", "compound", "other"]
+    },
+    "inner_type": {
+      "type": ["string", "null"],
+      "enum": ["invitation", "cued_invitation", "directive", "option_posing", "suggestive", null]
+    },
+    "target": {"type": ["string", "null"]},
+    "suggested_proposition": {"type": ["string", "null"]},
+    "options": {"type": ["array", "null"], "items": {"type": "string"}},
+    "phase_hint": {
+      "type": "string",
+      "enum": ["rapport", "ground_rules", "narrative_practice", "transition", "substantive", "closure"]
+    }
+  },
+  "required": ["type", "inner_type", "target", "suggested_proposition", "options", "phase_hint"]
+}

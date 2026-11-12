@@ -14,6 +14,8 @@ uv run pytest
 uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer
 # voix de l'enfant par LLM local (Ollama, qwen3.8 par défaut)
 uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --realizer llm
+# entretien libre : classification automatique + voix LLM
+uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --classifier llm --realizer llm
 ```
 
 En classification manuelle (par défaut), préfixez chaque énoncé par son type :

@@ -46,7 +46,11 @@ class Classification(BaseModel):
     suggested_proposition: str | None = None
     options: list[str] | None = None
     """Options offered by an option-posing question, in the order they were stated."""
+    inner_type: QuestionType | None = None
+    """For a compound question: type of its most directive element (drives the engine)."""
     phase_hints: list[str] = []
+    meta: dict = {}
+    """Classifier diagnostics (model, latency, errors). Logged, never used by the engine."""
     clean_text: str | None = None
     """Utterance as the child hears it, when the classifier input carried annotations."""
 
