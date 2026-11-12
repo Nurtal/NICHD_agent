@@ -13,11 +13,12 @@ from nichd_sim.classification import Classification, ClassificationContext, Clas
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
-from nichd_sim.phases import Phase, PhaseTracker, PhaseViolation
+from nichd_sim.phases import Phase, PhaseTracker, PhaseViolation, ViolationKind
 from nichd_sim.realization import Realizer, TemplateRealizer
 from nichd_sim.scenario import Scenario
 
 MAX_REALIZATION_ATTEMPTS = 2  # first try + one regeneration, then fallback response
+SOFT_TURN_LIMIT = 60  # warn (never interrupt) once the interview reaches this many turns
 
 
 class AttemptRecord(BaseModel):
@@ -76,6 +77,8 @@ class TurnResult(BaseModel):
     phase: Phase
     violations: list[PhaseViolation] = []
     """Phase violations detected at this turn."""
+    notices: list[str] = []
+    """Non-blocking messages for the learner (e.g. interview length)."""
     fallback_used: bool = False
 
 
@@ -145,6 +148,8 @@ class Session:
                 not u.contaminated and self.scenario.is_target_unit(u.id) for u in decision.allowed_units
             )
         )
+        if decision.forced_disclosure:
+            self.phases.flag(ViolationKind.FORCED_DISCLOSURE, detail=f"{decision.effective_type}")
         new_violations = self.phases.violations[n_violations:]
 
         history = self.history + [("interviewer", heard)]
@@ -175,6 +180,11 @@ class Session:
             )
         )
         self.log.phase_violations = list(self.phases.violations)
+        notices = []
+        if len(self.log.turns) == SOFT_TURN_LIMIT:
+            notices.append(
+                f"L'entretien atteint {SOFT_TURN_LIMIT} tours : pensez à la durée et à la fatigue de l'enfant."
+            )
         return TurnResult(
             response=response,
             classification=classification,
@@ -182,6 +192,7 @@ class Session:
             state=after,
             phase=phase,
             violations=new_violations,
+            notices=notices,
             fallback_used=fallback,
         )
 

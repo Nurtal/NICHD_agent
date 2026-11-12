@@ -60,8 +60,9 @@ class Parameters:
     def __getitem__(self, name: str) -> Any:
         if name in self.overrides:
             ov = self.overrides[name]
-            if isinstance(ov, Mapping):
-                return ov.get(self.band.value, ov.get(self.band, self.table[name].for_band(self.band)))
+            bands = {b.value for b in AgeBand}
+            if isinstance(ov, Mapping) and ov and set(map(str, ov)) <= bands:  # per-band override
+                return ov.get(self.band.value, self.table[name].for_band(self.band))
             return ov
         try:
             return self.table[name].for_band(self.band)

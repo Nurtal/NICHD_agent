@@ -79,6 +79,8 @@ D'après Lamb et al.
 | Suggestibilité | `suggestibility` | Trait du profil qui influence l'acquiescement et l'intégration. |
 | Seuil de dévoilement | `disclosure_threshold` | Niveau d'incitation de transition requis avant le premier dévoilement. |
 | Dévoilement | `disclosure` | Première mention de l'événement cible par l'enfant. |
+| Dévoilement forcé | `forced_disclosure` | Dévoilement obtenu par une question directive, fermée ou suggestive : signalé comme écart au protocole. |
+| Pression de dévoilement | `disclosure_pressure` | Somme des incitations reçues sur l'événement cible avant le dévoilement, pondérées par leur type. |
 | Révéler une unité | `reveal` | Autoriser une unité vraie dans la réponse. |
 | Contamination | `contamination` | Intégration durable d'un faux détail suggéré. |
 | Unité contaminée | `contaminated_unit` | Faux détail intégré, rattaché à son tour d'origine (`source_turn`). |
@@ -87,7 +89,7 @@ D'après Lamb et al.
 | Intégration | `integrated` | Un faux détail intégré peut réapparaître spontanément plus tard. |
 | Type effectif | `effective_type` | Type de question auquel le moteur a appliqué ses règles (l'élément le plus directif d'une question composée). |
 | Biais de récence | `recency_bias` | Tendance à choisir la dernière option proposée. |
-| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `confabulate` (inventer une réponse), `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`. |
+| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `confabulate` (inventer une réponse), `reluctant` (refus vague avant le dévoilement), `small_talk` (bavardage de rapport), `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`. |
 | Décision | `decision` | Acte de langage et unités autorisées pour le tour. |
 | Unités autorisées | `allowed_units` | Seules unités transmises au LLM pour le tour. |
 | Paramètres | `parameters` | Probabilités et effets, chacun avec sa source. `estimated` si la valeur est extrapolée. |

@@ -39,6 +39,7 @@ class ViolationKind(StrEnum):
     TRUNCATED_PHASE = "truncated_phase"
     PREMATURE_FOCUSED_QUESTION = "premature_focused_question"
     MISSING_CLOSURE = "missing_closure"
+    FORCED_DISCLOSURE = "forced_disclosure"
 
 
 VIOLATION_LABELS = {
@@ -46,6 +47,7 @@ VIOLATION_LABELS = {
     ViolationKind.TRUNCATED_PHASE: "phase tronquée",
     ViolationKind.PREMATURE_FOCUSED_QUESTION: "question fermée ou directive sur les faits avant la transition",
     ViolationKind.MISSING_CLOSURE: "clôture absente",
+    ViolationKind.FORCED_DISCLOSURE: "dévoilement obtenu par une question focalisée (directive, fermée ou suggestive)",
 }
 
 
@@ -83,6 +85,9 @@ class PhaseTracker:
         if revealed_target and ORDER.index(self.phase) < ORDER.index(Phase.SUBSTANTIVE):
             self._advance(Phase.SUBSTANTIVE)
         return self.phase
+
+    def flag(self, kind: ViolationKind, detail: str = "") -> None:
+        self.violations.append(PhaseViolation(kind=kind, phase=self.phase, turn=self.turn, detail=detail))
 
     def finish(self) -> list[PhaseViolation]:
         if self.phase != Phase.CLOSURE:

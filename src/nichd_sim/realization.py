@@ -32,6 +32,7 @@ FALLBACK_RESPONSES: dict[SpeechAct, str] = {
     SpeechAct.CONFABULATE: "Euh… je crois que oui.",
     SpeechAct.ACKNOWLEDGE: "D'accord.",
     SpeechAct.SMALL_TALK: "J'aime bien jouer aux Lego.",
+    SpeechAct.RELUCTANT: "Je sais pas…",
     SpeechAct.CONFUSION: "Hein ? Je comprends pas.",
     SpeechAct.SILENCE: "…",
 }
@@ -70,12 +71,17 @@ ACT_INSTRUCTIONS: dict[SpeechAct, str] = {
     SpeechAct.ANSWER: "Réponds à l'adulte en racontant TOUTES ces choses ({n}), dans cet ordre, avec tes mots, et RIEN d'autre :",
     SpeechAct.ACQUIESCE: "Tu dis oui à ce que l'adulte propose, en reprenant simplement son idée, et RIEN d'autre :",
     SpeechAct.DONT_KNOW: "Tu dis que tu ne sais pas, que tu ne te souviens pas. N'ajoute aucun détail.",
-    SpeechAct.DENY: "Tu dis non. N'ajoute aucun détail.",
+    SpeechAct.DENY: "Tu dis non (par exemple « non, c'est tout »). N'ajoute aucun détail.",
     SpeechAct.CONFABULATE: (
         "Tu ne connais pas la réponse mais tu réponds quand même : invente une réponse très courte "
         "et banale à la question (quelques mots), sans parler de rien d'autre."
     ),
     SpeechAct.ACKNOWLEDGE: "Tu réponds brièvement (d'accord, oui, hmm), sans raconter quoi que ce soit.",
+    SpeechAct.RELUCTANT: (
+        "Tu n'es pas encore prêt à parler de ce qui s'est passé. Réponds seulement par une courte phrase "
+        "comme « je sais pas », « je veux pas trop en parler », « bof… » ou « … ». N'évoque RIEN de ce qui "
+        "s'est passé : aucun lieu, aucune personne, aucun bruit, aucune émotion."
+    ),
     SpeechAct.SMALL_TALK: (
         "L'adulte fait connaissance avec toi. Réponds gentiment en parlant de toi (tes jeux, tes activités "
         "préférées, ton école), en une ou deux phrases. Ne parle d'aucun événement particulier, d'aucune "
