@@ -1,0 +1,10 @@
+# Catalogue fictif servant UNIQUEMENT aux exemples few-shot (distinct des scénarios d'entraînement).
+# Inès, 7 ans : un incident à la cantine.
+- {id: ex_cantine, category: where, value: "c'était à la cantine"}
+- {id: ex_midi, category: when, value: "c'était à midi, un lundi"}
+- {id: ex_grand, category: who, value: "un grand de CM2 qui s'appelle Hugo"}
+- {id: ex_plateau, category: what, value: "il a jeté mon plateau par terre"}
+- {id: ex_crie, category: what, value: "il m'a crié dessus"}
+- {id: ex_surveillante, category: who, value: "la surveillante est venue"}
+- {id: ex_pleure, category: what, value: "j'ai pleuré"}
+- {id: ex_frequence, category: frequency, value: "il l'avait déjà fait une autre fois"}

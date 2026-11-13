@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,6 +39,7 @@ class TurnRecord(BaseModel):
     attempts: list[AttemptRecord] = []
     fallback_used: bool = False
     response: str
+    latency_s: dict[str, float] = {}
 
     @property
     def prompt(self) -> str | None:
@@ -101,6 +103,7 @@ class Session:
             components={
                 "classifier": _describe(classifier),
                 "realizer": _describe(realizer),
+                **({"skill_version": classifier.skill_version} if hasattr(classifier, "skill_version") else {}),
             },
         )
         self._ended = False
@@ -117,7 +120,9 @@ class Session:
             revealed_unit_ids=list(self.engine.state.revealed),
             history=list(self.history),
         )
+        t0 = time.perf_counter()
         classification = self.classifier.classify(utterance, context)
+        t1 = time.perf_counter()
         heard = classification.clean_text or utterance
         before = self.state
         decision = self.engine.decide(classification)
@@ -125,6 +130,7 @@ class Session:
 
         history = self.history + [("interviewer", heard)]
         attempts, response, fallback = self._realize(decision, history, known=before.revealed)
+        t2 = time.perf_counter()
 
         self.history = history + [("child", response)]
         self.log.turns.append(
@@ -138,6 +144,11 @@ class Session:
                 attempts=attempts,
                 fallback_used=fallback,
                 response=response,
+                latency_s={
+                    "classification": round(t1 - t0, 3),
+                    "realization": round(t2 - t1, 3),
+                    "total": round(t2 - t0, 3),
+                },
             )
         )
         return TurnResult(

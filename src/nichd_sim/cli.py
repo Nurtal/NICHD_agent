@@ -6,6 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from nichd_sim.classifiers.llm import LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
@@ -15,10 +16,12 @@ from nichd_sim.session import Session
 COMMANDS = """Commandes : /aide  /unites  /etat  /fin"""
 
 
-def build_classifier(name: str):
-    if name == "manual":
+def build_classifier(args: argparse.Namespace):
+    if args.classifier == "manual":
         return ManualClassifier()
-    raise SystemExit(f"classifieur inconnu : {name}")
+    if args.classifier == "llm":
+        return LLMClassifier(OllamaClient(args.classifier_model or args.model, args.ollama_url))
+    raise SystemExit(f"classifieur inconnu : {args.classifier}")
 
 
 def build_realizer(args: argparse.Namespace):
@@ -37,7 +40,7 @@ def play(args: argparse.Namespace) -> int:
         return 2
     session = Session(
         scenario,
-        build_classifier(args.classifier),
+        build_classifier(args),
         build_realizer(args),
         seed=args.seed,
         log_dir=args.log_dir,
@@ -77,8 +80,17 @@ def play(args: argparse.Namespace) -> int:
             continue
         if args.trainer:
             c, d = result.classification, result.decision
-            print(f"  [formateur] {c.type}{' → ' + c.target if c.target else ''} | {d.speech_act} | {d.reason}")
             turn = session.log.turns[-1]
+            inner = f" ({c.inner_type})" if c.inner_type else ""
+            phase = f" [{c.phase_hints[0]}]" if c.phase_hints else ""
+            print(
+                f"  [formateur] {c.type}{inner}{' → ' + c.target if c.target else ''}{phase}"
+                f" | {d.speech_act} | {d.reason} | {turn.latency_s.get('total', 0):.1f}s"
+            )
+            if c.suggested_proposition:
+                print(f"  [formateur] proposition suggérée : {c.suggested_proposition}")
+            if "error" in c.meta:
+                print(f"  [formateur] classification en repli : {c.meta['error']}")
             for i, a in enumerate(turn.attempts):
                 if not a.ok:
                     print(f"  [filtre] essai {i + 1} rejeté : {a.forbidden_terms + a.leaked_units + ['manque:' + m for m in a.missing_units]} — {a.text!r}")
@@ -97,7 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("play", help="mener un entretien dans le terminal")
     p.add_argument("scenario", help="fichier de scénario YAML")
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--classifier", default="manual", choices=["manual"])
+    p.add_argument("--classifier", default="manual", choices=["manual", "llm"])
+    p.add_argument("--classifier-model", default=None, help="modèle Ollama du classifieur (défaut : --model)")
     p.add_argument("--realizer", default="template", choices=["template", "llm"])
     p.add_argument("--model", default=DEFAULT_MODEL, help="modèle Ollama")
     p.add_argument("--ollama-url", default=DEFAULT_URL)
