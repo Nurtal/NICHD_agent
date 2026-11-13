@@ -84,7 +84,7 @@ D'après Lamb et al.
 | Unité contaminée | `contaminated_unit` | Faux détail intégré, rattaché à son tour d'origine (`source_turn`). |
 | Confabulation | `confabulation` | Réponse inventée à une question hors scénario. |
 | Biais de récence | `recency_bias` | Tendance à choisir la dernière option proposée. |
-| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `confusion`, `silence`. |
+| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`. |
 | Décision | `decision` | Acte de langage et unités autorisées pour le tour. |
 | Unités autorisées | `allowed_units` | Seules unités transmises au LLM pour le tour. |
 | Paramètres | `parameters` | Probabilités et effets, chacun avec sa source. `estimated` si la valeur est extrapolée. |
