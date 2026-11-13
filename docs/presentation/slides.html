@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Simulateur NICHD — présentation</title>
+<!-- Source des slides. PDF : uv run --no-project --with playwright python build_pdf.py -->
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  :root {
+    --ink: #1c2230; --muted: #5b6475; --line: #dfe3ea; --bg: #ffffff; --soft: #f4f6f9;
+    --accent: #1f4e8c; --accent-soft: #e6eef8;
+    --open: #2e7d32; --dir: #f9a825; --opt: #ef6c00; --sug: #c62828; --sup: #5e35b1; --rule: #1565c0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #888; }
+  body { font: 20px/1.45 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .slide {
+    width: 1280px; height: 720px; background: var(--bg); position: relative; overflow: hidden;
+    padding: 56px 72px 48px; page-break-after: always; break-after: page; display: flex; flex-direction: column;
+  }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+  .kicker { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { font-size: 46px; line-height: 1.12; margin: 6px 0 22px; letter-spacing: -.01em; }
+  h2 { font-size: 22px; margin-bottom: 8px; }
+  p { margin-bottom: 10px; }
+  .lead { font-size: 23px; color: var(--muted); max-width: 980px; }
+  ul { padding-left: 1.1em; } li { margin-bottom: 7px; }
+  li::marker { color: var(--accent); }
+  .muted { color: var(--muted); }
+  .small { font-size: 16px; }
+  .foot { position: absolute; left: 72px; right: 72px; bottom: 20px; display: flex; justify-content: space-between;
+          font-size: 13px; color: #9aa2b1; }
+  .grid { display: grid; gap: 22px; align-items: start; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g-img { grid-template-columns: 1fr 2fr; align-items: start; }
+  .g-img li { font-size: 18px; }
+  .card { background: var(--soft); border-radius: 12px; padding: 18px 20px; border: 1px solid var(--line); }
+  .card h2 { font-size: 19px; color: var(--accent); }
+  .card p, .card li { font-size: 18px; }
+  code, .mono { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: .86em; }
+  code { background: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+  pre { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: 14.5px; line-height: 1.45;
+        background: #1c2230; color: #e8ecf3; border-radius: 12px; padding: 16px 20px; white-space: pre; }
+  pre .c { color: #8fa3bf; } pre .k { color: #ffcb6b; } pre .s { color: #a5d6a7; }
+  table { border-collapse: collapse; width: 100%; font-size: 17px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .tag { display: inline-block; color: #fff; border-radius: 999px; padding: 1px 11px; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+  .t-open { background: var(--open); } .t-dir { background: var(--dir); } .t-opt { background: var(--opt); }
+  .t-sug { background: var(--sug); } .t-sup { background: var(--sup); } .t-rule { background: var(--rule); }
+  .shot { width: 100%; max-height: 520px; object-fit: contain; object-position: top; border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 6px 22px rgba(20,30,50,.12); }
+  .big { white-space: nowrap; font-size: 42px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .hl { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 12px 18px; border-radius: 6px; font-size: 19px; }
+  .warn { background: #fdecea; border-left: 4px solid var(--sug); padding: 12px 18px; border-radius: 6px; font-size: 18px; }
+  /* title slide */
+  .title { background: linear-gradient(135deg, #16365f 0%, #1f4e8c 60%, #2f6db5 100%); color: #fff; justify-content: center; }
+  .title h1 { font-size: 64px; margin-bottom: 18px; }
+  .title .lead { color: #d6e2f3; font-size: 26px; }
+  .title .kicker { color: #9ec1ea; }
+  .title .foot { color: #9ec1ea; }
+  /* pipeline diagram */
+  .pipe { display: flex; align-items: stretch; gap: 0; margin: 8px 0 18px; }
+  .node { flex: 1; border-radius: 12px; padding: 14px 14px; font-size: 16px; border: 2px solid var(--line); background: #fff; }
+  .node b { display: block; font-size: 18px; margin-bottom: 4px; }
+  .node.llm { border-color: #c9a227; background: #fff8e1; }
+  .node.det { border-color: var(--accent); background: var(--accent-soft); }
+  .node.io { background: var(--soft); }
+  .arrow { width: 30px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 22px; }
+  .legend { display: flex; gap: 26px; font-size: 15px; color: var(--muted); }
+  .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  .phases { display: flex; gap: 8px; margin: 6px 0 18px; }
+  .ph { flex: 1; text-align: center; background: var(--accent); color: #fff; border-radius: 8px; padding: 10px 6px; font-weight: 600; font-size: 17px; }
+  .ph small { display: block; font-weight: 400; font-size: 13.5px; color: #cfe0f5; }
+  .ex { font-size: 17px; }
+  .ex .i { color: var(--muted); }
+  .ex .c { font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide title">
+  <div class="kicker">Prototype · MVP de démonstration</div>
+  <h1>Simulateur d'audition d'enfant<br>selon le protocole NICHD</h1>
+  <p class="lead">Un enfant simulé dont le comportement est piloté par des règles, un modèle de langue local pour la parole, et un retour objectif à l'apprenant.</p>
+  <div class="foot"><span>NICHD_agent · novembre 2026</span><span>Personnages et faits entièrement fictifs</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="kicker">Pourquoi</div>
+  <h1>S'entraîner sans enfant réel,<br>avec un retour mesurable</h1>
+  <div class="grid g2">
+    <div>
+      <ul>
+        <li>Le protocole NICHD structure l'audition en <b>phases</b> et privilégie les <b>questions ouvertes</b>.</li>
+        <li>Les questions fermées ou suggestives <b>dégradent</b> le témoignage : réponses au hasard, acquiescement, faux détails.</li>
+        <li>S'entraîner demande de la pratique répétée, avec un retour précis sur chaque question posée.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Ce que fait le simulateur</h2>
+      <ul>
+        <li>Un enfant simulé (5 à 12 ans) répond en français, de façon cohérente sur tout l'entretien.</li>
+        <li>Les <b>faits réels</b> du scénario sont connus : on peut donc mesurer ce qui a été recueilli… et ce qui a été contaminé.</li>
+        <li>Chaque intervention est codée selon la typologie NICHD, les phases sont suivies.</li>
+        <li>Un retour structuré est produit à la fin.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Simulateur NICHD</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="kicker">Principe central</div>
+  <h1>Architecture hybride : les règles décident,<br>le LLM ne fait que parler</h1>
+  <div class="pipe">
+    <div class="node io"><b>Interviewer</b>énoncé libre en français</div>
+    <div class="arrow">→</div>
+    <div class="node llm"><b>Classifieur</b>type NICHD, cible, phase<br><span class="small muted">LLM + skill versionné</span></div>
+    <div class="arrow">→</div>
+    <div class="node det"><b>Moteur de comportement</b>décide quoi révéler, acquiescer, refuser…<br><span class="small muted">déterministe, graine</span></div>
+    <div class="arrow">→</div>
+    <div class="node llm"><b>Réalisation</b>met la décision en mots d'enfant<br><span class="small muted">LLM</span></div>
+    <div class="arrow">→</div>
+    <div class="node det"><b>Filtre de sortie</b>lexique interdit, fuite, omission<br><span class="small muted">repli sur gabarit</span></div>
+  </div>
+  <div class="legend"><span><i class="sw" style="background:#fff8e1;border:2px solid #c9a227"></i>modèle de langue local</span><span><i class="sw" style="background:var(--accent-soft);border:2px solid var(--accent)"></i>composant déterministe</span></div>
+  <div class="grid g3" style="margin-top:20px">
+    <div class="card"><h2>Cohérence</h2><p>Le personnage ne dérive pas : ce qu'il sait et a déjà dit est tenu par le moteur, pas par le LLM.</p></div>
+    <div class="card"><h2>Reproductibilité</h2><p>Même graine + mêmes questions = même entretien. Chaque session peut être rejouée sans LLM.</p></div>
+    <div class="card"><h2>Contrôle du contenu</h2><p>Le LLM ne peut dire que les faits autorisés à ce tour ; révélations volontairement non explicites.</p></div>
+  </div>
+  <div class="foot"><span>Voir docs/adr/0001-architecture-hybride-moteur-deterministe.md</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="kicker">Entrée</div>
+  <h1>La fiche de scénario</h1>
+  <div class="grid g2">
+    <pre><span class="k">child_profile</span>:
+  name: Léo
+  age: <span class="s">5</span>
+  reluctance: <span class="s">0.2</span>      <span class="c"># réticence</span>
+  verbal_skills: <span class="s">0.4</span>
+  suggestibility: <span class="s">0.8</span>
+<span class="k">target_event</span>:            <span class="c"># faits de référence</span>
+  segments:
+    - id: during          <span class="c"># before / during / after</span>
+      units:
+        - id: d_pousse
+          category: what   <span class="c"># qui, quoi, où, quand, fréquence</span>
+          centrality: central
+          value: <span class="s">"le monsieur au blouson rouge
+                  a poussé Monsieur Bertin"</span>
+          anchors: [poussé, pousser]
+<span class="k">neutral_event</span>: ...        <span class="c"># pour la pratique narrative</span></pre>
+    <div>
+      <ul>
+        <li>Les faits sont découpés en <b>unités d'information</b>, centrales ou périphériques, ordonnées dans le temps.</li>
+        <li>Les <b>ancres</b> permettent de repérer chaque fait dans les réponses (fuite, omission) et dans la synthèse de l'apprenant.</li>
+        <li>Un <b>événement neutre</b> sert à la pratique narrative.</li>
+        <li><code>nichd-sim check-scenario</code> vérifie une fiche ; un guide de rédaction l'accompagne.</li>
+      </ul>
+      <div class="hl" style="margin-top:14px"><b>7 scénarios</b> (brouillons) : 5 à 12 ans, victimes et témoins, faits uniques et répétés, réticences variées.</div>
+    </div>
+  </div>
+  <div class="foot"><span>scenarios/ · docs/guide-scenarios.md</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="kicker">Le cœur</div>
+  <h1>Moteur de comportement : chaque type<br>de question a ses effets</h1>
+  <table>
+    <tr><th style="width:24%">Type de question</th><th style="width:40%">Exemple</th><th>Ce que l'enfant fait</th></tr>
+    <tr><td><span class="tag t-open">invitation</span></td><td>« Raconte-moi tout ce qui s'est passé. »</td><td>Récit libre : 2 à 4 unités <b>centrales</b> selon l'âge, modulé par la verbosité.</td></tr>
+    <tr><td><span class="tag t-open">invitation indicée</span></td><td>« Tu as parlé des messieurs, raconte-moi plus. »</td><td>Détaille le passage cité.</td></tr>
+    <tr><td><span class="tag t-dir">directive</span></td><td>« Qui a poussé qui ? »</td><td>Ne livre <b>que</b> le détail ciblé, ou « je sais pas ».</td></tr>
+    <tr><td><span class="tag t-opt">choix multiple</span></td><td>« C'était le matin ou l'après-midi ? »</td><td>Réponse partiellement aléatoire, <b>biais de récence</b> (dernière option).</td></tr>
+    <tr><td><span class="tag t-sug">suggestive</span></td><td>« Il avait un couteau, c'est ça ? »</td><td>Peut <b>acquiescer</b> et intégrer un faux détail, selon la suggestibilité et l'âge.</td></tr>
+    <tr><td><span class="tag t-sup">soutien</span> <span class="tag t-rule">règle de base</span></td><td>« Tu peux me dire “je sais pas”. »</td><td>Baisse la réticence / l'acquiescement pour la suite.</td></tr>
+  </table>
+  <p class="small muted" style="margin-top:14px">Paramètres par tranche d'âge (4–6, 7–9, 10–12) dans un fichier unique, chacun avec sa source bibliographique (Lamb et al., Brown &amp; Lamb, Ceci &amp; Bruck, Fritzley &amp; Lee…). Valeurs estimées : à calibrer.</p>
+  <div class="foot"><span>src/nichd_sim/engine.py · data/parameters.yaml</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="kicker">Mesurer le risque</div>
+  <h1>Suggestion, contamination et dévoilement</h1>
+  <div class="grid g2">
+    <div>
+      <h2>Contamination</h2>
+      <ul>
+        <li>Une suggestion <b>fausse</b> acceptée crée un <b>faux détail</b> (c1, c2…), rattaché au tour et au type de question qui l'ont introduit.</li>
+        <li>L'enfant peut le <b>répéter plus tard</b> comme s'il s'agissait d'un souvenir : il est intégré à son récit.</li>
+        <li>Une suggestion qui tombe juste est quand même signalée : <b>faute de technique</b>.</li>
+      </ul>
+      <h2 style="margin-top:16px">Dévoilement</h2>
+      <ul>
+        <li>Un enfant réticent ne parle pas tout de suite : chaque question ajoute une <b>pression</b> ; le dévoilement survient au-delà d'un seuil.</li>
+        <li>Obtenu sous une pression trop directive, il est signalé comme <b>dévoilement forcé</b>. Ne pas dévoiler reste un résultat légitime.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card ex">
+        <p class="i">Tour 12 — <span class="tag t-sug">question suggestive</span></p>
+        <p><b>Interviewer :</b> Le monsieur au blouson rouge avait un couteau, c'est ça ?</p>
+        <p class="c"><b>Léo :</b> Oui, il avait un couteau.</p>
+        <p class="small muted" style="margin-top:8px">Décision du moteur : <span class="mono">acquiesce</span> — acquiescement 0,56 → faux détail <span class="mono">c1</span></p>
+      </div>
+      <div class="warn" style="margin-top:16px">Aucun couteau dans les faits réels. Si l'apprenant le reprend dans sa synthèse, le retour le signale : <i>« Faux détail repris comme un fait »</i>.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Extrait de la session de démonstration (graine 1)</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="kicker">Protocole</div>
+  <h1>Les phases sont suivies et ont un effet</h1>
+  <div class="phases">
+    <div class="ph">Rapport<small>fait connaissance</small></div>
+    <div class="ph">Règles de base<small>« je sais pas » permis</small></div>
+    <div class="ph">Pratique narrative<small>événement neutre</small></div>
+    <div class="ph">Transition<small>sans nommer les faits</small></div>
+    <div class="ph">Phase substantive<small>récit des faits</small></div>
+    <div class="ph">Clôture<small>remerciements</small></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h2>Effets sur l'enfant</h2>
+      <ul>
+        <li>Soutien et rapport → <b>réticence</b> en baisse.</li>
+        <li>Règles de base → <b>acquiescement</b> en baisse (moins de « oui » aux suggestions).</li>
+        <li>Pratique narrative → <b>verbosité</b> en hausse : récits plus riches ensuite.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Écarts détectés</h2>
+      <ul>
+        <li>Phase sautée ou écourtée.</li>
+        <li>Question ciblée posée avant le récit libre.</li>
+        <li>Dévoilement forcé.</li>
+        <li>Clôture absente.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>src/nichd_sim/phases.py</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="kicker">Évaluation automatique</div>
+  <h1>Le classifieur NICHD : un skill versionné</h1>
+  <div class="grid g2">
+    <div>
+      <ul>
+        <li>Le <b>skill</b> formalise le protocole : spécification de la typologie, schéma JSON de sortie, 50 exemples commentés.</li>
+        <li>Pour chaque énoncé : <b>type</b> de question, <b>fait visé</b> dans le catalogue du scénario, proposition suggérée, indice de phase.</li>
+        <li>Sortie contrainte par schéma, température 0 ; en cas d'erreur, repli « autre » tracé.</li>
+        <li>Évalué sur un jeu de <b>104 énoncés</b> annotés (dont 12 ambigus).</li>
+      </ul>
+    </div>
+    <div>
+      <table>
+        <tr><th>Réflexion</th><th>κ</th><th>Type</th><th>Cible</th><th>Latence méd.</th></tr>
+        <tr><td>sans</td><td>0,956</td><td>96,2 %</td><td>90,7 %</td><td>3,6 s</td></tr>
+        <tr><td>basse</td><td>0,945</td><td>95,2 %</td><td>88,9 %</td><td>8,4 s</td></tr>
+        <tr style="background:var(--accent-soft)"><td><b>moyenne</b> (défaut)</td><td><b>0,978</b></td><td><b>98,1 %</b></td><td>90,7 %</td><td>13,1 s</td></tr>
+      </table>
+      <p class="small muted" style="margin-top:12px">κ de Cohen contre l'annotation de référence. Priorité actuelle : la précision ; la latence sera optimisée ensuite. Les écarts portent sur 2 à 3 énoncés : à confirmer sur un jeu plus large.</p>
+      <p class="small muted">La classification manuelle par préfixes (<code>[inv]</code>, <code>[dir:u]</code>, <code>[sug:u=…]</code>) reste disponible pour tester sans LLM.</p>
+    </div>
+  </div>
+  <div class="foot"><span>src/nichd_sim/skill/ · docs/evaluations/</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="kicker">Démonstration</div>
+  <h1>L'entretien, vu par le formateur</h1>
+  <div class="grid g-img">
+    <div>
+      <ul>
+        <li>L'apprenant pose ses questions librement, à l'écrit.</li>
+        <li>Le <b>mode formateur</b> montre en direct : phase courante, réticence, verbosité, acquiescement, type et cible de la dernière question, décision du moteur, faits révélés.</li>
+        <li>Un <b>mode hors ligne</b> (sans LLM) permet une démo sans GPU.</li>
+      </ul>
+      <div class="hl" style="margin-top:12px">Vidéo complète (3 min 30) : <span class="mono">demo_nichd.mp4</span>, dans ce dossier.</div>
+    </div>
+    <img class="shot" src="img/trainer.png" alt="Entretien et panneau formateur">
+  </div>
+  <div class="foot"><span>Interface Streamlit · nichd-sim ui</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="kicker">Sortie</div>
+  <h1>Le retour à l'apprenant</h1>
+  <div class="grid g-img">
+    <div>
+      <div style="display:flex;gap:22px;margin-bottom:16px">
+        <div><div class="big">50 %</div><div class="small muted">questions ouvertes</div></div>
+        <div><div class="big">44 %</div><div class="small muted">faits recueillis</div></div>
+        <div><div class="big" style="color:var(--sug)">12 %</div><div class="small muted">contamination</div></div>
+      </div>
+      <ul class="small">
+        <li><b>Métriques objectives</b>, calculées sans LLM à partir des faits de référence.</li>
+        <li>Phases parcourues et écarts, faux détails avec leur origine.</li>
+        <li><b>Synthèse de l'apprenant</b> confrontée aux déclarations de l'enfant.</li>
+        <li>Reformulations proposées (LLM, à lire avec esprit critique) et transcription annotée.</li>
+      </ul>
+    </div>
+    <img class="shot" src="img/feedback.png" alt="Écran de retour">
+  </div>
+  <div class="foot"><span>src/nichd_sim/metrics.py · feedback.py</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="kicker">Sortie</div>
+  <h1>Transcription annotée selon la typologie</h1>
+  <div class="grid g-img">
+    <div>
+      <ul>
+        <li>Chaque tour porte son type NICHD (couleur), sa phase et ses alertes (contamination, hors protocole…).</li>
+        <li>Lecture immédiate de la dérive : <span class="tag t-open">ouvert</span> → <span class="tag t-dir">directif</span> → <span class="tag t-sug">suggestif</span>.</li>
+        <li>Les sessions sont exportables en <b>CSV pour des codeurs humains</b>, afin de mesurer l'accord avec le classifieur.</li>
+      </ul>
+    </div>
+    <img class="shot" src="img/transcript.png" alt="Transcription annotée">
+  </div>
+  <div class="foot"><span>nichd-sim export</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div class="kicker">Traçabilité</div>
+  <h1>Tout est journalisé, rejouable, local</h1>
+  <div class="grid g3">
+    <div class="card"><h2>Journal de session</h2><p>JSON par session : paramètres, versions (skill, modèle), et pour chaque tour la classification, l'état avant/après, la décision, les tentatives de réalisation, les latences.</p></div>
+    <div class="card"><h2>Rejeu</h2><p><code>nichd-sim replay</code> reconstruit l'entretien <b>sans LLM</b> et vérifie que le moteur reprend exactement les mêmes décisions.</p></div>
+    <div class="card"><h2>100 % local</h2><p>Qwen 3.8 (27 B) servi par <b>Ollama</b> sur la station (2 × TITAN RTX). Aucune donnée ne sort de la machine.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><h2>Filtre de sortie</h2><p>Lexique interdit, fait non autorisé (fuite), fait autorisé oublié (omission), réponse vide ou bavarde. Après 2 essais : réponse gabarit. <b>0 repli sur 48 tours</b> de test.</p></div>
+    <div class="card"><h2>Qualité</h2><p>253 tests automatisés ; développement par tickets GitHub et PR empilées.</p></div>
+  </div>
+  <div class="foot"><span>src/nichd_sim/session.py · replay.py</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="kicker">Prise en main</div>
+  <h1>Utilisation</h1>
+  <div class="grid g2">
+    <pre><span class="c"># interface web (écoute en local)</span>
+uv run nichd-sim ui
+<span class="c"># depuis un poste distant : tunnel SSH</span>
+ssh -L 8501:localhost:8501 station
+
+<span class="c"># en terminal</span>
+uv run nichd-sim play scenarios/s01_bagarre_parc.yaml \
+    --classifier llm --realizer llm --trainer
+
+<span class="c"># démo fluide : classifieur sans réflexion</span>
+uv run nichd-sim play ... --classifier-think off
+
+<span class="c"># outils</span>
+uv run nichd-sim replay sessions/session_xxx.json
+uv run nichd-sim export sessions/session_xxx.json
+uv run nichd-sim check-scenario scenarios/*.yaml
+uv run nichd-sim eval-classifier</pre>
+    <div>
+      <ul>
+        <li>Choisir un scénario, une graine, activer ou non le mode formateur.</li>
+        <li>Mener l'audition comme en situation réelle.</li>
+        <li>« Terminer l'entretien », rédiger sa synthèse, lire le retour.</li>
+      </ul>
+      <p class="small muted" style="margin-top:12px">Latence par tour : ~4 s sans réflexion, ~14 s en réflexion moyenne (défaut).</p>
+    </div>
+  </div>
+  <div class="foot"><span>README.md</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <div class="kicker">Suite</div>
+  <h1>Limites et prochaines étapes</h1>
+  <div class="grid g2">
+    <div class="card">
+      <h2>À valider par des humains</h2>
+      <ul>
+        <li><b>Paramètres</b> du moteur : valeurs estimées depuis la littérature, à calibrer.</li>
+        <li><b>Scénarios</b> : relecture par un formateur NICHD, en priorité les plus sensibles (violences conjugales, négligence).</li>
+        <li><b>Accord classifieur / codeurs humains</b> sur des sessions réelles (export CSV prêt).</li>
+        <li><b>Réalisme</b> des réponses jugé en aveugle par des formateurs.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Techniques</h2>
+      <ul>
+        <li>Optimiser la latence du classifieur (actuellement ~13 s).</li>
+        <li>Étendre le jeu de test du classifieur aux 7 scénarios.</li>
+        <li>Suivre la progression des apprenants d'une session à l'autre.</li>
+        <li>Petites corrections d'interface : panneau formateur fixe, faux détails affichés en clair dans la synthèse.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>docs/design.md</span><span>14</span></div>
+</section>
+
+</body>
+</html>
