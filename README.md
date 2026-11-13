@@ -35,7 +35,7 @@ uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --classifier llm
 
 En classification manuelle (par défaut), préfixez chaque énoncé par son type :
 `[inv] Dis-moi tout ce qui s'est passé.`, `[dir:d_pousse] Qui a poussé ?` (tapez `/aide`, `/unites`).
-Options utiles : `--summary` (rédiger une synthèse confrontée aux faits), `--no-rephrase`
+Le classifieur raisonne par défaut (réflexion `medium`, le réglage le plus précis mesuré, ~13 s par question) ; `--classifier-think off` pour une démonstration fluide (~3 s). Options utiles : `--summary` (rédiger une synthèse confrontée aux faits), `--no-rephrase`
 (retour sans reformulations LLM). Les journaux de session sont écrits dans `sessions/`.
 
 ```bash

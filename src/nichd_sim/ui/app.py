@@ -11,7 +11,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from nichd_sim.classifiers.llm import LLMClassifier
+from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
 from nichd_sim.evaluation import load_scenarios
 from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS, LLMRephraser, LLMSummaryMatcher
@@ -58,7 +58,9 @@ def new_session(scenario, seed: int, offline: bool) -> Session:
         classifier, realizer, rephraser, matcher = ManualClassifier(), TemplateRealizer(), None, None
     else:
         client = OllamaClient(DEFAULT_MODEL, DEFAULT_URL)
-        classifier, realizer = LLMClassifier(client), LLMRealizer(client, seed=seed)
+        think = os.environ.get("NICHD_CLASSIFIER_THINK", DEFAULT_CLASSIFIER_THINK)
+        classifier = LLMClassifier(client, think=False if think == "off" else think)
+        realizer = LLMRealizer(client, seed=seed)
         rephraser, matcher = LLMRephraser(client), LLMSummaryMatcher(client)
     return Session(
         scenario, classifier, realizer, seed=seed, rephraser=rephraser, summary_matcher=matcher, log_dir=LOG_DIR
