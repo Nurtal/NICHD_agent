@@ -184,6 +184,10 @@ Violations détectées, par exemple :
 - phase sautée ou tronquée ;
 - clôture absente (pas de « autre chose ? », pas de sujet neutre de fin).
 
+Les phases n'avancent que vers l'avant. Sans indice de phase (classification manuelle), la machine infère les règles de base à partir des énoncés `ground_rule`, et ouvre la phase substantive au premier dévoilement de l'événement cible.
+
+**Sujet d'une invitation** : le moteur ne lit pas la phase suivie, mais l'indice de phase de l'énoncé lui-même. Un indice `rapport` ou `ground_rules` donne un bavardage de rapport (`small_talk`, sans aucun fait du scénario). Un indice `narrative_practice` oriente vers l'événement neutre. Sinon, c'est l'événement cible.
+
 C'est l'apprenant qui termine la session (bouton). Une limite souple d'environ 60 tours déclenche un avertissement sans couper l'entretien.
 
 ## 8. Réalisation linguistique et contrôle du contenu

@@ -31,6 +31,7 @@ FALLBACK_RESPONSES: dict[SpeechAct, str] = {
     SpeechAct.DENY: "Non.",
     SpeechAct.CONFABULATE: "Euh… je crois que oui.",
     SpeechAct.ACKNOWLEDGE: "D'accord.",
+    SpeechAct.SMALL_TALK: "J'aime bien jouer aux Lego.",
     SpeechAct.CONFUSION: "Hein ? Je comprends pas.",
     SpeechAct.SILENCE: "…",
 }
@@ -75,6 +76,11 @@ ACT_INSTRUCTIONS: dict[SpeechAct, str] = {
         "et banale à la question (quelques mots), sans parler de rien d'autre."
     ),
     SpeechAct.ACKNOWLEDGE: "Tu réponds brièvement (d'accord, oui, hmm), sans raconter quoi que ce soit.",
+    SpeechAct.SMALL_TALK: (
+        "L'adulte fait connaissance avec toi. Réponds gentiment en parlant de toi (tes jeux, tes activités "
+        "préférées, ton école), en une ou deux phrases. Ne parle d'aucun événement particulier, d'aucune "
+        "personne précise et d'aucun lieu précis."
+    ),
     SpeechAct.CONFUSION: "Tu ne comprends pas ce que dit l'adulte et tu le dis simplement. N'ajoute aucun détail.",
     SpeechAct.SILENCE: "Tu ne dis presque rien (« … », « hmm »).",
 }

@@ -13,6 +13,7 @@ from nichd_sim.classification import Classification, ClassificationContext, Clas
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
+from nichd_sim.phases import Phase, PhaseTracker, PhaseViolation
 from nichd_sim.realization import Realizer, TemplateRealizer
 from nichd_sim.scenario import Scenario
 
@@ -34,6 +35,7 @@ class TurnRecord(BaseModel):
     index: int
     utterance: str
     classification: Classification
+    phase: Phase
     state_before: EngineState
     decision: Decision
     state_after: EngineState
@@ -57,6 +59,7 @@ class SessionLog(BaseModel):
     parameters: dict
     components: dict[str, str]
     turns: list[TurnRecord] = []
+    phase_violations: list[PhaseViolation] = []
 
 
 class TurnResult(BaseModel):
@@ -66,6 +69,9 @@ class TurnResult(BaseModel):
     classification: Classification
     decision: Decision
     state: EngineState
+    phase: Phase
+    violations: list[PhaseViolation] = []
+    """Phase violations detected at this turn."""
     fallback_used: bool = False
 
 
@@ -93,6 +99,7 @@ class Session:
         self.output_filter = output_filter or OutputFilter(scenario)
         self.log_dir = Path(log_dir) if log_dir else None
         self.engine = BehaviorEngine(scenario, self.params, seed)
+        self.phases = PhaseTracker(scenario)
         self.history: list[tuple[str, str]] = []
         self.log = SessionLog(
             session_id=uuid.uuid4().hex[:12],
@@ -126,7 +133,15 @@ class Session:
         t1 = time.perf_counter()
         heard = classification.clean_text or utterance
         before = self.state
+        n_violations = len(self.phases.violations)
+        self.phases.observe(classification)
         decision = self.engine.decide(classification)
+        phase = self.phases.after_decision(
+            revealed_target=any(
+                not u.contaminated and self.scenario.is_target_unit(u.id) for u in decision.allowed_units
+            )
+        )
+        new_violations = self.phases.violations[n_violations:]
 
         history = self.history + [("interviewer", heard)]
         attempts, response, fallback = self._realize(decision, history, known=before.revealed)
@@ -141,6 +156,7 @@ class Session:
                 index=len(self.log.turns) + 1,
                 utterance=utterance,
                 classification=classification,
+                phase=phase,
                 state_before=before,
                 decision=decision,
                 state_after=after,
@@ -154,9 +170,20 @@ class Session:
                 },
             )
         )
+        self.log.phase_violations = list(self.phases.violations)
         return TurnResult(
-            response=response, classification=classification, decision=decision, state=after, fallback_used=fallback
+            response=response,
+            classification=classification,
+            decision=decision,
+            state=after,
+            phase=phase,
+            violations=new_violations,
+            fallback_used=fallback,
         )
+
+    @property
+    def phase(self) -> Phase:
+        return self.phases.phase
 
     def _realize(self, decision: Decision, history, known: list[str]) -> tuple[list[AttemptRecord], str, bool]:
         attempts: list[AttemptRecord] = []
@@ -184,6 +211,7 @@ class Session:
     def end(self) -> SessionLog:
         if not self._ended:
             self._ended = True
+            self.log.phase_violations = list(self.phases.finish())
             self.log.ended_at = _now()
             if self.log_dir is not None:
                 self.write_log(self.log_dir)
