@@ -11,6 +11,7 @@ from nichd_sim.classifiers.manual import HELP, ManualClassificationError, Manual
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
+from nichd_sim.replay import ReplayError, export_for_coders, find_scenario, load_log, replay
 from nichd_sim.scenario import ScenarioError, load_scenario
 from nichd_sim.session import Session
 
@@ -111,6 +112,35 @@ def play(args: argparse.Namespace) -> int:
     return 0
 
 
+def replay_cmd(args: argparse.Namespace) -> int:
+    try:
+        log = load_log(args.log)
+        scenario = load_scenario(args.scenario) if args.scenario else find_scenario(log, args.scenarios_dir)
+    except (ReplayError, ScenarioError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    report = replay(log, scenario)
+    if report.identical:
+        print(f"Rejeu identique : {report.turns} tour(s), session {log.session_id}.")
+        return 0
+    print(f"Rejeu divergent ({len(report.mismatches)} écart(s)) :")
+    for m in report.mismatches:
+        print(f"  - {m}")
+    return 1
+
+
+def export_cmd(args: argparse.Namespace) -> int:
+    try:
+        log = load_log(args.log)
+    except ReplayError as e:
+        print(e, file=sys.stderr)
+        return 2
+    out = Path(args.output or Path(args.log).with_suffix(".codage.csv"))
+    export_for_coders(log, out)
+    print(f"Transcription vierge pour codeurs : {out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nichd-sim", description="Simulateur d'audition NICHD")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -124,8 +154,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ollama-url", default=DEFAULT_URL)
     p.add_argument("--log-dir", default="sessions")
     p.add_argument("--trainer", action="store_true", help="mode formateur : affiche classification et décision")
+    p.set_defaults(func=play)
+
+    r = sub.add_parser("replay", help="rejouer une session depuis son journal, sans LLM")
+    r.add_argument("log", help="journal JSON de session")
+    r.add_argument("--scenario", help="fichier de scénario (sinon recherché par identifiant)")
+    r.add_argument("--scenarios-dir", default="scenarios")
+    r.set_defaults(func=replay_cmd)
+
+    e = sub.add_parser("export", help="exporter une transcription vierge (CSV) pour des codeurs humains")
+    e.add_argument("log", help="journal JSON de session")
+    e.add_argument("-o", "--output", help="fichier CSV de sortie")
+    e.set_defaults(func=export_cmd)
+
     args = parser.parse_args(argv)
-    return play(args)
+    return args.func(args)
 
 
 if __name__ == "__main__":

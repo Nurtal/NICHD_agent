@@ -21,3 +21,10 @@ uv run nichd-sim play scenarios/s01_bagarre_parc.yaml --trainer --classifier llm
 En classification manuelle (par défaut), préfixez chaque énoncé par son type :
 `[inv] Dis-moi tout ce qui s'est passé.`, `[dir:d_pousse] Qui a poussé ?` (tapez `/aide`, `/unites`).
 Les journaux de session sont écrits dans `sessions/`.
+
+```bash
+# rejouer une session à l'identique depuis son journal (sans LLM)
+uv run nichd-sim replay sessions/session_<id>.json
+# transcription vierge (CSV ;) pour des codeurs humains
+uv run nichd-sim export sessions/session_<id>.json -o codage.csv
+```
