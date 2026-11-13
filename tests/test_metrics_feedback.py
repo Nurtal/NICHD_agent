@@ -157,3 +157,83 @@ def test_no_question_in_substantive_phase_gives_undefined_ratio():
     assert fb.metrics.open_question_ratio.ratio is None
     assert fb.metrics.contamination_score.score == 0
     assert "Questions ouvertes (phase substantive) : —" in render_text(fb)
+
+
+# -- learner summary (#12) ----------------------------------------------------------
+
+
+class FakeMatcher:
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+
+    def match(self, summary, said_true, said_false):
+        self.calls.append((summary, said_true, said_false))
+        return self.result
+
+
+def run_with_summary(summary, match):
+    from nichd_sim.feedback import SummaryMatch
+
+    matcher = FakeMatcher(SummaryMatch(**match))
+    sc = load_scenario(S01).model_copy(update={"parameter_overrides": {
+        "p_acquiesce": 1.0, "p_integration": 0.0, "suggestibility_multiplier_range": [1, 1],
+    }})
+    clf = ScriptedClassifier()
+    s = Session(sc, clf, RecordingRealizer(), seed=3, summary_matcher=matcher)
+    for u, c in SCRIPT:
+        ask(s, clf, u, c)
+    return s.end(learner_summary=summary).feedback, matcher
+
+
+def test_without_summary_the_report_is_unchanged():
+    fb, matcher = run_with_summary(None, {})
+    assert fb.learner_summary is None and matcher.calls == []
+
+
+def test_summary_separates_retained_facts_contaminations_and_unsaid_items():
+    fb, matcher = run_with_summary(
+        "Léo était au parc avec sa mamie. Un homme a poussé M. Bertin, il avait un couteau. Il a volé un sac.",
+        {
+            "retained_true": ["b_mamie", "b_parc", "d_pousse", "a_part", "zzz"],
+            "retained_contaminated": ["c1", "c9"],
+            "not_said_by_child": ["il a volé un sac", " "],
+        },
+    )
+    ls = fb.learner_summary
+    # a_part was never said by the child, unknown ids are dropped
+    assert ls.retained_true == ["b_mamie", "b_parc", "d_pousse"]
+    assert ls.retained_contaminated == ["c1"]
+    assert ls.not_said_by_child == ["il a volé un sac"]
+    assert ls.true_said == 7 and ls.recall == pytest.approx(3 / 7)
+    # the matcher only sees what the child said (true + false), never the unsaid facts
+    _, said_true, said_false = matcher.calls[0]
+    assert {i for i, _ in said_true} == {"b_mamie", "b_parc", "d_messieurs", "d_crient", "d_pousse", "d_tombe", "d_banc"}
+    assert said_false == [("c1", "il avait un couteau")]
+
+
+def test_summary_section_in_text_report():
+    fb, _ = run_with_summary("x", {"retained_true": ["b_mamie"], "retained_contaminated": ["c1"], "not_said_by_child": ["un sac volé"]})
+    text = render_text(fb)
+    assert "Votre synthèse : 14 % des faits dits par l'enfant retenus (1/7)" in text
+    assert "faux détail(s) repris comme des faits : c1" in text
+    assert "jamais dit par l'enfant : « un sac volé »" in text
+
+
+def test_llm_summary_matcher_handles_bad_output():
+    from nichd_sim.feedback import LLMSummaryMatcher, SUMMARY_SCHEMA
+
+    class Chat:
+        model = "fake"
+
+        def __init__(self, content):
+            self.content, self.kw = content, None
+
+        def chat(self, messages, **kw):
+            self.kw = kw
+            return ChatResult(content=self.content)
+
+    good = Chat('{"retained_true": ["b_mamie"], "retained_contaminated": [], "not_said_by_child": []}')
+    assert LLMSummaryMatcher(good).match("s", [("b_mamie", "v")], []).retained_true == ["b_mamie"]
+    assert good.kw["format"] == SUMMARY_SCHEMA and good.kw["temperature"] == 0
+    assert LLMSummaryMatcher(Chat("oops")).match("s", [], []).retained_true == []

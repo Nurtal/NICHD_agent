@@ -10,7 +10,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from nichd_sim.classification import Classification, ClassificationContext, Classifier
-from nichd_sim.feedback import FeedbackReport, Rephraser, build_feedback
+from nichd_sim.feedback import FeedbackReport, Rephraser, SummaryMatcher, build_feedback
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
@@ -103,6 +103,7 @@ class Session:
         params: Parameters | None = None,
         output_filter: OutputFilter | None = None,
         rephraser: Rephraser | None = None,
+        summary_matcher: SummaryMatcher | None = None,
         log_dir: str | Path | None = None,
     ):
         self.scenario = scenario
@@ -112,6 +113,7 @@ class Session:
         self.params = params or Parameters.load(scenario.child_profile.age_band, scenario.parameter_overrides)
         self.output_filter = output_filter or OutputFilter(scenario)
         self.rephraser = rephraser
+        self.summary_matcher = summary_matcher
         self.log_dir = Path(log_dir) if log_dir else None
         self.engine = BehaviorEngine(scenario, self.params, seed)
         self.phases = PhaseTracker(scenario)
@@ -233,12 +235,15 @@ class Session:
         fallback = TemplateRealizer().realize(decision, self.scenario.child_profile, list(history)).text
         return attempts, fallback, True
 
-    def end(self) -> SessionLog:
+    def end(self, learner_summary: str | None = None) -> SessionLog:
+        """End the session. `learner_summary`: optional account written by the learner."""
         if not self._ended:
             self._ended = True
             self.log.phase_violations = list(self.phases.finish())
             self.log.ended_at = _now()
-            self.log.feedback = build_feedback(self.log, self.scenario, self.rephraser)
+            self.log.feedback = build_feedback(
+                self.log, self.scenario, self.rephraser, learner_summary, self.summary_matcher
+            )
             if self.log_dir is not None:
                 self.write_log(self.log_dir)
         return self.log
