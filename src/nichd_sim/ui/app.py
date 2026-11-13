@@ -161,7 +161,7 @@ def show_feedback(fb):
         st.write(f"{'—' if ls.recall is None else f'{ls.recall:.0%}'} des faits dits par l'enfant retenus "
                  f"({len(ls.retained_true)}/{ls.true_said}).")
         for i in ls.retained_contaminated:
-            st.error(f"Faux détail repris comme un fait : {i}")
+            st.error(f"Faux détail repris comme un fait : « {fb.false_detail(i)} » ({i})")
         for item in ls.not_said_by_child:
             st.error(f"Jamais dit par l'enfant : « {item} »")
 
@@ -239,8 +239,16 @@ with chat_col:
             )
             st.rerun()
 
+# Keep the trainer panel in view while the conversation grows (sticky within its column).
+TRAINER_PANEL_CSS = (
+    "<style>[data-testid='stColumn']:has(.st-key-trainer_panel)"
+    "{position:sticky;top:3.75rem;align-self:flex-start;z-index:1;"
+    "max-height:calc(100vh - 13rem);overflow-y:auto}</style>"
+)
+
 if trainer_col is not None:
-    with trainer_col:
+    st.markdown(TRAINER_PANEL_CSS, unsafe_allow_html=True)
+    with trainer_col, st.container(key="trainer_panel"):
         st.subheader("Mode formateur")
         st.markdown(f"Phase courante : {chip(PHASE_LABELS[session.phase], '#1565c0')}", unsafe_allow_html=True)
         state = session.state

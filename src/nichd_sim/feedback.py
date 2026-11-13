@@ -172,6 +172,13 @@ class FeedbackReport(BaseModel):
     disclosed: bool
     learner_summary: LearnerSummaryResult | None = None
 
+    def false_detail(self, contaminated_id: str) -> str:
+        """Wording of a false detail (c1, c2…) for display; the id itself if unknown."""
+        for e in self.metrics.contamination_score.entries:
+            if e.id == contaminated_id:
+                return e.value
+        return contaminated_id
+
 
 def match_summary(summary: str, log: SessionLog, scenario: Scenario, matcher: SummaryMatcher) -> LearnerSummaryResult:
     final = log.turns[-1].state_after if log.turns else None
@@ -277,7 +284,7 @@ def render_text(report: FeedbackReport) -> str:
         out.append("")
         out.append(f"Votre synthèse : {_pct(ls.recall)} des faits dits par l'enfant retenus ({len(ls.retained_true)}/{ls.true_said})")
         if ls.retained_contaminated:
-            out.append(f"  ⚠ {len(ls.retained_contaminated)} faux détail(s) repris comme des faits : {', '.join(ls.retained_contaminated)}")
+            out.append(f"  ⚠ {len(ls.retained_contaminated)} faux détail(s) repris comme des faits : {', '.join(f'« {report.false_detail(i)} »' for i in ls.retained_contaminated)}")
         for item in ls.not_said_by_child:
             out.append(f"  ⚠ jamais dit par l'enfant : « {item} »")
     out.append("")
