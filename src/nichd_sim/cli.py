@@ -101,6 +101,8 @@ def play(args: argparse.Namespace) -> int:
             if turn.fallback_used:
                 print("  [filtre] réponse de repli utilisée")
         print(f"{child} > {result.response}")
+        for notice in result.notices:
+            print(f"  ⓘ {notice}")
     log = session.end()
     if log.phase_violations:
         print("\nÉcarts au protocole :")

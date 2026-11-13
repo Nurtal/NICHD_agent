@@ -107,3 +107,87 @@ suggestibility_multiplier_range:
   value: [0.5, 1.5]
   source: Choix de modélisation.
   estimated: true
+
+# --- Effets des phases préparatoires et dévoilement (#9) --------------------
+
+support_reluctance_drop:
+  description: Baisse de la réticence après chaque énoncé de soutien (`support`).
+  value: 0.08
+  source: >
+    Hershkowitz, Lamb & Katz (2014), Allegation rates in forensic child abuse
+    investigations: Comparing the revised and standard NICHD protocols, Psychology,
+    Public Policy, and Law 20(3) — le soutien du protocole révisé augmente les
+    dévoilements des enfants réticents.
+  estimated: true
+
+rapport_reluctance_drop:
+  description: Baisse de la réticence après chaque invitation de rapport (sujet neutre).
+  value: 0.04
+  source: Hershkowitz, Lamb & Katz (2014), voir support_reluctance_drop.
+  estimated: true
+
+ground_rule_acquiescence_drop:
+  description: >
+    Baisse de la propension à acquiescer (et donc à confabuler et à dire oui) après
+    chaque règle de base énoncée, dans la limite de max_effective_ground_rules.
+  value: 0.12
+  source: >
+    Brown & Lamb (2015), Child Dev. Perspectives 9(4) — les règles de base (« je ne
+    sais pas », corriger l'interviewer) réduisent les erreurs aux questions fermées.
+  estimated: true
+
+max_effective_ground_rules:
+  description: Nombre de règles de base au-delà duquel une règle supplémentaire n'a plus d'effet.
+  value: 3
+  source: Choix de modélisation (le protocole NICHD en énonce trois à quatre).
+  estimated: true
+
+narrative_practice_verbosity_boost:
+  description: >
+    Hausse de la verbosité après chaque invitation de pratique narrative, dans la
+    limite de max_effective_practice_turns.
+  value: 0.1
+  source: >
+    Sternberg, Lamb, Hershkowitz, Yudilevitch, Orbach, Esplin & Hovav (1997), Effects
+    of introductory style on children's abilities to describe experiences of sexual
+    abuse, Child Abuse & Neglect 21(11) — une introduction ouverte allonge les
+    réponses aux invitations de la phase substantive.
+  estimated: true
+
+max_effective_practice_turns:
+  description: Nombre d'invitations de pratique narrative au-delà duquel l'effet plafonne.
+  value: 3
+  source: Choix de modélisation.
+  estimated: true
+
+disclosure_threshold_scale:
+  description: >
+    Seuil de dévoilement = réticence courante × échelle. Chaque incitation portant
+    sur l'événement cible ajoute une pression (disclosure_pressure) ; l'enfant
+    dévoile quand la pression cumulée atteint le seuil.
+  value: 5
+  source: >
+    Choix de modélisation, d'après la gradation des incitations de transition du
+    protocole NICHD (Lamb, Orbach, Hershkowitz, Esplin & Horowitz, 2007, Child Abuse
+    & Neglect 31).
+  estimated: true
+
+disclosure_pressure:
+  description: Pression exercée par une incitation, selon le type de question.
+  value: {invitation: 1.0, cued_invitation: 1.0, facilitator: 0.5, directive: 1.5, option_posing: 2.0, suggestive: 3.0}
+  source: Choix de modélisation (les incitations focalisées obtiennent le dévoilement plus vite, au prix de la fiabilité).
+  estimated: true
+
+no_disclosure_reluctance:
+  description: Au-delà de cette réticence courante, l'enfant ne dévoile pas, quelles que soient les incitations.
+  value: 0.9
+  source: Choix de modélisation (une absence de dévoilement est un résultat légitime).
+  estimated: true
+
+p_closure_reveal:
+  description: >
+    Question de clôture « autre chose ? » : probabilité que l'enfant livre une unité
+    centrale encore non dite.
+  value: 0.3
+  source: Choix de modélisation.
+  estimated: true

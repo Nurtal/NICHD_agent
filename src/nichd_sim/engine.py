@@ -26,6 +26,8 @@ class SpeechAct(StrEnum):
     DENY = "deny"
     CONFABULATE = "confabulate"
     ACKNOWLEDGE = "acknowledge"
+    RELUCTANT = "reluctant"
+    """Not ready to talk about the event yet: vague, evasive, no detail."""
     SMALL_TALK = "small_talk"
     """Rapport chit-chat about the child's life, without any scenario fact."""
     CONFUSION = "confusion"
@@ -55,6 +57,10 @@ class Decision(BaseModel):
     """A suggestive/closed question whose proposition happened to be true: still a technique fault."""
     new_contamination: str | None = None
     """Id of the contaminated unit created by this turn, if any."""
+    disclosure: bool = False
+    """This turn is the child's first disclosure of the target event."""
+    forced_disclosure: bool = False
+    """The disclosure was obtained by a focused (directive, closed or suggestive) prompt."""
 
 
 class ContaminatedUnit(BaseModel):
@@ -78,6 +84,10 @@ class EngineState(BaseModel):
     contaminated: list[ContaminatedUnit] = []
     last_unit: str | None = None
     turn: int = 0
+    disclosed: bool = False
+    disclosure_pressure: float = 0.0
+    ground_rules_given: int = 0
+    practice_turns: int = 0
 
 
 def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
@@ -85,6 +95,8 @@ def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
     norm = normalize(proposition)
     return any(mentions(norm, a) for a in unit.anchors)
 
+
+_FOCUSED = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE}
 
 _FROM_HINT = object()  # sentinel: derive the topic from the utterance's phase hint
 
@@ -112,6 +124,14 @@ class BehaviorEngine:
         effective = c.type
         if c.type == QuestionType.COMPOUND:
             effective = c.inner_type or QuestionType.DIRECTIVE
+        self._apply_phase_effects(c, effective)
+        was_disclosed = self.state.disclosed
+        if not was_disclosed and self._about_target(c, effective):
+            gate = self._disclosure_gate(effective)
+            if gate is not None:
+                decision = gate.model_copy(update={"effective_type": effective})
+                self._commit(decision)
+                return decision
         handler = {
             QuestionType.INVITATION: self._invitation,
             QuestionType.CUED_INVITATION: self._cued_invitation,
@@ -125,7 +145,55 @@ class BehaviorEngine:
         }[effective]
         decision = handler(c, effective).model_copy(update={"effective_type": effective})
         self._commit(decision)
+        if not was_disclosed and self.state.disclosed:
+            decision = decision.model_copy(
+                update={"disclosure": True, "forced_disclosure": effective in _FOCUSED}
+            )
         return decision
+
+    # -- phase effects & disclosure ------------------------------------------
+
+    def _apply_phase_effects(self, c: Classification, t: QuestionType) -> None:
+        st, p = self.state, self.params
+        hint = c.phase_hints[0] if c.phase_hints else None
+        if t == QuestionType.SUPPORT:
+            st.reluctance = max(0.0, st.reluctance - p["support_reluctance_drop"])
+        elif t == QuestionType.INVITATION and hint == "rapport":
+            st.reluctance = max(0.0, st.reluctance - p["rapport_reluctance_drop"])
+        elif t == QuestionType.GROUND_RULE and st.ground_rules_given < p["max_effective_ground_rules"]:
+            st.ground_rules_given += 1
+            st.acquiescence = max(0.0, st.acquiescence - p["ground_rule_acquiescence_drop"])
+        if (
+            t in (QuestionType.INVITATION, QuestionType.CUED_INVITATION)
+            and hint == "narrative_practice"
+            and st.practice_turns < p["max_effective_practice_turns"]
+        ):
+            st.practice_turns += 1
+            st.verbosity = min(1.0, st.verbosity + p["narrative_practice_verbosity_boost"])
+
+    def _about_target(self, c: Classification, t: QuestionType) -> bool:
+        """Does this prompt push the child to talk about the target event?"""
+        if t in (QuestionType.SUPPORT, QuestionType.GROUND_RULE, QuestionType.OTHER):
+            return False
+        if c.target and c.target != OUT_OF_SCENARIO:
+            return self.scenario.is_target_unit(c.target)
+        if t == QuestionType.FACILITATOR and self.state.last_unit:
+            return self.scenario.is_target_unit(self.state.last_unit)
+        return self._topic(c) == EventKind.TARGET
+
+    def _disclosure_gate(self, t: QuestionType) -> Decision | None:
+        """Accumulate pressure; None means the child discloses now."""
+        st, p = self.state, self.params
+        st.disclosure_pressure += p["disclosure_pressure"].get(str(t), 1.0)
+        if st.reluctance >= p["no_disclosure_reluctance"]:
+            return Decision(speech_act=SpeechAct.RELUCTANT, reason="trop réticent pour dévoiler")
+        threshold = st.reluctance * p["disclosure_threshold_scale"]
+        if st.disclosure_pressure >= threshold:
+            return None
+        return Decision(
+            speech_act=SpeechAct.RELUCTANT,
+            reason=f"pas encore prêt à dévoiler (pression {st.disclosure_pressure:.1f} / seuil {threshold:.1f})",
+        )
 
     def record_confabulation(self, unit_id: str, text: str) -> None:
         """Store what the child actually invented (known only after realization)."""
@@ -151,7 +219,7 @@ class BehaviorEngine:
     def _invitation_size(self) -> int:
         base = self.params["units_per_invitation"]
         lo, hi = self.params["verbosity_multiplier_range"]
-        return max(1, round(base * (lo + (hi - lo) * self.state.verbosity)))
+        return max(1, int(base * (lo + (hi - lo) * self.state.verbosity) + 0.5))  # round half up
 
     def _unrevealed(self, pool: list[InfoUnit]) -> list[InfoUnit]:
         return [u for u in pool if u.id not in self.state.revealed]
@@ -202,6 +270,8 @@ class BehaviorEngine:
     def _invitation(self, c: Classification, t: QuestionType, topic=_FROM_HINT) -> Decision:
         if topic is _FROM_HINT:
             topic = self._topic(c)
+            if topic == EventKind.TARGET and c.phase_hints[:1] == ["closure"]:
+                return self._anything_else()
         if topic is None:
             return Decision(speech_act=SpeechAct.SMALL_TALK, reason="invitation de rapport")
         fresh = self._unrevealed(self._orders[topic])
@@ -210,6 +280,19 @@ class BehaviorEngine:
         return self._narrate(
             central_left or fresh, self._invitation_size(), label, recall_contamination=topic == EventKind.TARGET
         )
+
+    def _anything_else(self) -> Decision:
+        """Closure « autre chose ? »: maybe one remaining central unit."""
+        remaining = [
+            u for u in self._unrevealed(self._orders[EventKind.TARGET]) if u.centrality == Centrality.CENTRAL
+        ]
+        if remaining and self._draw(self.params["p_closure_reveal"]):
+            return Decision(
+                speech_act=SpeechAct.ANSWER,
+                allowed_units=[self._allowed(remaining[0])],
+                reason="clôture « autre chose ? » → une unité centrale restante",
+            )
+        return Decision(speech_act=SpeechAct.DENY, reason="clôture « autre chose ? » → non, c'est tout")
 
     def _cued_invitation(self, c: Classification, t: QuestionType) -> Decision:
         found = self._segment_pool(c.target)
@@ -350,6 +433,8 @@ class BehaviorEngine:
         for au in decision.allowed_units:
             if not au.contaminated and au.id not in self.state.revealed:
                 self.state.revealed.append(au.id)
+                if self.scenario.is_target_unit(au.id):
+                    self.state.disclosed = True
         true_units = [au for au in decision.allowed_units if not au.contaminated]
         if true_units:
             self.state.last_unit = true_units[-1].id
