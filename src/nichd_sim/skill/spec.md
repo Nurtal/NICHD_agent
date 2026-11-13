@@ -56,6 +56,19 @@ Choisis l'unité dont le **sujet** correspond à la question, même si la répon
 l'interviewer est fausse (« Il avait un blouson bleu, hein ? » vise l'unité qui décrit les
 personnes, même si le blouson est rouge).
 
+Règles de choix de la cible :
+1. **La cible est le fait que la question cherche à établir**, pas une personne ou un lieu
+   cités en passant. « Est-ce que quelqu'un s'est disputé dans la cour ? » vise l'unité de la
+   dispute, pas celle du lieu. « Quelqu'un t'a fait mal ? » vise l'unité où l'enfant est blessé
+   ou frappé, si elle existe.
+2. **Un détail que la valeur de l'unité ne contient pas est `"out_of_scenario"`**, même si la
+   personne ou l'objet figure dans le catalogue : âge, taille, vêtements, cheveux, couleur,
+   prénom, voix… ne visent une unité que si sa valeur mentionne cet aspect. Exception : une
+   question suggestive ou fermée qui *contredit* un aspect présent dans la valeur (couleur
+   fausse d'un blouson cité) vise cette unité.
+3. Pour une question composée, la cible est celle de l'élément **le plus directif** (celui qui
+   donne `inner_type`).
+
 ## Proposition suggérée (`suggested_proposition`)
 
 Pour `suggestive` et `option_posing` en oui/non : le contenu que l'interviewer introduit, formulé
