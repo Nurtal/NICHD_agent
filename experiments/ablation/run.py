@@ -1,6 +1,6 @@
 """Run the ablation: same scripted interviews for the hybrid child and the LLM-only child.
 
-    uv run python experiments/ablation/run.py [--seeds 0 1 2] [--out experiments/ablation/results]
+    uv run python experiments/ablation/run.py [--models qwen3.8:latest phi4 ...] [--seeds 0 1 2]
 
 Writes one JSONL line per (condition, scenario, seed) interview, resumable (done runs are skipped).
 """
@@ -41,12 +41,12 @@ def run_hybrid(scenario, seed, client):
     return turns
 
 
-def run_llm_only(scenario, seed, client):
+def run_llm_only(scenario, seed, client, strong=False):
     history, turns = [], []
     for i, u in enumerate(script(scenario), 1):
         text = strip_tag(u)
         t0 = time.perf_counter()
-        res = client.chat(baseline_messages(scenario, history, text), temperature=TEMPERATURE,
+        res = client.chat(baseline_messages(scenario, history, text, strong=strong), temperature=TEMPERATURE,
                           seed=seed * 1000 + i * 10, think=False)
         child = " ".join(res.content.split())
         history += [("interviewer", text), ("child", child)]
@@ -54,11 +54,19 @@ def run_llm_only(scenario, seed, client):
     return turns
 
 
+CONDITIONS = {
+    "hybrid": run_hybrid,
+    "llm_only": run_llm_only,
+    "llm_only_strong": lambda sc, seed, client: run_llm_only(sc, seed, client, strong=True),
+}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--out", default=str(ROOT / "experiments/ablation/results"))
-    ap.add_argument("--model", default=None)
+    ap.add_argument("--models", nargs="+", default=["qwen3.8:latest"])
+    ap.add_argument("--conditions", nargs="+", default=list(CONDITIONS))
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -67,20 +75,21 @@ def main():
     if path.exists():
         for line in path.read_text(encoding="utf-8").splitlines():
             d = json.loads(line)
-            done.add((d["condition"], d["scenario"], d["seed"]))
-    client = OllamaClient(args.model) if args.model else OllamaClient()
+            done.add((d["model"], d["condition"], d["scenario"], d["seed"]))
     scenarios = load_scenarios(ROOT / "scenarios")
-    for seed in args.seeds:
-        for sid, sc in scenarios.items():
-            for cond, fn in (("hybrid", run_hybrid), ("llm_only", run_llm_only)):
-                if (cond, sid, seed) in done:
-                    continue
-                t0 = time.perf_counter()
-                turns = fn(sc, seed, client)
-                rec = {"condition": cond, "scenario": sid, "seed": seed, "model": client.model, "turns": turns}
-                with path.open("a", encoding="utf-8") as f:
-                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-                print(f"{cond:8} {sid:26} seed={seed} {time.perf_counter() - t0:6.1f}s", flush=True)
+    for model in args.models:  # one model at a time: Ollama keeps it loaded
+        client = OllamaClient(model)
+        for seed in args.seeds:
+            for sid, sc in scenarios.items():
+                for cond in args.conditions:
+                    if (model, cond, sid, seed) in done:
+                        continue
+                    t0 = time.perf_counter()
+                    turns = CONDITIONS[cond](sc, seed, client)
+                    rec = {"condition": cond, "scenario": sid, "seed": seed, "model": model, "turns": turns}
+                    with path.open("a", encoding="utf-8") as f:
+                        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                    print(f"{model:16} {cond:16} {sid:26} seed={seed} {time.perf_counter() - t0:6.1f}s", flush=True)
 
 
 if __name__ == "__main__":

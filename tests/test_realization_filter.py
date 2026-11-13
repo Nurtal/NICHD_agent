@@ -188,3 +188,13 @@ def test_regeneration_is_stricter_and_cooler():
     first, second = chat.calls
     assert first["temperature"] == 0.7 and second["temperature"] == 0.3
     assert "refusée" in second["messages"][0]["content"] and "refusée" not in first["messages"][0]["content"]
+
+
+def test_refusal_prompt_asks_for_a_plain_no():
+    """A rejected suggestion was voiced « Non, c'est tout » (closing formula) instead of a plain no."""
+    from nichd_sim.engine import Decision, SpeechAct
+    from nichd_sim.realization import build_system_prompt
+
+    prompt = build_system_prompt(Decision(speech_act=SpeechAct.DENY, reason="suggestion fausse → refus"),
+                                 load_scenario(S01).child_profile)
+    assert "simplement non" in prompt and "c'est tout" not in prompt

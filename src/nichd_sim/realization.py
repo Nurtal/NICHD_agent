@@ -71,7 +71,10 @@ ACT_INSTRUCTIONS: dict[SpeechAct, str] = {
     SpeechAct.ANSWER: "Réponds à l'adulte en racontant TOUTES ces choses ({n}), dans cet ordre, avec tes mots, et RIEN d'autre :",
     SpeechAct.ACQUIESCE: "Tu dis oui à ce que l'adulte propose, en reprenant simplement son idée, et RIEN d'autre :",
     SpeechAct.DONT_KNOW: "Tu dis que tu ne sais pas, que tu ne te souviens pas. N'ajoute aucun détail.",
-    SpeechAct.DENY: "Tu dis non (par exemple « non, c'est tout »). N'ajoute aucun détail.",
+    SpeechAct.DENY: (
+        "Tu réponds simplement non à ce que l'adulte vient de dire ou de demander (« non », « non non », "
+        "« ben non »). N'ajoute aucun détail et ne raconte rien d'autre."
+    ),
     SpeechAct.CONFABULATE: (
         "Tu ne connais pas la réponse mais tu réponds quand même : invente une réponse très courte "
         "et banale à la question (quelques mots), sans parler de rien d'autre."
