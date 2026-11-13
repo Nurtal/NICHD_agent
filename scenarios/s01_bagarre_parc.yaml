@@ -3,8 +3,9 @@
 # Personnages et faits entièrement fictifs.
 
 id: s01_bagarre_parc
-version: "0.1.0"
+version: "0.2.0"
 title: "Léo, 5 ans — témoin d'une bagarre au parc"
+status: draft  # en attente de validation par un formateur NICHD
 intake_context: >
   Léo, 5 ans, est entendu comme témoin d'un incident survenu dans un parc
   de son quartier. Sa grand-mère, présente ce jour-là, a signalé les faits.
@@ -24,7 +25,7 @@ target_event:
           category: when
           centrality: peripheral
           value: "c'était un mercredi, il y avait pas école"
-          anchors: [mercredi, école]
+          anchors: [mercredi]
         - id: b_mamie
           category: who
           centrality: central
@@ -82,7 +83,7 @@ target_event:
           category: frequency
           centrality: peripheral
           value: "une autre fois déjà ils s'étaient disputés devant chez nous"
-          anchors: [autre fois, déjà]
+          anchors: [autre fois, disputés]
 
     - id: after
       units:
@@ -105,7 +106,7 @@ target_event:
           category: when
           centrality: peripheral
           value: "après on est rentrés à la maison pour le goûter"
-          anchors: [goûter, maison]
+          anchors: [goûter]
 
 # Événement neutre récent, pour la pratique narrative.
 neutral_event:

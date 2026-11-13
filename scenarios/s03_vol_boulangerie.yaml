@@ -1,0 +1,133 @@
+# Scénario n° 3 — enfant de 11 ans, coopératif, peu suggestible, témoin d'un vol.
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s03_vol_boulangerie
+version: "0.1.0"
+title: "Sami, 11 ans — témoin d'un vol à la boulangerie"
+status: draft
+intake_context: >
+  Sami, 11 ans, est entendu comme témoin d'un vol survenu dans une
+  boulangerie de son quartier. La victime a porté plainte.
+
+child_profile:
+  name: Sami
+  age: 11
+  reluctance: 0.1
+  verbal_skills: 0.8
+  suggestibility: 0.2
+
+target_event:
+  segments:
+    - id: before
+      units:
+        - id: b_mardi
+          category: when
+          centrality: peripheral
+          value: "c'était mardi après l'école, vers cinq heures"
+          anchors: [mardi, cinq heures]
+        - id: b_boulangerie
+          category: where
+          centrality: central
+          value: "c'était à la boulangerie de la place"
+          anchors: [boulangerie]
+        - id: b_yanis
+          category: who
+          centrality: peripheral
+          value: "j'étais avec mon grand frère Yanis"
+          anchors: [Yanis, grand frère]
+        - id: b_file
+          category: what
+          centrality: peripheral
+          value: "on faisait la queue pour acheter du pain"
+          anchors: [queue, pain, file]
+
+    - id: during
+      units:
+        - id: d_dame
+          category: who
+          centrality: central
+          value: "il y avait une dame avec un manteau vert et une capuche"
+          anchors: [dame, manteau vert, capuche]
+        - id: d_monsieur
+          category: who
+          centrality: central
+          value: "devant nous il y avait un vieux monsieur avec une canne"
+          anchors: [vieux monsieur, canne]
+        - id: d_vol
+          category: what
+          centrality: central
+          value: "la dame a pris le portefeuille dans la poche du monsieur"
+          anchors: [portefeuille, volé, piqué]
+        - id: d_poche
+          category: where
+          centrality: peripheral
+          value: "le portefeuille dépassait de la poche de sa veste"
+          anchors: [poche, veste, dépassait]
+        - id: d_sac
+          category: what
+          centrality: peripheral
+          value: "elle l'a mis tout de suite dans son sac"
+          anchors: [sac]
+        - id: d_boulangere
+          category: who
+          centrality: peripheral
+          value: "la boulangère n'a rien vu"
+          anchors: [boulangère]
+
+    - id: after
+      units:
+        - id: a_velo
+          category: what
+          centrality: central
+          value: "la dame est sortie vite et elle est partie à vélo"
+          anchors: [vélo]
+        - id: a_jaune
+          category: what
+          centrality: peripheral
+          value: "son vélo était jaune"
+          anchors: [jaune]
+        - id: a_previent
+          category: what
+          centrality: central
+          value: "j'ai dit au monsieur qu'on lui avait pris son portefeuille"
+          anchors: [dit au monsieur, prévenu]
+        - id: a_police
+          category: what
+          centrality: central
+          value: "le monsieur a appelé la police"
+          anchors: [police]
+
+neutral_event:
+  segments:
+    - id: before
+      units:
+        - id: n_match
+          category: what
+          centrality: central
+          value: "samedi j'ai joué un match de foot avec mon club"
+          anchors: [match, foot, club]
+    - id: during
+      units:
+        - id: n_but
+          category: what
+          centrality: central
+          value: "j'ai marqué un but de la tête"
+          anchors: [but, tête]
+        - id: n_pluie
+          category: what
+          centrality: peripheral
+          value: "il pleuvait et le terrain était plein de boue"
+          anchors: [pleuvait, boue, pluie]
+    - id: after
+      units:
+        - id: n_score
+          category: what
+          centrality: central
+          value: "on a gagné trois à un"
+          anchors: [gagné, trois à un]
+        - id: n_pizza
+          category: what
+          centrality: peripheral
+          value: "après on a mangé une pizza avec l'équipe"
+          anchors: [pizza, équipe]

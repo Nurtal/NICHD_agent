@@ -1,0 +1,140 @@
+# Scénario n° 2 — enfant de 8 ans, réticente, victime de violences physiques
+# par un adulte de son entourage. Révélations volontairement non explicites.
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s02_violences_maison
+version: "0.1.0"
+title: "Emma, 8 ans — violences physiques à la maison"
+status: draft
+intake_context: >
+  Emma, 8 ans, est entendue après un signalement de son enseignante, qui a
+  remarqué une marque sur son bras. Emma n'a encore rien raconté à personne
+  de façon précise.
+
+child_profile:
+  name: Emma
+  age: 8
+  reluctance: 0.65
+  verbal_skills: 0.6
+  suggestibility: 0.4
+
+target_event:
+  segments:
+    - id: before
+      units:
+        - id: b_dimanche
+          category: when
+          centrality: peripheral
+          value: "c'était dimanche soir"
+          anchors: [dimanche]
+        - id: b_cuisine
+          category: where
+          centrality: central
+          value: "c'était à la maison, dans la cuisine"
+          anchors: [cuisine]
+        - id: b_maman_travail
+          category: who
+          centrality: peripheral
+          value: "maman était partie travailler"
+          anchors: [travailler]
+        - id: b_jus
+          category: what
+          centrality: central
+          value: "j'avais renversé mon verre de jus d'orange"
+          anchors: [renversé, jus]
+
+    - id: during
+      units:
+        - id: d_karim
+          category: who
+          centrality: central
+          value: "Karim, le copain de maman, était là"
+          anchors: [Karim, copain de maman]
+        - id: d_crie
+          category: what
+          centrality: central
+          value: "Karim a crié très fort sur moi"
+          anchors: [crié, crier, cris, hurlé]
+        - id: d_bras
+          category: what
+          centrality: central
+          value: "il m'a attrapé le bras très fort"
+          anchors: [attrapé, bras, tiré]
+        - id: d_tape
+          category: what
+          centrality: central
+          value: "il m'a tapé dans le dos avec sa main"
+          anchors: [tapé, frappé, dos]
+        - id: d_tele
+          category: what
+          centrality: peripheral
+          value: "la télé était allumée"
+          anchors: [télé, télévision]
+        - id: d_nolan
+          category: who
+          centrality: peripheral
+          value: "mon petit frère Nolan pleurait"
+          anchors: [Nolan, petit frère]
+        - id: d_frequence
+          category: frequency
+          centrality: central
+          value: "il l'a déjà fait d'autres fois quand maman n'est pas là"
+          anchors: [autres fois, souvent]
+
+    - id: after
+      units:
+        - id: a_chambre
+          category: what
+          centrality: central
+          value: "je suis allée dans ma chambre"
+          anchors: [chambre]
+        - id: a_bleu
+          category: what
+          centrality: central
+          value: "j'avais un bleu sur le bras"
+          anchors: [bleu, marque]
+        - id: a_secret
+          category: what
+          centrality: peripheral
+          value: "Karim m'a dit de ne rien dire à maman"
+          anchors: [rien dire, secret]
+        - id: a_maitresse
+          category: who
+          centrality: peripheral
+          value: "le lendemain la maîtresse a vu mon bras"
+          anchors: [maîtresse, lendemain]
+
+neutral_event:
+  segments:
+    - id: before
+      units:
+        - id: n_piscine
+          category: where
+          centrality: central
+          value: "on est allés à la piscine avec la classe"
+          anchors: [piscine]
+    - id: during
+      units:
+        - id: n_toboggan
+          category: what
+          centrality: central
+          value: "j'ai fait le grand toboggan"
+          anchors: [toboggan]
+        - id: n_lea
+          category: who
+          centrality: central
+          value: "j'étais avec ma copine Léa"
+          anchors: [Léa, copine]
+        - id: n_bonnet
+          category: what
+          centrality: peripheral
+          value: "j'avais un bonnet de bain bleu"
+          anchors: [bonnet]
+    - id: after
+      units:
+        - id: n_gouter
+          category: what
+          centrality: central
+          value: "après on a mangé des gâteaux dans le car"
+          anchors: [gâteaux]

@@ -123,7 +123,7 @@ def test_session_log_is_written_on_end(tmp_path):
     assert len(files) == 1
     data = json.loads(files[0].read_text())
     assert data["session_id"] == log.session_id
-    assert data["scenario_id"] == "s01_bagarre_parc" and data["scenario_version"] == "0.1.0"
+    assert data["scenario_id"] == "s01_bagarre_parc" and data["scenario_version"] == "0.2.0"
     assert data["seed"] == 42 and data["ended_at"]
     assert data["parameters"]["units_per_invitation"] == 2
     t1 = data["turns"][0]

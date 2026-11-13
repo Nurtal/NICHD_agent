@@ -107,6 +107,12 @@ class Event(_Strict):
                 yield seg.id, unit
 
 
+class ValidationStatus(StrEnum):
+    DRAFT = "draft"
+    """En attente de validation par un formateur NICHD."""
+    VALIDATED = "validated"
+
+
 class EventKind(StrEnum):
     TARGET = "target"
     NEUTRAL = "neutral"
@@ -116,6 +122,7 @@ class Scenario(_Strict):
     id: str = Field(min_length=1)
     version: str = Field(min_length=1)
     title: str = Field(min_length=1)
+    status: ValidationStatus = ValidationStatus.DRAFT
     intake_context: str = Field(min_length=1, description="Contexte de saisine montré à l'apprenant (sans les faits).")
     child_profile: ChildProfile
     target_event: Event

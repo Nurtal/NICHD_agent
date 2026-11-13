@@ -26,6 +26,15 @@ class FilterVerdict:
     missing_units: list[str] = field(default_factory=list)
     """Allowed units the response failed to express (would distort the metrics)."""
     empty: bool = False
+    too_long: bool = False
+    """A content-free act (don't know, deny, reluctant…) that runs on: likely invented content."""
+
+
+CONTENT_FREE_ACTS = {
+    SpeechAct.DONT_KNOW, SpeechAct.DENY, SpeechAct.RELUCTANT,
+    SpeechAct.ACKNOWLEDGE, SpeechAct.CONFUSION, SpeechAct.SILENCE,
+}
+MAX_CONTENT_FREE_WORDS = 10
 
 
 class OutputFilter:
@@ -61,9 +70,11 @@ class OutputFilter:
                 if anchors and not any(_mentions(norm, a) for a in anchors):
                     missing.append(au.id)
         empty = not norm and decision.speech_act != SpeechAct.SILENCE
+        too_long = decision.speech_act in CONTENT_FREE_ACTS and len(norm.split()) > MAX_CONTENT_FREE_WORDS
         return FilterVerdict(
-            ok=not forbidden and not leaked and not missing and not empty,
+            ok=not forbidden and not leaked and not missing and not empty and not too_long,
             empty=empty,
+            too_long=too_long,
             forbidden_terms=forbidden,
             leaked_units=leaked,
             missing_units=missing,
