@@ -8,6 +8,7 @@ from pathlib import Path
 
 from nichd_sim.classifiers.llm import LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
+from nichd_sim.feedback import LLMRephraser, render_text
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
@@ -46,6 +47,7 @@ def play(args: argparse.Namespace) -> int:
         build_realizer(args),
         seed=args.seed,
         log_dir=args.log_dir,
+        rephraser=None if args.no_rephrase else LLMRephraser(OllamaClient(args.model, args.ollama_url)),
     )
     child = scenario.child_profile.name
     print(f"=== {scenario.title} ===\n{scenario.intake_context.strip()}\n")
@@ -104,11 +106,7 @@ def play(args: argparse.Namespace) -> int:
         for notice in result.notices:
             print(f"  ⓘ {notice}")
     log = session.end()
-    if log.phase_violations:
-        print("\nÉcarts au protocole :")
-        for v in log.phase_violations:
-            where = f"tour {v.turn}" if v.turn else "fin"
-            print(f"  - {VIOLATION_LABELS[v.kind]} ({v.phase}, {where}){' — ' + v.detail if v.detail else ''}")
+    print(render_text(log.feedback))
     if args.log_dir:
         print(f"Journal : {Path(args.log_dir) / f'session_{session.log.session_id}.json'}")
     return 0
@@ -156,6 +154,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ollama-url", default=DEFAULT_URL)
     p.add_argument("--log-dir", default="sessions")
     p.add_argument("--trainer", action="store_true", help="mode formateur : affiche classification et décision")
+    p.add_argument("--no-rephrase", action="store_true", help="pas de reformulations LLM dans le retour (hors ligne)")
     p.set_defaults(func=play)
 
     r = sub.add_parser("replay", help="rejouer une session depuis son journal, sans LLM")

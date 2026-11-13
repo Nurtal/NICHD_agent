@@ -10,6 +10,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from nichd_sim.classification import Classification, ClassificationContext, Classifier
+from nichd_sim.feedback import FeedbackReport, Rephraser, build_feedback
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
@@ -36,7 +37,10 @@ class TurnRecord(BaseModel):
     index: int
     utterance: str
     classification: Classification
+    asked_in: Phase
+    """Phase when the interviewer spoke."""
     phase: Phase
+    """Phase after the child's answer (a disclosure opens the substantive phase)."""
     state_before: EngineState
     decision: Decision
     state_after: EngineState
@@ -65,6 +69,7 @@ class SessionLog(BaseModel):
     components: dict[str, str]
     turns: list[TurnRecord] = []
     phase_violations: list[PhaseViolation] = []
+    feedback: FeedbackReport | None = None
 
 
 class TurnResult(BaseModel):
@@ -96,6 +101,7 @@ class Session:
         seed: int = 0,
         params: Parameters | None = None,
         output_filter: OutputFilter | None = None,
+        rephraser: Rephraser | None = None,
         log_dir: str | Path | None = None,
     ):
         self.scenario = scenario
@@ -104,6 +110,7 @@ class Session:
         self.seed = seed
         self.params = params or Parameters.load(scenario.child_profile.age_band, scenario.parameter_overrides)
         self.output_filter = output_filter or OutputFilter(scenario)
+        self.rephraser = rephraser
         self.log_dir = Path(log_dir) if log_dir else None
         self.engine = BehaviorEngine(scenario, self.params, seed)
         self.phases = PhaseTracker(scenario)
@@ -141,7 +148,7 @@ class Session:
         heard = classification.clean_text or utterance
         before = self.state
         n_violations = len(self.phases.violations)
-        self.phases.observe(classification)
+        asked_in = self.phases.observe(classification)
         decision = self.engine.decide(classification)
         phase = self.phases.after_decision(
             revealed_target=any(
@@ -165,6 +172,7 @@ class Session:
                 index=len(self.log.turns) + 1,
                 utterance=utterance,
                 classification=classification,
+                asked_in=asked_in,
                 phase=phase,
                 state_before=before,
                 decision=decision,
@@ -228,6 +236,7 @@ class Session:
             self._ended = True
             self.log.phase_violations = list(self.phases.finish())
             self.log.ended_at = _now()
+            self.log.feedback = build_feedback(self.log, self.scenario, self.rephraser)
             if self.log_dir is not None:
                 self.write_log(self.log_dir)
         return self.log
