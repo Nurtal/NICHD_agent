@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
-from nichd_sim.realization import TemplateRealizer
+from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
+from nichd_sim.realization import LLMRealizer, TemplateRealizer
 from nichd_sim.scenario import ScenarioError, load_scenario
 from nichd_sim.session import Session
 
@@ -20,10 +21,12 @@ def build_classifier(name: str):
     raise SystemExit(f"classifieur inconnu : {name}")
 
 
-def build_realizer(name: str):
-    if name == "template":
+def build_realizer(args: argparse.Namespace):
+    if args.realizer == "template":
         return TemplateRealizer()
-    raise SystemExit(f"realizer inconnu : {name}")
+    if args.realizer == "llm":
+        return LLMRealizer(OllamaClient(args.model, args.ollama_url), seed=args.seed)
+    raise SystemExit(f"realizer inconnu : {args.realizer}")
 
 
 def play(args: argparse.Namespace) -> int:
@@ -35,7 +38,7 @@ def play(args: argparse.Namespace) -> int:
     session = Session(
         scenario,
         build_classifier(args.classifier),
-        build_realizer(args.realizer),
+        build_realizer(args),
         seed=args.seed,
         log_dir=args.log_dir,
     )
@@ -69,9 +72,18 @@ def play(args: argparse.Namespace) -> int:
         except ManualClassificationError as e:
             print(e)
             continue
+        except LLMError as e:
+            print(f"[erreur] {e}", file=sys.stderr)
+            continue
         if args.trainer:
             c, d = result.classification, result.decision
             print(f"  [formateur] {c.type}{' → ' + c.target if c.target else ''} | {d.speech_act} | {d.reason}")
+            turn = session.log.turns[-1]
+            for i, a in enumerate(turn.attempts):
+                if not a.ok:
+                    print(f"  [filtre] essai {i + 1} rejeté : {a.forbidden_terms + a.leaked_units + ['manque:' + m for m in a.missing_units]} — {a.text!r}")
+            if turn.fallback_used:
+                print("  [filtre] réponse de repli utilisée")
         print(f"{child} > {result.response}")
     session.end()
     if args.log_dir:
@@ -86,7 +98,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("scenario", help="fichier de scénario YAML")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--classifier", default="manual", choices=["manual"])
-    p.add_argument("--realizer", default="template", choices=["template"])
+    p.add_argument("--realizer", default="template", choices=["template", "llm"])
+    p.add_argument("--model", default=DEFAULT_MODEL, help="modèle Ollama")
+    p.add_argument("--ollama-url", default=DEFAULT_URL)
     p.add_argument("--log-dir", default="sessions")
     p.add_argument("--trainer", action="store_true", help="mode formateur : affiche classification et décision")
     args = parser.parse_args(argv)
