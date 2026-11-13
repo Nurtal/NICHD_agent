@@ -20,6 +20,9 @@ uv run nichd-sim ui
 NICHD_OFFLINE=1 uv run nichd-sim ui
 ```
 
+L'interface n'écoute que sur `127.0.0.1`. Depuis un autre poste, passez par un tunnel SSH
+(`ssh -L 8501:127.0.0.1:8501 serveur`) plutôt que d'exposer le port (`--host` à vos risques).
+
 ### En ligne de commande
 
 ```bash

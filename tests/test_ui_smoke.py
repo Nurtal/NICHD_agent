@@ -65,3 +65,17 @@ def test_switching_scenario_resets_the_interview(app):
     assert not at.exception
     assert len(at.chat_message) == 0
     assert any("Choisissez un scénario" in m.value for m in at.markdown)
+
+
+def test_ui_command_listens_on_localhost_by_default(monkeypatch):
+    import subprocess
+
+    from nichd_sim import cli
+
+    calls = []
+    monkeypatch.setattr(subprocess, "call", lambda cmd: calls.append(cmd) or 0)
+    cli.main(["ui", "--headless"])
+    cmd = calls[0]
+    assert cmd[cmd.index("--server.address") + 1] == "127.0.0.1"
+    cli.main(["ui", "--host", "0.0.0.0"])
+    assert calls[1][calls[1].index("--server.address") + 1] == "0.0.0.0"

@@ -159,7 +159,12 @@ def ui_cmd(args: argparse.Namespace) -> int:
     import subprocess
 
     app = Path(__file__).resolve().parent / "ui" / "app.py"
-    cmd = [sys.executable, "-m", "streamlit", "run", str(app), "--server.port", str(args.port)]
+    cmd = [
+        sys.executable, "-m", "streamlit", "run", str(app),
+        "--server.port", str(args.port),
+        # Local only by default: the simulator drives a local LLM and must not be exposed.
+        "--server.address", args.host,
+    ]
     if args.headless:
         cmd += ["--server.headless", "true"]
     return subprocess.call(cmd)
@@ -219,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
 
     u = sub.add_parser("ui", help="lancer l'interface web (Streamlit)")
     u.add_argument("--port", type=int, default=8501)
+    u.add_argument("--host", default="127.0.0.1", help="adresse d'écoute (défaut : locale uniquement)")
     u.add_argument("--headless", action="store_true")
     u.set_defaults(func=ui_cmd)
 
