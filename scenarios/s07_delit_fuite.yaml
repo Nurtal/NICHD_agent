@@ -1,0 +1,158 @@
+# Scénario n° 7 — adolescent de 12 ans, très coopératif et verbal, peu suggestible, témoin d'un délit de fuite.
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s07_delit_fuite
+version: 0.1.0
+title: Lucas, 12 ans — témoin d'un délit de fuite
+status: draft
+intake_context: 'Lucas, 12 ans, est entendu comme témoin d''un accident de la circulation : un cycliste
+  a été renversé et le conducteur ne s''est pas arrêté.'
+child_profile:
+  name: Lucas
+  age: 12
+  reluctance: 0.05
+  verbal_skills: 0.9
+  suggestibility: 0.15
+target_event:
+  segments:
+  - id: before
+    units:
+    - id: b_samedi
+      category: when
+      centrality: central
+      value: samedi vers dix heures
+      anchors:
+      - samedi
+      - dix heures
+    - id: b_carrefour
+      category: where
+      centrality: central
+      value: au carrefour devant la pharmacie
+      anchors:
+      - carrefour
+      - pharmacie
+    - id: b_trottinette
+      category: what
+      centrality: peripheral
+      value: j'étais sur ma trottinette, j'allais au basket
+      anchors:
+      - trottinette
+      - basket
+  - id: during
+    units:
+    - id: d_voiture
+      category: who
+      centrality: central
+      value: une petite voiture grise
+      anchors:
+      - voiture grise
+    - id: d_feu
+      category: what
+      centrality: central
+      value: elle a grillé le feu rouge
+      anchors:
+      - feu rouge
+      - grillé
+    - id: d_cycliste
+      category: who
+      centrality: central
+      value: un cycliste avec un casque orange traversait
+      anchors:
+      - cycliste
+      - casque orange
+    - id: d_choc
+      category: what
+      centrality: central
+      value: la voiture a percuté la roue arrière du vélo et il est tombé
+      anchors:
+      - percuté
+      - roue arrière
+    - id: d_plaque
+      category: what
+      centrality: peripheral
+      value: la plaque commençait par FG
+      anchors:
+      - plaque
+      - FG
+    - id: d_conductrice
+      category: who
+      centrality: peripheral
+      value: c'était une femme avec des lunettes de soleil qui conduisait
+      anchors:
+      - lunettes de soleil
+      - conduisait
+    - id: d_musique
+      category: what
+      centrality: peripheral
+      value: il y avait de la musique très forte dans la voiture
+      anchors:
+      - musique
+  - id: after
+    units:
+    - id: a_fuite
+      category: what
+      centrality: central
+      value: la voiture est repartie très vite vers l'autoroute
+      anchors:
+      - repartie
+      - autoroute
+    - id: a_aide
+      category: what
+      centrality: central
+      value: un monsieur et moi, on l'a aidé à se relever
+      anchors:
+      - aidé
+      - relever
+    - id: a_pompiers
+      category: what
+      centrality: central
+      value: le pharmacien a appelé les pompiers
+      anchors:
+      - pompiers
+      - pharmacien
+    - id: a_genou
+      category: what
+      centrality: peripheral
+      value: il avait mal au genou
+      anchors:
+      - genou
+neutral_event:
+  segments:
+  - id: before
+    units:
+    - id: n_cinema
+      category: where
+      centrality: central
+      value: mercredi je suis allé au cinéma
+      anchors:
+      - cinéma
+    - id: n_malik
+      category: who
+      centrality: central
+      value: avec mon cousin Malik
+      anchors:
+      - Malik
+      - cousin
+  - id: during
+    units:
+    - id: n_film
+      category: what
+      centrality: central
+      value: on a vu un film de science-fiction
+      anchors:
+      - science-fiction
+    - id: n_popcorn
+      category: what
+      centrality: peripheral
+      value: on a partagé un grand pot de pop-corn
+      anchors:
+      - pop-corn
+  - id: after
+    units:
+    - id: n_bus
+      category: what
+      centrality: central
+      value: on est rentrés en bus
+      anchors:
+      - bus

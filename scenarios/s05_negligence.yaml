@@ -1,0 +1,153 @@
+# Scénario n° 5 — enfant de 7 ans, négligence (laissé seul le soir, faits répétés).
+# Statut : brouillon, en attente de validation par un formateur NICHD.
+# Personnages et faits entièrement fictifs.
+
+id: s05_negligence
+version: 0.1.0
+title: Noah, 7 ans — laissé seul le soir avec sa petite sœur
+status: draft
+intake_context: Noah, 7 ans, est entendu après un signalement d'un voisin, qui a entendu un jeune enfant
+  pleurer longtemps dans l'appartement d'à côté.
+child_profile:
+  name: Noah
+  age: 7
+  reluctance: 0.4
+  verbal_skills: 0.5
+  suggestibility: 0.5
+target_event:
+  segments:
+  - id: before
+    units:
+    - id: b_appartement
+      category: where
+      centrality: central
+      value: chez nous, dans l'appartement du cinquième étage
+      anchors:
+      - appartement
+      - cinquième
+    - id: b_vendredi
+      category: when
+      centrality: peripheral
+      value: la dernière fois c'était vendredi
+      anchors:
+      - vendredi
+    - id: b_maman_sen_va
+      category: who
+      centrality: central
+      value: maman s'en va le soir après le dîner
+      anchors:
+      - s'en va
+    - id: b_seul
+      category: what
+      centrality: central
+      value: je reste tout seul à la maison
+      anchors:
+      - tout seul
+  - id: during
+    units:
+    - id: d_jade
+      category: who
+      centrality: central
+      value: ma petite sœur Jade est là aussi, elle a deux ans
+      anchors:
+      - Jade
+      - petite sœur
+    - id: d_faim
+      category: what
+      centrality: central
+      value: on avait faim et il y avait rien dans le frigo
+      anchors:
+      - faim
+      - frigo
+    - id: d_cereales
+      category: what
+      centrality: peripheral
+      value: j'ai donné des céréales à ma petite sœur
+      anchors:
+      - céréales
+    - id: d_noir
+      category: what
+      centrality: central
+      value: la lumière s'est éteinte et on avait peur du noir
+      anchors:
+      - noir
+      - lumière
+    - id: d_pleure
+      category: what
+      centrality: central
+      value: Jade a pleuré très fort
+      anchors:
+      - pleuré
+    - id: d_tablette
+      category: what
+      centrality: peripheral
+      value: j'ai regardé des dessins animés sur la tablette
+      anchors:
+      - tablette
+      - dessins animés
+    - id: d_frequence
+      category: frequency
+      centrality: central
+      value: ça arrive presque tous les soirs
+      anchors:
+      - tous les soirs
+  - id: after
+    units:
+    - id: a_retour
+      category: what
+      centrality: central
+      value: maman est rentrée au milieu de la nuit
+      anchors:
+      - rentrée
+      - milieu de la nuit
+    - id: a_diallo
+      category: who
+      centrality: peripheral
+      value: le voisin Monsieur Diallo a frappé pour voir si ça allait
+      anchors:
+      - Diallo
+    - id: a_fatigue
+      category: what
+      centrality: peripheral
+      value: le lendemain j'étais trop fatigué en classe
+      anchors:
+      - fatigué
+neutral_event:
+  segments:
+  - id: before
+    units:
+    - id: n_zoo
+      category: where
+      centrality: central
+      value: dimanche on est allés au zoo
+      anchors:
+      - zoo
+    - id: n_papi
+      category: who
+      centrality: central
+      value: j'étais avec mon papi
+      anchors:
+      - papi
+  - id: during
+    units:
+    - id: n_girafe
+      category: what
+      centrality: central
+      value: j'ai vu une girafe qui mangeait des feuilles
+      anchors:
+      - girafe
+    - id: n_photo
+      category: what
+      centrality: peripheral
+      value: papi a pris des photos avec son téléphone
+      anchors:
+      - photos
+  - id: after
+    units:
+    - id: n_glace
+      category: what
+      centrality: central
+      value: à la fin j'ai eu une glace à la fraise
+      anchors:
+      - glace
+      - fraise
