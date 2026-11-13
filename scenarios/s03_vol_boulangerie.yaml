@@ -3,7 +3,7 @@
 # Personnages et faits entièrement fictifs.
 
 id: s03_vol_boulangerie
-version: "0.1.0"
+version: "0.1.1"
 title: "Sami, 11 ans — témoin d'un vol à la boulangerie"
 status: draft
 intake_context: >
@@ -48,7 +48,7 @@ target_event:
           category: who
           centrality: central
           value: "il y avait une dame avec un manteau vert et une capuche"
-          anchors: [dame, manteau vert, capuche]
+          anchors: [manteau vert, capuche]
         - id: d_monsieur
           category: who
           centrality: central

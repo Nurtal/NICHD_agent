@@ -4,7 +4,7 @@
 # Personnages et faits entièrement fictifs.
 
 id: s02_violences_maison
-version: "0.1.0"
+version: "0.1.1"
 title: "Emma, 8 ans — violences physiques à la maison"
 status: draft
 intake_context: >
@@ -125,7 +125,7 @@ neutral_event:
           category: who
           centrality: central
           value: "j'étais avec ma copine Léa"
-          anchors: [Léa, copine]
+          anchors: [Léa]
         - id: n_bonnet
           category: what
           centrality: peripheral

@@ -9,35 +9,29 @@ from nichd_sim.classification import OUT_OF_SCENARIO
 from nichd_sim.engine import SpeechAct
 from nichd_sim.phases import Phase
 from nichd_sim.realization import TemplateRealizer
-from nichd_sim.scenario import Centrality, ValidationStatus, load_scenario
-from nichd_sim.text import normalize
+from nichd_sim.scenario import ValidationStatus, load_scenario
+from nichd_sim.scenario_check import Level, check_scenario
 
 SCENARIOS = sorted((ROOT / "scenarios").glob("*.yaml"))
 S02 = ROOT / "scenarios" / "s02_violences_maison.yaml"
 S03 = ROOT / "scenarios" / "s03_vol_boulangerie.yaml"
-FORBIDDEN_ANCHORS = {"deja", "maison", "ecole", "pris", "appele", "car", "soir", "partie", "sortie"}
 
 
 def H(type, target=None, phase=None, **kw):
     return C(type, target, phase_hints=[phase] if phase else [], **kw)
 
 
-def test_there_are_three_scenarios():
-    assert [p.name[:3] for p in SCENARIOS] == ["s01", "s02", "s03"]
+def test_there_are_at_least_three_scenarios_with_unique_ids():
+    ids = [load_scenario(p).id for p in SCENARIOS]
+    assert len(ids) >= 3 and len(set(ids)) == len(ids)
 
 
 @pytest.mark.parametrize("path", SCENARIOS, ids=lambda p: p.stem)
-def test_scenario_is_complete_and_awaits_trainer_validation(path: Path):
+def test_scenario_passes_authoring_checks_and_awaits_trainer_validation(path: Path):
     sc = load_scenario(path)
     assert sc.status == ValidationStatus.DRAFT
-    assert sc.neutral_event is not None
-    target = [u for _, u in sc.target_units()]
-    assert sum(u.centrality == Centrality.CENTRAL for u in target) >= 6
-    assert {u.category for u in target} >= {"who", "what", "where", "when"}
-    # every unit is expressed by at least one of its anchors (needed by the omission check)
-    for _, u in sc.all_units():
-        assert any(normalize(a) in normalize(u.value) for a in u.anchors), u.id
-        assert not {normalize(a) for a in u.anchors} & FORBIDDEN_ANCHORS, u.id
+    findings = [f for f in check_scenario(sc) if f.level != Level.INFO]
+    assert findings == [], "\n".join(map(str, findings))
 
 
 @pytest.mark.parametrize("path", SCENARIOS, ids=lambda p: p.stem)
