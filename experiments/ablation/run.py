@@ -19,7 +19,7 @@ from protocol import baseline_messages, script, strip_tag  # noqa: E402
 
 from nichd_sim.classifiers.manual import ManualClassifier  # noqa: E402
 from nichd_sim.evaluation import load_scenarios  # noqa: E402
-from nichd_sim.llm import OllamaClient  # noqa: E402
+from nichd_sim.llm import LLMError, OllamaClient  # noqa: E402
 from nichd_sim.realization import LLMRealizer  # noqa: E402
 from nichd_sim.session import Session  # noqa: E402
 
@@ -54,6 +54,17 @@ def run_llm_only(scenario, seed, client, strong=False):
     return turns
 
 
+def unload(model: str, base_url: str = "http://localhost:11434") -> None:
+    """Free the GPU before the next model, so that it fits entirely in VRAM."""
+    import urllib.request
+
+    req = urllib.request.Request(f"{base_url}/api/generate", data=json.dumps({"model": model, "keep_alive": 0}).encode(),
+                                 headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=60).read()
+
+
+STOP = ["Adulte :", "Adulte:", "Toi :", "Toi:", "Enfant :", "Interviewer :", "\n---", "\n("]
+
 CONDITIONS = {
     "hybrid": run_hybrid,
     "llm_only": run_llm_only,
@@ -78,18 +89,25 @@ def main():
             done.add((d["model"], d["condition"], d["scenario"], d["seed"]))
     scenarios = load_scenarios(ROOT / "scenarios")
     for model in args.models:  # one model at a time: Ollama keeps it loaded
-        client = OllamaClient(model)
+        # phi4 and mistral sometimes write the rest of the dialogue themselves ("Adulte : … Toi : …"):
+        # stop there, as any deployed chat would, and cap the length.
+        client = OllamaClient(model, timeout=300, num_predict=400, stop=STOP)
         for seed in args.seeds:
             for sid, sc in scenarios.items():
                 for cond in args.conditions:
                     if (model, cond, sid, seed) in done:
                         continue
                     t0 = time.perf_counter()
-                    turns = CONDITIONS[cond](sc, seed, client)
+                    try:
+                        turns = CONDITIONS[cond](sc, seed, client)
+                    except LLMError as e:  # skip; a later run resumes it
+                        print(f"{model:16} {cond:16} {sid:26} seed={seed} ÉCHEC {e}", flush=True)
+                        continue
                     rec = {"condition": cond, "scenario": sid, "seed": seed, "model": model, "turns": turns}
                     with path.open("a", encoding="utf-8") as f:
                         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     print(f"{model:16} {cond:16} {sid:26} seed={seed} {time.perf_counter() - t0:6.1f}s", flush=True)
+        unload(model)
 
 
 if __name__ == "__main__":

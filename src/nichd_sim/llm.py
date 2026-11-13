@@ -38,8 +38,11 @@ class ChatClient(Protocol):
 
 
 class OllamaClient:
-    def __init__(self, model: str = DEFAULT_MODEL, base_url: str = DEFAULT_URL, keep_alive: str = "30m", timeout: float = 120):
+    def __init__(self, model: str = DEFAULT_MODEL, base_url: str = DEFAULT_URL, keep_alive: str = "30m", timeout: float = 120,
+                 num_predict: int | None = None, stop: list[str] | None = None):
         self.model = model
+        self.num_predict = num_predict
+        self.stop = stop
         self.base_url = base_url.rstrip("/")
         self.keep_alive = keep_alive
         self.timeout = timeout
@@ -48,6 +51,10 @@ class OllamaClient:
         options: dict[str, Any] = {"temperature": temperature}
         if seed is not None:
             options["seed"] = seed
+        if self.num_predict is not None:
+            options["num_predict"] = self.num_predict
+        if self.stop:
+            options["stop"] = self.stop
         body: dict[str, Any] = {
             "model": self.model,
             "messages": messages,

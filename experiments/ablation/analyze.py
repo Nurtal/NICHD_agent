@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics as st
 import sys
 from collections import defaultdict
@@ -21,6 +22,8 @@ from nichd_sim.output_filter import load_lexicon  # noqa: E402
 from nichd_sim.text import contains, normalize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
+# The child speaks as the adult, addresses the user, or writes stage directions.
+ROLE_BREAK = re.compile(r"(Adulte|Interviewer|Enquêt\w*|Toi|Enfant)\s*:|^\s*---|^\s*\(|[\U0001F300-\U0001FAFF]", re.M)
 CONDS = ("hybrid", "llm_only", "llm_only_strong")
 LABEL = {"hybrid": "Hybride", "llm_only": "100 % LLM", "llm_only_strong": "100 % LLM renforcé"}
 
@@ -39,11 +42,13 @@ def score(rec, scenario, lexicon):
     m["first_disclosure_turn"] = first
     m["rule_turn_words"] = st.mean(words[i] for i in (3, 4))
     # directives: the targeted fact is given; other facts volunteered on top
+    # "extra" = facts the child had never said before this turn (re-mentioning known facts is fine)
     hits, extras = [], []
     for i, key in ((12, 0), (13, 1), (16, 2), (19, 0)):
         target = plan.directives[key][0]
+        before = set().union(*(said[j] for j in turns if j < i))
         hits.append(target in said[i])
-        extras.append(len(said[i] - {target}))
+        extras.append(len(said[i] - {target} - before))
     m["directive_hit"] = st.mean(hits)
     m["directive_extra_units"] = st.mean(extras)
     m["repeat_consistent"] = hits[0] == hits[3]
@@ -62,6 +67,7 @@ def score(rec, scenario, lexicon):
     m["invitation_units"] = st.mean(len(said[i]) for i in (9, 11, 20))
     norm_all = [normalize(t["child"]) for t in turns.values()]
     m["forbidden_hits"] = sum(any(contains(n, w) for w in lexicon) for n in norm_all)
+    m["role_break"] = sum(bool(ROLE_BREAK.search(t["child"])) for t in turns.values())
     m["empty"] = sum(not t["child"].strip() for t in turns.values())
     m["fallbacks"] = sum(t.get("fallback", False) for t in turns.values())
     m["latency_s"] = st.mean(t["latency_s"] for t in turns.values())
@@ -148,7 +154,7 @@ def main():
         ("Entretiens où un fait central sort avant la transition (0 %)", "premature_disclosure", pct, st.mean),
         ("Mots par réponse aux règles de base (très peu)", "rule_turn_words", lambda x: f"{x:.1f}", st.mean),
         ("Directive : fait ciblé donné", "directive_hit", pct, st.mean),
-        ("Directive : autres faits ajoutés (~0)", "directive_extra_units", lambda x: f"{x:.2f}", st.mean),
+        ("Directive : faits nouveaux ajoutés en plus du fait ciblé (~0)", "directive_extra_units", lambda x: f"{x:.2f}", st.mean),
         ("Hors scénario : « je sais pas »", "out_dont_know", pct, st.mean),
         ("Suggestion fausse acceptée", "suggestion_accepted", pct, st.mean),
         ("Écart moyen au taux d'acceptation visé par profil (0)", "calib_error", pct, None),
@@ -156,6 +162,7 @@ def main():
         ("ρ suggestibilité → acceptations (> 0)", "rho_suggestibility", lambda x: f"{x:+.2f}", None),
         ("ρ âge → mots par récit (> 0)", "rho_age", lambda x: f"{x:+.2f}", None),
         ("ρ âge → faits par récit (> 0)", "rho_age_units", lambda x: f"{x:+.2f}", None),
+        ("Réponses hors rôle par entretien (0)", "role_break", lambda x: f"{x:.2f}", st.mean),
         ("Latence moyenne par tour", "latency_s", lambda x: f"{x:.1f} s", st.mean),
     ]
     for label, key, fmt, f in CRITERIA:
@@ -169,7 +176,7 @@ def main():
                + ", ".join(f"{s.split('_')[0]} {pct(target[s])}" for s in sids) + ".\n")
 
     out += ["## Par modèle\n",
-            "| Modèle | Condition | Fait central précoce | Faits ajoutés / directive | Suggestions acceptées | "
+            "| Modèle | Condition | Fait central précoce | Faits nouveaux ajoutés / directive | Suggestions acceptées | "
             "Écart au visé | ρ réticence | ρ suggestibilité | ρ âge | Replis | Faux détail repris |",
             "|---|---|---|---|---|---|---|---|---|---|---|"]
     for m in models:
