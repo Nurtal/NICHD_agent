@@ -216,7 +216,8 @@ def test_summary_section_in_text_report():
     fb, _ = run_with_summary("x", {"retained_true": ["b_mamie"], "retained_contaminated": ["c1"], "not_said_by_child": ["un sac volé"]})
     text = render_text(fb)
     assert "Votre synthèse : 14 % des faits dits par l'enfant retenus (1/7)" in text
-    assert "faux détail(s) repris comme des faits : c1" in text
+    assert "faux détail(s) repris comme des faits : « il avait un couteau »" in text
+    assert fb.false_detail("c1") == "il avait un couteau"
     assert "jamais dit par l'enfant : « un sac volé »" in text
 
 
