@@ -83,8 +83,11 @@ D'après Lamb et al.
 | Contamination | `contamination` | Intégration durable d'un faux détail suggéré. |
 | Unité contaminée | `contaminated_unit` | Faux détail intégré, rattaché à son tour d'origine (`source_turn`). |
 | Confabulation | `confabulation` | Réponse inventée à une question hors scénario. |
+| Suggestion tombée juste | `lucky_suggestion` | Question suggestive ou fermée dont la proposition s'avère vraie : pas de contamination, mais faute de technique. |
+| Intégration | `integrated` | Un faux détail intégré peut réapparaître spontanément plus tard. |
+| Type effectif | `effective_type` | Type de question auquel le moteur a appliqué ses règles (l'élément le plus directif d'une question composée). |
 | Biais de récence | `recency_bias` | Tendance à choisir la dernière option proposée. |
-| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`. |
+| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `confabulate` (inventer une réponse), `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`. |
 | Décision | `decision` | Acte de langage et unités autorisées pour le tour. |
 | Unités autorisées | `allowed_units` | Seules unités transmises au LLM pour le tour. |
 | Paramètres | `parameters` | Probabilités et effets, chacun avec sa source. `estimated` si la valeur est extrapolée. |

@@ -29,6 +29,7 @@ FALLBACK_RESPONSES: dict[SpeechAct, str] = {
     SpeechAct.DONT_KNOW: "Je sais pas.",
     SpeechAct.ACQUIESCE: "Oui.",
     SpeechAct.DENY: "Non.",
+    SpeechAct.CONFABULATE: "Euh… je crois que oui.",
     SpeechAct.ACKNOWLEDGE: "D'accord.",
     SpeechAct.CONFUSION: "Hein ? Je comprends pas.",
     SpeechAct.SILENCE: "…",
@@ -65,10 +66,14 @@ REGISTERS: dict[AgeBand, str] = {
 }
 
 ACT_INSTRUCTIONS: dict[SpeechAct, str] = {
-    SpeechAct.ANSWER: "Réponds à l'adulte en disant TOUTES ces choses-là, avec tes mots, et RIEN d'autre :",
+    SpeechAct.ANSWER: "Réponds à l'adulte en racontant TOUTES ces choses ({n}), dans cet ordre, avec tes mots, et RIEN d'autre :",
     SpeechAct.ACQUIESCE: "Tu dis oui à ce que l'adulte propose, en reprenant simplement son idée, et RIEN d'autre :",
     SpeechAct.DONT_KNOW: "Tu dis que tu ne sais pas, que tu ne te souviens pas. N'ajoute aucun détail.",
     SpeechAct.DENY: "Tu dis non. N'ajoute aucun détail.",
+    SpeechAct.CONFABULATE: (
+        "Tu ne connais pas la réponse mais tu réponds quand même : invente une réponse très courte "
+        "et banale à la question (quelques mots), sans parler de rien d'autre."
+    ),
     SpeechAct.ACKNOWLEDGE: "Tu réponds brièvement (d'accord, oui, hmm), sans raconter quoi que ce soit.",
     SpeechAct.CONFUSION: "Tu ne comprends pas ce que dit l'adulte et tu le dis simplement. N'ajoute aucun détail.",
     SpeechAct.SILENCE: "Tu ne dis presque rien (« … », « hmm »).",
@@ -85,10 +90,12 @@ def build_system_prompt(decision: Decision, profile: ChildProfile) -> str:
     lines = [
         f"Tu es {profile.name}, {profile.age} ans. Un adulte te pose des questions sur quelque chose que tu as vécu.",
         REGISTERS[profile.age_band].format(age=profile.age),
-        ACT_INSTRUCTIONS[decision.speech_act],
+        ACT_INSTRUCTIONS[decision.speech_act].format(n=len(decision.allowed_units)),
     ]
     if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE):
-        lines += [f"- {u.value}" for u in decision.allowed_units]
+        lines += [f"{i}. {u.value}" for i, u in enumerate(decision.allowed_units, 1)]
+        if len(decision.allowed_units) > 1:
+            lines.append(f"Ta réponse doit contenir les {len(decision.allowed_units)} choses, aucune ne doit manquer.")
     lines.append(RULES)
     return "\n".join(lines)
 

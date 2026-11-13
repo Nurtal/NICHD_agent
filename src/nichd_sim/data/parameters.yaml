@@ -24,3 +24,86 @@ verbosity_multiplier_range:
   value: [0.5, 1.5]
   source: Choix de modélisation (aucune valeur publiée directement exploitable).
   estimated: true
+
+# --- Questions à choix, suggestion, contamination (#5) -----------------------
+# Les sources donnent des tendances (effet de l'âge, du format de question), pas
+# des probabilités directement utilisables : toutes les valeurs sont `estimated`.
+
+p_correct_option:
+  description: >
+    Question à choix dont une option correspond au fait vrai : probabilité de
+    choisir la bonne option.
+  values: {"4_6": 0.6, "7_9": 0.75, "10_12": 0.85}
+  source: >
+    Brown & Lamb (2015), Can children be useful witnesses? It depends how they are
+    questioned, Child Dev. Perspectives 9(4) — les questions fermées produisent plus
+    d'erreurs, surtout chez les plus jeunes.
+  estimated: true
+
+p_recency:
+  description: >
+    Question à choix sans bonne option (ou réponse erronée) : probabilité de
+    choisir la dernière option énoncée plutôt que de dire « je sais pas ».
+  values: {"4_6": 0.6, "7_9": 0.45, "10_12": 0.3}
+  source: >
+    Biais de réponse des jeunes enfants aux questions fermées (Fritzley & Lee, 2003,
+    Child Development 74(5)) ; l'effet de récence spécifique aux choix forcés reste
+    à documenter par une revue ciblée.
+  estimated: true
+
+p_yes_bias:
+  description: >
+    Question oui/non sur une proposition fausse ou absente du scénario :
+    probabilité de répondre « oui » (avant modulation par la suggestibilité).
+  values: {"4_6": 0.4, "7_9": 0.2, "10_12": 0.15}
+  source: >
+    Fritzley & Lee (2003), Do young children always say yes to yes-no questions?
+    A metadevelopmental study of the affirmation bias, Child Development 74(5).
+  estimated: true
+
+p_acquiesce:
+  description: >
+    Question suggestive dont la proposition est fausse : probabilité d'acquiescer
+    (avant modulation par la suggestibilité du profil).
+  values: {"4_6": 0.55, "7_9": 0.35, "10_12": 0.25}
+  source: >
+    Ceci & Bruck (1993), Suggestibility of the child witness: A historical review and
+    synthesis, Psychological Bulletin 113(3) — les enfants d'âge préscolaire sont
+    nettement plus suggestibles que les plus âgés.
+  estimated: true
+
+p_integration:
+  description: >
+    Après un acquiescement (ou un mauvais choix), probabilité que le faux détail
+    soit intégré durablement et puisse réapparaître spontanément.
+  values: {"4_6": 0.5, "7_9": 0.35, "10_12": 0.2}
+  source: >
+    Bruck & Melnyk (2004), Individual differences in children's suggestibility:
+    A review and synthesis, Applied Cognitive Psychology 18(8).
+  estimated: true
+
+p_contamination_recall:
+  description: >
+    À chaque invitation, probabilité qu'un faux détail intégré réapparaisse
+    spontanément dans le récit.
+  value: 0.5
+  source: Choix de modélisation (persistance des faux détails, Ceci & Bruck, 1993).
+  estimated: true
+
+p_confabulation:
+  description: >
+    Question directive hors scénario : probabilité d'inventer une réponse plutôt
+    que de dire « je sais pas » (avant modulation par la suggestibilité).
+  values: {"4_6": 0.35, "7_9": 0.2, "10_12": 0.1}
+  source: >
+    Waterman, Blades & Spencer (2001), Interviewing children and adults: The effect
+    of question format on the tendency to speculate, Applied Cognitive Psychology 15(5).
+  estimated: true
+
+suggestibility_multiplier_range:
+  description: >
+    Bornes [min, max] du multiplicateur appliqué aux probabilités d'acquiescement,
+    de oui, d'intégration et de confabulation selon la suggestibilité (0 → min, 1 → max).
+  value: [0.5, 1.5]
+  source: Choix de modélisation.
+  estimated: true

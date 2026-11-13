@@ -163,3 +163,10 @@ def test_inflected_form_of_a_forbidden_anchor_is_a_leak():
     r = ask(s, clf, "Et mamie ?", C("directive", "a_telephone"))
     assert s.log.turns[0].attempts[0].leaked_units == ["d_crient"]
     assert r.response == "Mamie a téléphoné."
+
+
+def test_empty_response_is_rejected():
+    s, clf = session_with(ScriptedRealizer("", "  "))
+    r = ask(s, clf, "Il avait quelle voiture ?", C("directive", "out_of_scenario"))
+    assert r.fallback_used and r.response == "Je sais pas."
+    assert s.log.turns[0].attempts[0].empty
