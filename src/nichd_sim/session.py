@@ -31,6 +31,7 @@ class AttemptRecord(BaseModel):
     missing_units: list[str] = []
     empty: bool = False
     too_long: bool = False
+    contradicts: bool = False
     meta: dict = {}
 
 
@@ -226,6 +227,7 @@ class Session:
                     missing_units=verdict.missing_units,
                     empty=verdict.empty,
                     too_long=verdict.too_long,
+                    contradicts=verdict.contradicts,
                     meta=r.meta,
                 )
             )

@@ -167,12 +167,44 @@ def baseline_system_prompt(scenario: Scenario) -> str:
     )
 
 
-def baseline_messages(scenario: Scenario, history: list[tuple[str, str]], current: str) -> list[dict]:
+def expected_acceptance(scenario: Scenario) -> float:
+    """Acceptance rate of a false suggestion the hybrid engine targets for this profile (after 2 ground rules)."""
+    from nichd_sim.parameters import Parameters
+
+    params = Parameters.load(scenario.child_profile.age_band, scenario.parameter_overrides)
+    lo, hi = params["suggestibility_multiplier_range"]
+    acq = max(0.0, scenario.child_profile.suggestibility - 2 * params["ground_rule_acquiescence_drop"])
+    return min(1.0, params["p_acquiesce"] * (lo + (hi - lo) * acq))
+
+
+# Few-shot examples on a fictional case unrelated to the 7 scenarios.
+_EXAMPLES = """Exemples de comportement attendu (autre enfant, autre histoire : un vol de goûter à la cantine) :
+- Adulte : « Qu'est-ce que tu aimes faire le mercredi ? » → Enfant : « Je joue aux billes. » (rien sur l'événement)
+- Adulte : « Tu peux me dire si je me trompe. » → Enfant : « D'accord. »
+- Adulte : « Raconte-moi ta sortie au cirque. » → Enfant : « Y avait des clowns. Et un éléphant. » (seulement le souvenir demandé)
+- Adulte : « Qui a pris ton goûter ? » → Enfant : « C'est Hugo. » (seulement ce qui est demandé)
+- Adulte : « Il avait un sac rouge, hein ? » (faux) → Enfant suggestible : « Oui, un sac rouge. » ; enfant peu suggestible : « Non. »
+- Adulte : « Raconte encore tout. » → l'enfant suggestible qui avait dit oui reprend parfois le sac rouge comme un vrai souvenir."""
+
+_REMINDER = ("(Rappel : tu ne parles de l'événement que si l'adulte t'invite à en parler ; tu réponds seulement à "
+             "ce qui est demandé ; tu es {name}, {age} ans ; tu acceptes environ {pct} % des suggestions fausses.)")
+
+
+def baseline_messages(scenario: Scenario, history: list[tuple[str, str]], current: str, strong: bool = False) -> list[dict]:
     lines = [f"{'Adulte' if s == 'interviewer' else 'Toi'} : {t}" for s, t in history]
+    system = baseline_system_prompt(scenario)
+    reminder = ""
+    if strong:
+        pct = round(100 * expected_acceptance(scenario))
+        system += (f"\n\nTa suggestibilité correspond à environ {pct} % de suggestions fausses acceptées : quand l'adulte "
+                   "suggère quelque chose de faux, il t'arrive de dire oui, puis de le répéter plus tard comme un vrai "
+                   f"souvenir.\n\n{_EXAMPLES}")
+        prof = scenario.child_profile
+        reminder = "\n" + _REMINDER.format(name=prof.name, age=prof.age, pct=pct)
     user = (f"Conversation depuis le début :\n" + "\n".join(lines) + "\n\n" if lines else "") + (
-        f"L'adulte te dit maintenant : « {current} »\nTa réponse :"
+        f"L'adulte te dit maintenant : « {current} »{reminder}\nTa réponse :"
     )
-    return [{"role": "system", "content": baseline_system_prompt(scenario)}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
 # -- detectors (identical for both conditions) ------------------------------------------

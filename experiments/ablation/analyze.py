@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics as st
 import sys
 from collections import defaultdict
@@ -14,15 +15,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from protocol import PLANS, ROLES, accepts_suggestion, has_keyword, is_dont_know, units_mentioned  # noqa: E402
+from protocol import PLANS, ROLES, accepts_suggestion, expected_acceptance, has_keyword, is_dont_know, units_mentioned  # noqa: E402
 
 from nichd_sim.evaluation import load_scenarios  # noqa: E402
 from nichd_sim.output_filter import load_lexicon  # noqa: E402
 from nichd_sim.text import contains, normalize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-CONDS = ("hybrid", "llm_only")
-LABEL = {"hybrid": "Hybride", "llm_only": "100 % LLM"}
+# The child speaks as the adult, addresses the user, or writes stage directions.
+ROLE_BREAK = re.compile(r"(Adulte|Interviewer|Enquêt\w*|Toi|Enfant)\s*:|^\s*---|^\s*\(|[\U0001F300-\U0001FAFF]", re.M)
+CONDS = ("hybrid", "llm_only", "llm_only_strong")
+LABEL = {"hybrid": "Hybride", "llm_only": "100 % LLM", "llm_only_strong": "100 % LLM renforcé"}
 
 
 def score(rec, scenario, lexicon):
@@ -39,11 +42,13 @@ def score(rec, scenario, lexicon):
     m["first_disclosure_turn"] = first
     m["rule_turn_words"] = st.mean(words[i] for i in (3, 4))
     # directives: the targeted fact is given; other facts volunteered on top
+    # "extra" = facts the child had never said before this turn (re-mentioning known facts is fine)
     hits, extras = [], []
     for i, key in ((12, 0), (13, 1), (16, 2), (19, 0)):
         target = plan.directives[key][0]
+        before = set().union(*(said[j] for j in turns if j < i))
         hits.append(target in said[i])
-        extras.append(len(said[i] - {target}))
+        extras.append(len(said[i] - {target} - before))
     m["directive_hit"] = st.mean(hits)
     m["directive_extra_units"] = st.mean(extras)
     m["repeat_consistent"] = hits[0] == hits[3]
@@ -56,9 +61,13 @@ def score(rec, scenario, lexicon):
     rep = [has_keyword(recall_text, plan.false_suggestions[k][1]) for k, a in enumerate(accepted) if a]
     m["_accepted_n"], m["_repeated_n"] = len(rep), sum(rep)
     m["invitation_words"] = st.mean(words[i] for i in (9, 11, 20))
+    productive = [i for i in (9, 11, 20, 21) if said[i]]  # invitations where the child actually tells facts
+    m["productive_invitation_words"] = st.mean(words[i] for i in productive) if productive else None
+    m["productive_invitation_units"] = st.mean(len(said[i]) for i in productive) if productive else None
     m["invitation_units"] = st.mean(len(said[i]) for i in (9, 11, 20))
     norm_all = [normalize(t["child"]) for t in turns.values()]
     m["forbidden_hits"] = sum(any(contains(n, w) for w in lexicon) for n in norm_all)
+    m["role_break"] = sum(bool(ROLE_BREAK.search(t["child"])) for t in turns.values())
     m["empty"] = sum(not t["child"].strip() for t in turns.values())
     m["fallbacks"] = sum(t.get("fallback", False) for t in turns.values())
     m["latency_s"] = st.mean(t["latency_s"] for t in turns.values())
@@ -95,75 +104,104 @@ def main():
     args = ap.parse_args()
     scenarios = load_scenarios(ROOT / "scenarios")
     lexicon = load_lexicon()
-    rows = defaultdict(list)  # (cond, scenario) -> metrics
-    model = None
+    rows = defaultdict(list)  # (model, cond, scenario) -> metrics
     for line in Path(args.path).read_text(encoding="utf-8").splitlines():
         rec = json.loads(line)
-        model = rec["model"]
-        rows[(rec["condition"], rec["scenario"])].append(score(rec, scenarios[rec["scenario"]], lexicon))
+        rows[(rec["model"], rec["condition"], rec["scenario"])].append(score(rec, scenarios[rec["scenario"]], lexicon))
+    models = sorted({k[0] for k in rows}, key=lambda m: (m != "qwen3.8:latest", m))
+    conds = [c for c in CONDS if any(k[1] == c for k in rows)]
+    sids = sorted(scenarios)
+    prof = [scenarios[s].child_profile for s in sids]
+    target = {s: expected_acceptance(scenarios[s]) for s in sids}
 
-    def agg(cond, key, sids=None, f=st.mean):
-        vals = [m[key] for (c, s), ms in rows.items() if c == cond and (sids is None or s in sids) for m in ms
-                if m[key] is not None]
+    def agg(model, cond, key, sids_=None, f=st.mean):
+        vals = [m[key] for (mo, c, s), ms in rows.items() if mo == model and c == cond
+                and (sids_ is None or s in sids_) for m in ms if m[key] is not None]
         return f(vals) if vals else float("nan")
 
-    n = {c: sum(len(ms) for (cc, _), ms in rows.items() if cc == c) for c in CONDS}
-    out = [f"# Ablation : enfant hybride vs enfant 100 % LLM\n",
-           f"Modèle : `{model}` (local, Ollama), température 0,7, réflexion désactivée. "
-           f"{n['hybrid']} entretiens par condition (7 scénarios × {n['hybrid'] // 7} graines), 23 tours scriptés "
-           "identiques. La condition hybride reçoit les étiquettes NICHD de référence (classifieur hors comparaison) ; "
-           "la condition 100 % LLM reçoit la fiche complète, le profil, des consignes de comportement et tout "
-           "l'historique. Mêmes détecteurs textuels (ancres des unités) pour les deux.\n",
-           "## Résultats globaux\n",
-           "| Critère (attendu) | " + " | ".join(LABEL[c] for c in CONDS) + " |", "|---|---|---|"]
+    def per_scenario(model, cond, key):
+        return [agg(model, cond, key, {s}) for s in sids]
 
-    def line(label, key, fmt=pct, f=st.mean):
-        out.append(f"| {label} | " + " | ".join(fmt(agg(c, key, f=f)) for c in CONDS) + " |")
+    def rho(model, cond, xs, key):
+        return spearman(xs, per_scenario(model, cond, key))
 
-    line("Entretiens où un fait central sort avant la transition (attendu : 0)", "premature_disclosure")
-    line("Mots par réponse aux règles de base (attendu : très court)", "rule_turn_words", fmt=lambda x: f"{x:.1f}")
-    line("Question directive : fait ciblé donné", "directive_hit")
-    line("Question directive : autres faits ajoutés (attendu : ~0)", "directive_extra_units", fmt=lambda x: f"{x:.2f}")
-    line("Même question directive répétée : réponse cohérente", "repeat_consistent")
-    line("Question hors scénario : « je sais pas »", "out_dont_know")
-    line("Suggestion fausse acceptée", "suggestion_accepted")
-    acc = {c: agg(c, "_accepted_n", f=sum) for c in CONDS}
-    reps = {c: agg(c, "_repeated_n", f=sum) for c in CONDS}
-    out.append("| Faux détail accepté puis repris au rappel libre | " + " | ".join(
-        f"{int(reps[c])}/{int(acc[c])}" for c in CONDS) + " |")
-    line("Réponses contenant un terme du lexique interdit (total)", "forbidden_hits", fmt=lambda x: f"{int(x)}", f=sum)
-    line("Réponses vides (total)", "empty", fmt=lambda x: f"{int(x)}", f=sum)
-    line("Latence moyenne par tour", "latency_s", fmt=lambda x: f"{x:.1f} s")
-    out.append(f"\nRéponses de repli de la condition hybride (filtre de sortie) : {int(agg('hybrid', 'fallbacks', f=sum))}.\n")
+    def calib_error(model, cond):
+        obs = per_scenario(model, cond, "suggestion_accepted")
+        return st.mean(abs(o - target[s]) for o, s in zip(obs, sids))
 
-    out += ["## Le profil de l'enfant est-il respecté ?\n",
-            "Corrélation de Spearman sur les 7 scénarios (n = 7, indicatif) entre un paramètre du profil et le "
-            "comportement observé.\n",
-            "| Scénario | Âge | Réticence | Suggestibilité | " + " | ".join(
-                f"1er fait (tour) {LABEL[c]} | Suggestions acceptées {LABEL[c]} | Mots / invitation {LABEL[c]}" for c in CONDS) + " |",
-            "|---|---|---|---|" + "---|---|---|" * len(CONDS)]
-    sids = sorted(scenarios)
-    per = {c: {s: {} for s in sids} for c in CONDS}
-    for c in CONDS:
-        for s in sids:
-            for key in ("first_disclosure_turn", "suggestion_accepted", "invitation_words"):
-                per[c][s][key] = agg(c, key, {s})
-    for s in sids:
-        p = scenarios[s].child_profile
+    derived = {
+        "rho_reluctance": lambda m, c: rho(m, c, [p.reluctance for p in prof], "first_disclosure_turn"),
+        "rho_suggestibility": lambda m, c: rho(m, c, [p.suggestibility for p in prof], "suggestion_accepted"),
+        "rho_age": lambda m, c: rho(m, c, [p.age for p in prof], "productive_invitation_words"),
+        "rho_age_units": lambda m, c: rho(m, c, [p.age for p in prof], "productive_invitation_units"),
+        "calib_error": calib_error,
+    }
+
+    def value(m, c, key, f=st.mean):
+        return derived[key](m, c) if key in derived else agg(m, c, key, f=f)
+
+    n_int = {c: sum(len(ms) for (mo, cc, _), ms in rows.items() if cc == c) for c in conds}
+    out = [
+        "# Ablation v2 : enfant hybride vs enfant 100 % LLM, plusieurs modèles locaux\n",
+        f"Modèles (Ollama, locaux) : {', '.join(f'`{m}`' for m in models)}. Température 0,7, réflexion désactivée. "
+        f"Entretiens par condition : {', '.join(f'{LABEL[c]} {n_int[c]}' for c in conds)} "
+        "(7 scénarios × 3 graines × modèles), 23 tours scriptés identiques. Mêmes détecteurs pour toutes les conditions.\n",
+        "## Synthèse (moyenne sur les modèles, [min – max])\n",
+        "| Critère (attendu) | " + " | ".join(LABEL[c] for c in conds) + " |",
+        "|---|" + "---|" * len(conds),
+    ]
+    CRITERIA = [
+        ("Entretiens où un fait central sort avant la transition (0 %)", "premature_disclosure", pct, st.mean),
+        ("Mots par réponse aux règles de base (très peu)", "rule_turn_words", lambda x: f"{x:.1f}", st.mean),
+        ("Directive : fait ciblé donné", "directive_hit", pct, st.mean),
+        ("Directive : faits nouveaux ajoutés en plus du fait ciblé (~0)", "directive_extra_units", lambda x: f"{x:.2f}", st.mean),
+        ("Hors scénario : « je sais pas »", "out_dont_know", pct, st.mean),
+        ("Suggestion fausse acceptée", "suggestion_accepted", pct, st.mean),
+        ("Écart moyen au taux d'acceptation visé par profil (0)", "calib_error", pct, None),
+        ("ρ réticence → dévoilement tardif (> 0)", "rho_reluctance", lambda x: f"{x:+.2f}", None),
+        ("ρ suggestibilité → acceptations (> 0)", "rho_suggestibility", lambda x: f"{x:+.2f}", None),
+        ("ρ âge → mots par récit (> 0)", "rho_age", lambda x: f"{x:+.2f}", None),
+        ("ρ âge → faits par récit (> 0)", "rho_age_units", lambda x: f"{x:+.2f}", None),
+        ("Réponses hors rôle par entretien (0)", "role_break", lambda x: f"{x:.2f}", st.mean),
+        ("Latence moyenne par tour", "latency_s", lambda x: f"{x:.1f} s", st.mean),
+    ]
+    for label, key, fmt, f in CRITERIA:
         cells = []
-        for c in CONDS:
-            cells += [f"{per[c][s]['first_disclosure_turn']:.1f}", pct(per[c][s]["suggestion_accepted"]),
-                      f"{per[c][s]['invitation_words']:.0f}"]
-        out.append(f"| {s} | {p.age} | {p.reluctance} | {p.suggestibility} | " + " | ".join(cells) + " |")
-    prof = [scenarios[s].child_profile for s in sids]
-    out += ["", "| Lien attendu | " + " | ".join(LABEL[c] for c in CONDS) + " |", "|---|---|---|"]
-    for label, xs, key in (
-        ("Réticence ↗ → dévoilement plus tardif (ρ > 0)", [p.reluctance for p in prof], "first_disclosure_turn"),
-        ("Suggestibilité ↗ → plus d'acceptations (ρ > 0)", [p.suggestibility for p in prof], "suggestion_accepted"),
-        ("Âge ↗ → récits plus longs (ρ > 0)", [p.age for p in prof], "invitation_words"),
-    ):
-        out.append(f"| {label} | " + " | ".join(
-            f"{spearman(xs, [per[c][s][key] for s in sids]):+.2f}" for c in CONDS) + " |")
+        for c in conds:
+            vals = [value(m, c, key, f) if f else value(m, c, key) for m in models]
+            vals = [v for v in vals if v == v]  # drop NaN
+            cells.append(f"{fmt(st.mean(vals))} [{fmt(min(vals))} – {fmt(max(vals))}]" if vals else "—")
+        out.append(f"| {label} | " + " | ".join(cells) + " |")
+    out.append("\nTaux d'acceptation visé par profil (moteur v2, après deux règles de base) : "
+               + ", ".join(f"{s.split('_')[0]} {pct(target[s])}" for s in sids) + ".\n")
+
+    out += ["## Par modèle\n",
+            "| Modèle | Condition | Fait central précoce | Faits nouveaux ajoutés / directive | Suggestions acceptées | "
+            "Écart au visé | ρ réticence | ρ suggestibilité | ρ âge | Replis | Faux détail repris |",
+            "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for m in models:
+        for c in conds:
+            acc, rep = agg(m, c, "_accepted_n", f=sum), agg(m, c, "_repeated_n", f=sum)
+            out.append(
+                f"| `{m}` | {LABEL[c]} | {pct(agg(m, c, 'premature_disclosure'))} | "
+                f"{agg(m, c, 'directive_extra_units'):.2f} | {pct(agg(m, c, 'suggestion_accepted'))} | "
+                f"{pct(calib_error(m, c))} | {value(m, c, 'rho_reluctance'):+.2f} | "
+                f"{value(m, c, 'rho_suggestibility'):+.2f} | {value(m, c, 'rho_age'):+.2f} | "
+                f"{int(agg(m, c, 'fallbacks', f=sum)) if c == 'hybrid' else '—'} | {int(rep)}/{int(acc)} |")
+    out += ["", "ρ : corrélation de Spearman sur les 7 scénarios (n = 7, indicatif) ; « nan » quand une condition "
+            "ne varie pas (par exemple aucune suggestion acceptée).", ""]
+
+    out += ["## Par scénario (moyenne sur les modèles)\n",
+            "| Scénario | Âge | Réticence | Suggestibilité | Visé | " + " | ".join(
+                f"Acceptées {LABEL[c]} | 1er fait {LABEL[c]}" for c in conds) + " |",
+            "|---|---|---|---|---|" + "---|---|" * len(conds)]
+    for s, p in zip(sids, prof):
+        cells = []
+        for c in conds:
+            acc = st.mean(v for m in models if (v := agg(m, c, "suggestion_accepted", {s})) == v)
+            fd = [v for m in models if (v := agg(m, c, "first_disclosure_turn", {s})) == v]
+            cells += [pct(acc), f"{st.mean(fd):.1f}" if fd else "—"]
+        out.append(f"| {s} | {p.age} | {p.reluctance} | {p.suggestibility} | {pct(target[s])} | " + " | ".join(cells) + " |")
     text = "\n".join(out) + "\n"
     if args.output:
         Path(args.output).write_text(text, encoding="utf-8")
