@@ -15,8 +15,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import torch
-from scipy.signal import resample_poly
 from kokoro import KPipeline
+from scipy.signal import resample_poly
 
 HERE = Path(__file__).parent
 RES = HERE / "results"

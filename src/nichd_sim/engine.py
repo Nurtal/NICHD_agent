@@ -269,6 +269,14 @@ class BehaviorEngine:
             reason=f"pas encore prêt à dévoiler (pression {st.disclosure_pressure:.1f} / seuil {threshold:.1f})",
         )
 
+    def unsay(self, unit_ids: list[str]) -> None:
+        """The child was interrupted before saying these units: they are not revealed after all,
+        and may be told later. (Lies and contaminations told in the same reply are kept.)"""
+        st = self.state
+        st.revealed = [u for u in st.revealed if u not in unit_ids]
+        st.disclosed = any(self.scenario.is_target_unit(u) for u in st.revealed)
+        st.last_unit = st.revealed[-1] if st.revealed else None
+
     def record_confabulation(self, unit_id: str, text: str) -> None:
         """Store what the child actually invented (known only after realization)."""
         for cu in self.state.contaminated:

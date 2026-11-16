@@ -16,11 +16,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tests"))
 
-from doubles import C, ask, make_session  # noqa: E402
+from doubles import C, ask, make_session
 
-from nichd_sim.delivery import FILLER, ChunkKind, plan_speech  # noqa: E402
-from nichd_sim.replay import load_log  # noqa: E402
-from nichd_sim.scenario import load_scenario  # noqa: E402
+from nichd_sim.delivery import FILLER, ChunkKind, plan_speech
+from nichd_sim.replay import load_log
+from nichd_sim.scenario import load_scenario
 
 OUT = Path(__file__).parent / "results" / "corpus.json"
 SIZE = 60

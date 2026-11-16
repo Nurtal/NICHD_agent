@@ -92,7 +92,7 @@ def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
     report = ReplayReport(turns=len(log.turns))
     for original in log.turns:
         try:
-            session.turn(original.utterance)
+            session.turn(original.utterance, timing=original.timing)
         except ReplayError as e:
             report.mismatches.append(f"tour {original.index} : {e}")
             break

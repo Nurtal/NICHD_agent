@@ -120,7 +120,13 @@ D'après Lamb et al.
 | Plan d'élocution | `speech_plan` | Suite de segments de parole et de silences, calculée à partir de la réponse et de la diction. |
 | Segment d'élocution | `speech_chunk` | Élément du plan : `speech` (texte à dire) ou `silence` (durée). |
 | Synthèse vocale | `speaker` | Port qui transforme un plan d'élocution en audio (TTS). |
-| Transcription | `listener` | Port qui transforme la parole de l'apprenant en texte (STT). Prévu, pas encore implémenté. |
+| Transcription | `listener` | Port qui transforme la parole de l'apprenant en texte (STT), avec l'horodatage des mots. |
+| Prise de parole | `turn_timing` | Moment où l'apprenant commence à parler, par rapport à la fin de l'audio de l'enfant. |
+| Temps d'attente | `wait_ms` | Délai entre la fin de la réponse de l'enfant et la prise de parole de l'apprenant. Négatif : l'apprenant a parlé avant la fin. |
+| Interruption | `barge_in` | L'apprenant parle avant la fin de la réponse de l'enfant : pendant le silence initial (`onset`), pendant une pause (`pause`) ou pendant que l'enfant parle (`speech`). |
+| Partie entendue | `heard_text` | Ce que l'enfant a eu le temps de dire avant d'être interrompu. |
+| Unités non dites | `unheard_units` | Unités autorisées pour un tour mais coupées par une interruption : le moteur les reprend, l'enfant pourra les dire plus tard. |
+| Conversation vocale | `voice_conversation` | Enchaînement transcription → session → synthèse, avec une piste audio de tout l'échange. |
 
 ## LLM et contrôle du contenu
 

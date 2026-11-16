@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import statistics
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
@@ -99,12 +100,34 @@ class DeceptionSummary(BaseModel):
     lies_by_question_type: dict[str, int]
 
 
+HESITATION_MS = 1500
+"""A child reply whose initial silence lasts at least this long is a hesitation to respect."""
+
+
+class TurnTakingSummary(BaseModel):
+    """Voice sessions: did the learner leave the child time to answer?"""
+
+    timed_turns: int
+    median_wait_ms: int | None
+    """Median wait after the child's reply, over the turns that did not interrupt."""
+    interruptions: dict[str, int]
+    """Interruptions by moment: onset (before the child started), pause, speech."""
+    hesitations: int
+    """Child replies with an initial silence ≥ HESITATION_MS, followed by a learner turn."""
+    hesitations_respected: int
+    """…that the learner let the child get through (no interruption during the onset)."""
+    units_cut: list[str]
+    """Units the child did not get to say because of an interruption."""
+
+
 class Metrics(BaseModel):
     open_question_ratio: OpenQuestionRatio
     accurate_info_recall: AccurateInfoRecall
     contamination_score: ContaminationScore
     deception: DeceptionSummary | None = None
     """Only for scenarios with a `deception` block."""
+    turn_taking: TurnTakingSummary | None = None
+    """Only for voice sessions (turns with timing)."""
 
 
 def compute_metrics(log: SessionLog, scenario: Scenario) -> Metrics:
@@ -114,6 +137,32 @@ def compute_metrics(log: SessionLog, scenario: Scenario) -> Metrics:
         accurate_info_recall=recall,
         contamination_score=_contamination(log, scenario),
         deception=_deception(log, scenario, recall) if scenario.deception is not None else None,
+        turn_taking=_turn_taking(log),
+    )
+
+
+def _turn_taking(log: SessionLog) -> TurnTakingSummary | None:
+    timed = [(i, t) for i, t in enumerate(log.turns) if t.timing is not None]
+    if not timed:
+        return None
+    waits, kinds, hesitations, respected = [], {}, 0, 0
+    for i, t in timed:
+        barge = t.timing.barge_in
+        if barge is None:
+            waits.append(t.timing.wait_ms)
+        else:
+            kinds[barge.during] = kinds.get(barge.during, 0) + 1
+        prev = log.turns[i - 1].decision.delivery if i > 0 else None
+        if prev is not None and prev.onset_ms >= HESITATION_MS:
+            hesitations += 1
+            respected += barge is None or barge.during != "onset"
+    return TurnTakingSummary(
+        timed_turns=len(timed),
+        median_wait_ms=int(statistics.median(waits)) if waits else None,
+        interruptions=kinds,
+        hesitations=hesitations,
+        hesitations_respected=respected,
+        units_cut=[u for t in log.turns for u in t.unheard_units],
     )
 
 
@@ -164,7 +213,7 @@ def _recall(log: SessionLog, scenario: Scenario) -> AccurateInfoRecall:
     for t in log.turns:
         qtype = t.decision.effective_type or t.classification.type
         for au in t.decision.allowed_units:
-            if au.contaminated or au.id in elicited or not scenario.is_target_unit(au.id):
+            if au.contaminated or au.id in elicited or au.id in t.unheard_units or not scenario.is_target_unit(au.id):
                 continue
             unit = scenario.unit(au.id)
             elicited[au.id] = ElicitedUnit(

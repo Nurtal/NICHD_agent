@@ -62,8 +62,21 @@ uv run nichd-sim play scenarios/s08_violences_maison_secret.yaml --trainer --voi
 uv run nichd-sim render-audio sessions/session_<id>.json -o audio/<id>   # rejouer un journal en audio
 ```
 
-La voix `tone` (par défaut) est un bourdonnement sans modèle, pour vérifier le rythme ; une vraie voix de synthèse
-s'ajoute derrière le port `Speaker` (`src/nichd_sim/voice/`).
+Voix : `kokoro` (enfant, défaut si installé), `kokoro-adulte`, ou `tone` (bourdonnement sans modèle, pour vérifier le
+rythme). Kokoro tourne dans son propre environnement, sans toucher au venv du projet : installation et criblage dans
+[experiments/voices/](experiments/voices/README.md). La réponse est synthétisée en un seul énoncé puis coupée aux pauses,
+ce qui garde une intonation continue.
+
+L'apprenant peut aussi **parler** : la transcription (Whisper large-v3, même environnement que Kokoro) mesure quand il
+prend la parole. S'il coupe l'enfant (pendant son hésitation, une pause ou une phrase), ce que l'enfant n'a pas eu le
+temps de dire **n'est pas compté comme dit** : il pourra le redire plus tard. Le retour indique l'attente médiane, les
+interruptions et les hésitations respectées. Sans interface micro pour l'instant, on scripte la conversation (texte dit
+par la voix adulte, ou enregistrements WAV) :
+
+```bash
+uv run nichd-sim converse experiments/voices/conversations/s08_interruptions.yaml -o audio/conv --trainer
+uv run nichd-sim transcribe mon_enregistrement.wav
+```
 
 ## Organisation
 

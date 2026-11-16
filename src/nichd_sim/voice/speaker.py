@@ -19,6 +19,11 @@ class Speaker(Protocol):
         """Speak `text` at the relative `rate` (1.0 = normal, lower = slower)."""
         ...
 
+    # Optional, preferred when available:
+    #   synthesize_pieces(pieces: list[str], *, rate: float = 1.0) -> list[Audio]
+    # speaks the pieces as one utterance and returns it cut at the piece boundaries, so that the
+    # pauses inserted between pieces do not break the intonation.
+
 
 class ToneSpeaker:
     """Stand-in voice: a hum whose length follows the text. No dependency, deterministic.
