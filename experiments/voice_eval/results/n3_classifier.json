@@ -1,0 +1,469 @@
+{
+ "checks": [
+  {
+   "level": "N3",
+   "metric": "κ du classifieur sur le texte d'origine (référence)",
+   "value": 0.9779497508745891,
+   "target": "rapporté",
+   "ok": null,
+   "note": "qwen3.8:latest, réflexion medium"
+  },
+  {
+   "level": "N3",
+   "metric": "Δκ texte → transcription, « grave-lent »",
+   "value": 0.054840329666308585,
+   "target": "≤ 0,05",
+   "ok": false,
+   "note": "κ = 0.923 ; 5 énoncé(s) basculé(s) en erreur ; synthétique"
+  },
+  {
+   "level": "N3",
+   "metric": "Δκ texte → transcription, « moyen »",
+   "value": 0.06555636348909888,
+   "target": "≤ 0,05",
+   "ok": false,
+   "note": "κ = 0.912 ; 6 énoncé(s) basculé(s) en erreur ; synthétique"
+  },
+  {
+   "level": "N3",
+   "metric": "Δκ texte → transcription, « aigu-rapide »",
+   "value": 0.06564870734133299,
+   "target": "≤ 0,05",
+   "ok": false,
+   "note": "κ = 0.912 ; 6 énoncé(s) basculé(s) en erreur ; synthétique"
+  },
+  {
+   "level": "N3",
+   "metric": "Δκ texte → transcription, « moyen », 20 dB",
+   "value": 0.08731982133415372,
+   "target": "≤ 0,05",
+   "ok": false,
+   "note": "κ = 0.891 ; 8 énoncé(s) basculé(s) en erreur ; synthétique"
+  },
+  {
+   "level": "N3",
+   "metric": "Δκ texte → transcription, « moyen », 10 dB",
+   "value": 0.0986248563598211,
+   "target": "≤ 0,05",
+   "ok": false,
+   "note": "κ = 0.879 ; 9 énoncé(s) basculé(s) en erreur ; synthétique"
+  },
+  {
+   "level": "N3",
+   "metric": "Δκ texte → transcription, « moyen », 5 dB",
+   "value": 0.11998147689623007,
+   "target": "rapporté",
+   "ok": null,
+   "note": "κ = 0.858 ; 11 énoncé(s) basculé(s) en erreur ; synthétique"
+  }
+ ],
+ "conditions": {
+  "text": {
+   "kappa": 0.9779497508745891,
+   "type_acc": 0.9807692307692307,
+   "target_acc": 0.9074074074074074
+  },
+  "grave-lent:None": {
+   "kappa": 0.9231094212082805,
+   "type_acc": 0.9326923076923077,
+   "target_acc": 0.8518518518518519,
+   "flipped": [
+    {
+     "id": "ts027",
+     "texte": "Il y avait un chien ?",
+     "transcription": "Il y avait un chien.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts056",
+     "texte": "Il t'a tapée avec une ceinture ?",
+     "transcription": "Il t'a tapé avec une ceinture.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts078",
+     "texte": "Vous avez gagné ?",
+     "transcription": "Vous avez gagné.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts079",
+     "texte": "Je crois que tu as vu quelque chose mardi. Dis-moi tout.",
+     "transcription": "Je crois que tu as vu quelque chose mardi, dis-moi tout.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts087",
+     "texte": "Elle a mis le portefeuille où ?",
+     "transcription": "Elle a mis le portefeuille roux.",
+     "attendu": "directive",
+     "sur_texte": "directive",
+     "sur_transcription": "suggestive"
+    }
+   ]
+  },
+  "moyen:None": {
+   "kappa": 0.9123933873854903,
+   "type_acc": 0.9230769230769231,
+   "target_acc": 0.8888888888888888,
+   "flipped": [
+    {
+     "id": "ts027",
+     "texte": "Il y avait un chien ?",
+     "transcription": "Il y avait un chien.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts046",
+     "texte": "Ta maîtresse s'inquiète pour toi. Raconte-moi pourquoi.",
+     "transcription": "Ta maîtresse s'inquiète pour toi ? Raconte-moi pourquoi.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts051",
+     "texte": "Et après ?",
+     "transcription": "Il est prêt.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts056",
+     "texte": "Il t'a tapée avec une ceinture ?",
+     "transcription": "Il t'a tapé avec une ceinture.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts078",
+     "texte": "Vous avez gagné ?",
+     "transcription": "Vous avez gagné.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts079",
+     "texte": "Je crois que tu as vu quelque chose mardi. Dis-moi tout.",
+     "transcription": "Je crois que tu as vu quelque chose mardi, dis-moi tout.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    }
+   ]
+  },
+  "aigu-rapide:None": {
+   "kappa": 0.9123010435332561,
+   "type_acc": 0.9230769230769231,
+   "target_acc": 0.8518518518518519,
+   "flipped": [
+    {
+     "id": "ts027",
+     "texte": "Il y avait un chien ?",
+     "transcription": "Il y avait un chien.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts046",
+     "texte": "Ta maîtresse s'inquiète pour toi. Raconte-moi pourquoi.",
+     "transcription": "Ta maîtresse s'inquiète pour toi ? Raconte-moi pourquoi.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts056",
+     "texte": "Il t'a tapée avec une ceinture ?",
+     "transcription": "Il t'a tapé avec une ceinture.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts078",
+     "texte": "Vous avez gagné ?",
+     "transcription": "Vous avez gagné.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts079",
+     "texte": "Je crois que tu as vu quelque chose mardi. Dis-moi tout.",
+     "transcription": "Je crois que tu as vu quelque chose mardi, dis-moi tout.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts087",
+     "texte": "Elle a mis le portefeuille où ?",
+     "transcription": "Elle a mis le portefeuille roux.",
+     "attendu": "directive",
+     "sur_texte": "directive",
+     "sur_transcription": "suggestive"
+    }
+   ]
+  },
+  "moyen:20": {
+   "kappa": 0.8906299295404354,
+   "type_acc": 0.9038461538461539,
+   "target_acc": 0.8703703703703703,
+   "flipped": [
+    {
+     "id": "ts019",
+     "texte": "Mmh.",
+     "transcription": "Et mes machos ?",
+     "attendu": "facilitator",
+     "sur_texte": "facilitator",
+     "sur_transcription": "other"
+    },
+    {
+     "id": "ts027",
+     "texte": "Il y avait un chien ?",
+     "transcription": "Il y avait un chien.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts046",
+     "texte": "Ta maîtresse s'inquiète pour toi. Raconte-moi pourquoi.",
+     "transcription": "Ta maîtresse s'inquiète pour toi ? Raconte-moi pourquoi.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts051",
+     "texte": "Et après ?",
+     "transcription": "Il est prêt.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts056",
+     "texte": "Il t'a tapée avec une ceinture ?",
+     "transcription": "Il t'a tapé avec une ceinture.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts078",
+     "texte": "Vous avez gagné ?",
+     "transcription": "Vous avez gagné.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts079",
+     "texte": "Je crois que tu as vu quelque chose mardi. Dis-moi tout.",
+     "transcription": "Je crois que tu as vu quelque chose mardi, dis-moi tout.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts087",
+     "texte": "Elle a mis le portefeuille où ?",
+     "transcription": "Elle a mis le portefeuille goût.",
+     "attendu": "directive",
+     "sur_texte": "directive",
+     "sur_transcription": "facilitator"
+    }
+   ]
+  },
+  "moyen:10": {
+   "kappa": 0.879324894514768,
+   "type_acc": 0.8942307692307693,
+   "target_acc": 0.8148148148148148,
+   "flipped": [
+    {
+     "id": "ts019",
+     "texte": "Mmh.",
+     "transcription": "Aimez-moi, chou.",
+     "attendu": "facilitator",
+     "sur_texte": "facilitator",
+     "sur_transcription": "other"
+    },
+    {
+     "id": "ts027",
+     "texte": "Il y avait un chien ?",
+     "transcription": "Il y avait un chien.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts032",
+     "texte": "Il est parti où et ta mamie a fait quoi ?",
+     "transcription": "Il est parti où est Tamami à ses poids ?",
+     "attendu": "compound",
+     "sur_texte": "compound",
+     "sur_transcription": "directive"
+    },
+    {
+     "id": "ts046",
+     "texte": "Ta maîtresse s'inquiète pour toi. Raconte-moi pourquoi.",
+     "transcription": "Ta maîtresse s'inquiète pour toi ? Raconte-moi pourquoi.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts051",
+     "texte": "Et après ?",
+     "transcription": "Il est prêt.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts056",
+     "texte": "Il t'a tapée avec une ceinture ?",
+     "transcription": "Il t'a tapé avec une ceinture.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts078",
+     "texte": "Vous avez gagné ?",
+     "transcription": "Vous avez gagné.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts083",
+     "texte": "Parle-moi de la dame.",
+     "transcription": "par mois de la gamme.",
+     "attendu": "cued_invitation",
+     "sur_texte": "cued_invitation",
+     "sur_transcription": "other"
+    },
+    {
+     "id": "ts087",
+     "texte": "Elle a mis le portefeuille où ?",
+     "transcription": "Elle a mis le portefeuille rouge.",
+     "attendu": "directive",
+     "sur_texte": "directive",
+     "sur_transcription": "suggestive"
+    }
+   ]
+  },
+  "moyen:5": {
+   "kappa": 0.8579682739783591,
+   "type_acc": 0.875,
+   "target_acc": 0.8518518518518519,
+   "flipped": [
+    {
+     "id": "ts015",
+     "texte": "Et puis ?",
+     "transcription": "En plus...",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts019",
+     "texte": "Mmh.",
+     "transcription": "Elle est mailleuse.",
+     "attendu": "facilitator",
+     "sur_texte": "facilitator",
+     "sur_transcription": "other"
+    },
+    {
+     "id": "ts027",
+     "texte": "Il y avait un chien ?",
+     "transcription": "Il y avait un chien.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts046",
+     "texte": "Ta maîtresse s'inquiète pour toi. Raconte-moi pourquoi.",
+     "transcription": "Ta maîtresse s'inquiète pour toi ? Raconte-moi pourquoi ?",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts051",
+     "texte": "Et après ?",
+     "transcription": "Il est prêt.",
+     "attendu": "invitation",
+     "sur_texte": "invitation",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts056",
+     "texte": "Il t'a tapée avec une ceinture ?",
+     "transcription": "Il t'a tapé avec une ceinture.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts077",
+     "texte": "Tu as dit que tu as marqué un but. Dis-moi tout sur ce but.",
+     "transcription": "Tu as dit que tu as marqué un 10 ? Dis-moi tout sur ce 10 !",
+     "attendu": "cued_invitation",
+     "sur_texte": "cued_invitation",
+     "sur_transcription": "compound"
+    },
+    {
+     "id": "ts078",
+     "texte": "Vous avez gagné ?",
+     "transcription": "Vous avez gagné.",
+     "attendu": "option_posing",
+     "sur_texte": "option_posing",
+     "sur_transcription": "facilitator"
+    },
+    {
+     "id": "ts083",
+     "texte": "Parle-moi de la dame.",
+     "transcription": "par mois de la gamme.",
+     "attendu": "cued_invitation",
+     "sur_texte": "cued_invitation",
+     "sur_transcription": "other"
+    },
+    {
+     "id": "ts087",
+     "texte": "Elle a mis le portefeuille où ?",
+     "transcription": "Elle a mis le portefeuille bleu.",
+     "attendu": "directive",
+     "sur_texte": "directive",
+     "sur_transcription": "suggestive"
+    },
+    {
+     "id": "ts094",
+     "texte": "Hmm, d'accord.",
+     "transcription": "Sous-titrage Société Radio-Canada",
+     "attendu": "facilitator",
+     "sur_texte": "facilitator",
+     "sur_transcription": "other"
+    }
+   ]
+  }
+ }
+}

@@ -58,7 +58,19 @@ FINDINGS = """## Ce que l'évaluation a trouvé et corrigé
    le bruit pour une prise de parole dès la première trame (erreur de 349 ms). **Correction** dans
    `Audio.voiced_bounds` : seuil relatif au niveau de bruit, plusieurs trames fortes consécutives exigées, et
    hystérésis pour les attaques douces. L'erreur tombe à 15 ms.
-4. **Mesures elles-mêmes vérifiées.**
+4. **Le point d'interrogation perdu (N3, non corrigé).** La transcription coûte au classifieur Δκ = 0,055 à 0,066
+   sans bruit (seuil 0,05), 0,10 à 10 dB. Sur les 45 basculements, toutes conditions confondues :
+   - 28 viennent d'un **« ? » perdu**. Une question fermée dite par l'intonation (« Il y avait un chien ? ») est
+     transcrite comme une affirmation et devient suggestive ;
+   - 7 viennent d'une autre ponctuation (« . » ↔ « , », qui transforme deux phrases en question composée) ;
+   - seulement 10 viennent de mots mal reconnus, surtout à 10 et 5 dB (dont une hallucination de Whisper sur un
+     « Hmm »).
+   Le classifieur n'est donc pas gêné par les mots mais par la ponctuation, que Whisper déduit et que le
+   classifieur prend pour un signal fiable. Pistes, à valider :
+   - dire au classifieur que la ponctuation d'une transcription n'est pas fiable ;
+   - rétablir le « ? » d'après la montée de F0 en fin d'énoncé ;
+   - amorcer Whisper avec des questions (`initial_prompt`).
+5. **Mesures elles-mêmes vérifiées.**
    - N0 : sur une vérité parfaite (voix `tone`), la segmentation retrouve tous les silences, à 4 ms près ; une
      diction cassée fait chuter le rappel des silences à 0,34.
    - N1 : des auditeurs simulés attentifs passent les contrôles, des auditeurs au hasard échouent.
@@ -73,6 +85,8 @@ LIMITS = """## Limites
 - **Transcription mesurée sur voix synthétique.** Les résultats sont optimistes. Les énoncés très courts (relances
   NICHD : « Et après ? », « Hmm hmm ») sont le point faible, en partie parce que Kokoro dit mal « hmm ».
 - **Une seule voix française** dans Kokoro (`ff_siwis`). La voix d'enfant en est dérivée (hauteur et formants × 1,25).
+- **Prosodie des questions synthétique.** L'intonation montante de Kokoro sur les questions fermées n'est pas
+  celle d'un interviewer réel. La part des « ? » perdus est à remesurer sur de vraies voix.
 - **Paramètres estimés.** Le poids du mensonge est calibré sur un ordre de grandeur de la littérature (adultes,
   méta-analyses), pas sur des données d'enfants en audition.
 """
@@ -100,6 +114,13 @@ def load(level: str) -> list[Check] | None:
     return [Check(**c) for c in json.loads(path.read_text(encoding="utf-8"))["checks"]]
 
 
+SHORT = {"n3_stt": "N3 transcription", "n3_classifier": "N3 classifieur", "cost": "Coût"}
+
+
+def label(level: str, title: str) -> str:
+    return SHORT.get(level, title.split(" —")[0])
+
+
 def main() -> None:
     summary = ["| Niveau | Contrôles réussis | Échecs | Rapportés |", "|---|---|---|---|"]
     sections = []
@@ -108,12 +129,12 @@ def main() -> None:
         sections += [f"## {title}", "", method, ""]
         if checks is None:
             sections += ["*Pas encore de résultats.*", ""]
-            summary.append(f"| {title.split(' —')[0]} | — | — | non lancé |")
+            summary.append(f"| {label(level, title)} | — | — | non lancé |")
             continue
         ok = sum(c.ok is True for c in checks)
         ko = sum(c.ok is False for c in checks)
         info = sum(c.ok is None for c in checks)
-        summary.append(f"| {title.split(' —')[0]} | {ok} | {ko} | {info} |")
+        summary.append(f"| {label(level, title)} | {ok} | {ko} | {info} |")
         sections += ["| Métrique | Valeur | Cible | | Note |", "|---|---|---|---|---|", *[c.row() for c in checks], ""]
     text = "\n".join([
         "# Évaluation de la chaîne vocale (diction, mensonge, voix, transcription)", "",

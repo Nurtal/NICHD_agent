@@ -11,9 +11,9 @@
 | N1-auto | 5 | 0 | 0 |
 | N1 | — | — | non lancé |
 | N4 | 15 | 0 | 3 |
-| N3 | 3 | 0 | 4 |
-| N3 | — | — | non lancé |
-| Coût (rapporté seulement) | — | — | non lancé |
+| N3 transcription | 3 | 0 | 4 |
+| N3 classifieur | 0 | 5 | 2 |
+| Coût | 0 | 0 | 6 |
 
 ## Ce que l'évaluation a trouvé et corrigé
 
@@ -32,7 +32,19 @@
    le bruit pour une prise de parole dès la première trame (erreur de 349 ms). **Correction** dans
    `Audio.voiced_bounds` : seuil relatif au niveau de bruit, plusieurs trames fortes consécutives exigées, et
    hystérésis pour les attaques douces. L'erreur tombe à 15 ms.
-4. **Mesures elles-mêmes vérifiées.**
+4. **Le point d'interrogation perdu (N3, non corrigé).** La transcription coûte au classifieur Δκ = 0,055 à 0,066
+   sans bruit (seuil 0,05), 0,10 à 10 dB. Sur les 45 basculements, toutes conditions confondues :
+   - 28 viennent d'un **« ? » perdu**. Une question fermée dite par l'intonation (« Il y avait un chien ? ») est
+     transcrite comme une affirmation et devient suggestive ;
+   - 7 viennent d'une autre ponctuation (« . » ↔ « , », qui transforme deux phrases en question composée) ;
+   - seulement 10 viennent de mots mal reconnus, surtout à 10 et 5 dB (dont une hallucination de Whisper sur un
+     « Hmm »).
+   Le classifieur n'est donc pas gêné par les mots mais par la ponctuation, que Whisper déduit et que le
+   classifieur prend pour un signal fiable. Pistes, à valider :
+   - dire au classifieur que la ponctuation d'une transcription n'est pas fiable ;
+   - rétablir le « ? » d'après la montée de F0 en fin d'énoncé ;
+   - amorcer Whisper avec des questions (`initial_prompt`).
+5. **Mesures elles-mêmes vérifiées.**
    - N0 : sur une vérité parfaite (voix `tone`), la segmentation retrouve tous les silences, à 4 ms près ; une
      diction cassée fait chuter le rappel des silences à 0,34.
    - N1 : des auditeurs simulés attentifs passent les contrôles, des auditeurs au hasard échouent.
@@ -137,13 +149,28 @@ Les 104 énoncés du jeu de test du skill, dits par 3 pseudo-locuteurs tirés de
 
 Même classifieur et mêmes réglages qu'en production (LLM, réflexion par défaut), sur le texte d'origine puis sur les transcriptions.
 
-*Pas encore de résultats.*
+| Métrique | Valeur | Cible | | Note |
+|---|---|---|---|---|
+| κ du classifieur sur le texte d'origine (référence) | 0.978 | rapporté | — | qwen3.8:latest, réflexion medium |
+| Δκ texte → transcription, « grave-lent » | 0.0548 | ≤ 0,05 | ❌ | κ = 0.923 ; 5 énoncé(s) basculé(s) en erreur ; synthétique |
+| Δκ texte → transcription, « moyen » | 0.0656 | ≤ 0,05 | ❌ | κ = 0.912 ; 6 énoncé(s) basculé(s) en erreur ; synthétique |
+| Δκ texte → transcription, « aigu-rapide » | 0.0656 | ≤ 0,05 | ❌ | κ = 0.912 ; 6 énoncé(s) basculé(s) en erreur ; synthétique |
+| Δκ texte → transcription, « moyen », 20 dB | 0.0873 | ≤ 0,05 | ❌ | κ = 0.891 ; 8 énoncé(s) basculé(s) en erreur ; synthétique |
+| Δκ texte → transcription, « moyen », 10 dB | 0.0986 | ≤ 0,05 | ❌ | κ = 0.879 ; 9 énoncé(s) basculé(s) en erreur ; synthétique |
+| Δκ texte → transcription, « moyen », 5 dB | 0.12 | rapporté | — | κ = 0.858 ; 11 énoncé(s) basculé(s) en erreur ; synthétique |
 
 ## Coût (rapporté seulement)
 
 Latences mesurées sur la station (2 × TITAN RTX), sans autre charge GPU.
 
-*Pas encore de résultats.*
+| Métrique | Valeur | Cible | | Note |
+|---|---|---|---|---|
+| Latence, synthèse (Kokoro, réponse entière) | p50 0.17 s, p95 0.48 s | rapporté | — | 20 mesures |
+| Latence, transcription (Whisper large-v3) | p50 0.50 s, p95 0.68 s | rapporté | — | 20 mesures |
+| Latence, classification (qwen3.8:latest, réflexion medium) | p50 10.69 s, p95 33.64 s | rapporté | — | 10 mesures |
+| Latence, réalisation (qwen3.8:latest) | p50 2.20 s, p95 2.72 s | rapporté | — | 10 mesures |
+| Tour vocal complet (somme des médianes, hors silence simulé) | 13.6 s | rapporté | — | optimisation prévue plus tard |
+| Mémoire GPU des modèles vocaux (Kokoro + Whisper) | 4.3 Go | rapporté | — |  |
 
 ## Limites
 
@@ -152,6 +179,8 @@ Latences mesurées sur la station (2 × TITAN RTX), sans autre charge GPU.
 - **Transcription mesurée sur voix synthétique.** Les résultats sont optimistes. Les énoncés très courts (relances
   NICHD : « Et après ? », « Hmm hmm ») sont le point faible, en partie parce que Kokoro dit mal « hmm ».
 - **Une seule voix française** dans Kokoro (`ff_siwis`). La voix d'enfant en est dérivée (hauteur et formants × 1,25).
+- **Prosodie des questions synthétique.** L'intonation montante de Kokoro sur les questions fermées n'est pas
+  celle d'un interviewer réel. La part des « ? » perdus est à remesurer sur de vraies voix.
 - **Paramètres estimés.** Le poids du mensonge est calibré sur un ordre de grandeur de la littérature (adultes,
   méta-analyses), pas sur des données d'enfants en audition.
 
