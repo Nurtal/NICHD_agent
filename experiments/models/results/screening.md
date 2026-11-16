@@ -4,7 +4,11 @@
 
 | Modèle | Famille | Prio. | Sur GPU | Repli | OK du 1er coup | Motifs de rejet | Latence/tour | Mots/réponse | Hors rôle | Mots anglais |
 |---|---|---|---|---|---|---|---|---|---|---|
+| `gpt-oss:20b` | gpt-oss | 1 | 100 % | 1.2 % | 96 % | too_long 7, missing 6, leak 1 | 0.8 s | 9.0 | 0 | 0 |
 | `gemma4:latest` | gemma | 0 | 100 % | 1.9 % | 98 % | too_long 7 | 0.2 s | 8.9 | 0 | 0 |
+| `gemma4:31b` | gemma | 1 | 100 % | 1.9 % | 98 % | leak 4, too_long 2 | 1.4 s | 9.6 | 0 | 0 |
+| `olmo-3.1:32b-instruct` | olmo | 1 | 100 % | 3.1 % | 92 % | missing 16, leak 7, too_long 5 | 1.7 s | 11.8 | 0 | 0 |
+| `mistral-small3.2:24b` | mistral | 1 | 100 % | 3.7 % | 93 % | too_long 12, leak 5, empty 1 | 0.8 s | 10.9 | 0 | 0 |
 | `qwen3.8:latest` | qwen | 0 | 100 % | 3.7 % | 94 % | too_long 8, leak 5, missing 4 | 1.1 s | 9.3 | 0 | 0 |
 | `phi4:latest` | phi | 0 | 100 % | 10.6 % | 84 % | too_long 35, leak 7, emoji 2, missing 1 | 0.9 s | 17.8 | 0 | 0 |
 | `mistral:latest` | mistral | 0 | 100 % | 12.4 % | 81 % | too_long 27, missing 11, leak 9, contradicts 8 | 0.6 s | 15.7 | 0 | 0 |

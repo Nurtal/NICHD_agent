@@ -23,7 +23,7 @@ from nichd_sim.text import contains, normalize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 # The child speaks as the adult, addresses the user, or writes stage directions.
-ROLE_BREAK = re.compile(r"(Adulte|Interviewer|Enquêt\w*|Toi|Enfant)\s*:|^\s*---|^\s*\(|[\U0001F300-\U0001FAFF]", re.M)
+ROLE_BREAK = re.compile(r"(Adulte|Interviewer|Enquêt\w*|Toi|Enfant)\s*:|^\s*---|^\s*\(|\*[^*\n]{3,}\*|[\U0001F300-\U0001FAFF]", re.M)
 CONDS = ("hybrid", "llm_only", "llm_only_strong")
 LABEL = {"hybrid": "Hybride", "llm_only": "100 % LLM", "llm_only_strong": "100 % LLM renforcé"}
 
