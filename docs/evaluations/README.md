@@ -1,6 +1,6 @@
 # Évaluations
 
-- [Ablation : enfant hybride vs enfant 100 % LLM](ablation-hybride-vs-llm.md) : même modèle, mêmes entretiens scriptés. Le LLM seul révèle des faits trop tôt (62 % des entretiens) et n'accepte aucune suggestion fausse (0/42). L'hybride suit le profil (réticence ρ = +0,94, suggestibilité ρ = +0,87).
+- [Ablation : enfant hybride vs enfant 100 % LLM](ablation-hybride-vs-llm.md) : 4 modèles locaux, 252 entretiens scriptés identiques. L'hybride ne laisse sortir aucun fait central trop tôt, quel que soit le modèle. Le LLM seul en laisse sortir dans 68 % des entretiens, et encore 55 % avec un témoin renforcé. L'hybride suit le profil de l'enfant (réticence ρ = +0,94, suggestibilité ρ = +0,92) avec un comportement identique d'un modèle à l'autre.
 
 ## Classifieur
 

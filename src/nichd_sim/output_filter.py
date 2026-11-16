@@ -28,6 +28,8 @@ class FilterVerdict:
     empty: bool = False
     too_long: bool = False
     """A content-free act (don't know, deny, reluctant…) that runs on: likely invented content."""
+    contradicts: bool = False
+    """The wording flips the engine's decision (a "yes" for a refusal, a "no" for an acquiescence)."""
 
 
 CONTENT_FREE_ACTS = {
@@ -35,6 +37,8 @@ CONTENT_FREE_ACTS = {
     SpeechAct.ACKNOWLEDGE, SpeechAct.CONFUSION, SpeechAct.SILENCE,
 }
 MAX_CONTENT_FREE_WORDS = 10
+_YES = {"oui", "ouais", "ouai", "exactement"}
+_NO = {"non", "nan"}
 
 
 class OutputFilter:
@@ -71,8 +75,13 @@ class OutputFilter:
                     missing.append(au.id)
         empty = not norm and decision.speech_act != SpeechAct.SILENCE
         too_long = decision.speech_act in CONTENT_FREE_ACTS and len(norm.split()) > MAX_CONTENT_FREE_WORDS
+        words = set(norm.split())
+        contradicts = (decision.speech_act == SpeechAct.DENY and bool(words & _YES)) or (
+            decision.speech_act == SpeechAct.ACQUIESCE and bool(words & _NO) and not words & _YES
+        )
         return FilterVerdict(
-            ok=not forbidden and not leaked and not missing and not empty and not too_long,
+            ok=not forbidden and not leaked and not missing and not empty and not too_long and not contradicts,
+            contradicts=contradicts,
             empty=empty,
             too_long=too_long,
             forbidden_terms=forbidden,

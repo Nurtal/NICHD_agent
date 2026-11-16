@@ -55,21 +55,30 @@ p_yes_bias:
   description: >
     Question oui/non sur une proposition fausse ou absente du scénario :
     probabilité de répondre « oui » (avant modulation par la suggestibilité).
-  values: {"4_6": 0.4, "7_9": 0.2, "10_12": 0.15}
+  values: {"4_6": 0.2, "7_9": 0.1, "10_12": 0.05}
   source: >
     Fritzley & Lee (2003), Do young children always say yes to yes-no questions?
-    A metadevelopmental study of the affirmation bias, Child Development 74(5).
+    A metadevelopmental study of the affirmation bias, Child Development 74(5) ;
+    Okanda & Itakura (2010), Child Development 81(2) — biais « oui » nul dès 4–5 ans
+    pour les questions compréhensibles (biais « non » pour les incompréhensibles).
+    v2 (calibration 2026-11) : abaissé depuis {0.4, 0.2, 0.15}, voir
+    docs/research/revue-litterature.md §5.2.
   estimated: true
 
 p_acquiesce:
   description: >
     Question suggestive dont la proposition est fausse : probabilité d'acquiescer
     (avant modulation par la suggestibilité du profil).
-  values: {"4_6": 0.55, "7_9": 0.35, "10_12": 0.25}
+  values: {"4_6": 0.3, "7_9": 0.18, "10_12": 0.1}
   source: >
     Ceci & Bruck (1993), Suggestibility of the child witness: A historical review and
     synthesis, Psychological Bulletin 113(3) — les enfants d'âge préscolaire sont
-    nettement plus suggestibles que les plus âgés.
+    nettement plus suggestibles que les plus âgés. Ordre de grandeur : ≈ 20 % de faux
+    « oui » à une question suggestive de type « tag » (Finnilä et al., 2003, cité par
+    Pompedda et al., 2022 — source primaire non consultée). Après deux règles de base,
+    un enfant de suggestibilité moyenne accepte ≈ 23 % (4–6 ans), 14 % (7–9), 8 % (10–12).
+    v2 (calibration 2026-11) : abaissé depuis {0.55, 0.35, 0.25}, qui donnait 50 % à
+    5–7 ans dans l'ablation (docs/evaluations/ablation-hybride-vs-llm.md).
   estimated: true
 
 p_integration:

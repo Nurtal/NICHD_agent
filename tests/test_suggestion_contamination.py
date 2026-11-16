@@ -119,7 +119,11 @@ def test_younger_children_acquiesce_more_than_older_ones():
 
     r5, r8, r11 = rate(5), rate(8), rate(11)
     assert r5 > r8 > r11
-    assert abs(r5 - 0.55) < 0.08  # p_acquiesce(4_6) with neutral suggestibility
+    from nichd_sim.parameters import Parameters
+    from nichd_sim.scenario import AgeBand
+
+    expected = Parameters.load(AgeBand.B4_6)["p_acquiesce"]
+    assert abs(r5 - expected) < 0.08  # p_acquiesce(4_6) with neutral suggestibility
 
 
 def test_suggestibility_profile_modulates_acquiescence():
