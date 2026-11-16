@@ -1,6 +1,7 @@
 """Run the ablation: same scripted interviews for the hybrid child and the LLM-only child.
 
     uv run python experiments/ablation/run.py [--models qwen3.8:latest phi4 ...] [--seeds 0 1 2]
+        [--config experiments/models/candidates.yaml]
 
 Writes one JSONL line per (condition, scenario, seed) interview, resumable (done runs are skipped).
 """
@@ -37,8 +38,32 @@ def run_hybrid(scenario, seed, client):
             "turn": i, "interviewer": strip_tag(u), "child": r.response,
             "speech_act": r.decision.speech_act, "allowed": [a.id for a in r.decision.allowed_units],
             "fallback": r.fallback_used, "latency_s": round(time.perf_counter() - t0, 2),
+            "rejected": [rejection_reasons(a) for a in s.log.turns[-1].attempts if not a.ok],
         })
     return turns
+
+
+def rejection_reasons(attempt) -> list[str]:
+    """Why the output filter refused a realization (one attempt)."""
+    reasons = [f"forbidden:{t}" for t in attempt.forbidden_terms] + [f"leak:{u}" for u in attempt.leaked_units]
+    reasons += [f"missing:{u}" for u in attempt.missing_units]
+    reasons += [name for name in ("empty", "too_long", "contradicts", "emoji") if getattr(attempt, name)]
+    return reasons
+
+
+def load_candidates(path) -> dict[str, dict]:
+    """Model name -> entry of experiments/models/candidates.yaml."""
+    import yaml
+
+    return {m["name"]: m for m in yaml.safe_load(Path(path).read_text(encoding="utf-8"))["models"]}
+
+
+def make_client(model: str, options: dict | None = None) -> OllamaClient:
+    # phi4 and mistral sometimes write the rest of the dialogue themselves ("Adulte : … Toi : …"):
+    # stop there, as any deployed chat would, and cap the length.
+    options = options or {}
+    return OllamaClient(model, timeout=300, num_predict=400, stop=STOP,
+                        num_ctx=options.get("num_ctx"), think=options.get("think"))
 
 
 def run_llm_only(scenario, seed, client, strong=False):
@@ -78,7 +103,9 @@ def main():
     ap.add_argument("--out", default=str(ROOT / "experiments/ablation/results"))
     ap.add_argument("--models", nargs="+", default=["qwen3.8:latest"])
     ap.add_argument("--conditions", nargs="+", default=list(CONDITIONS))
+    ap.add_argument("--config", help="experiments/models/candidates.yaml: per-model options (num_ctx, think)")
     args = ap.parse_args()
+    candidates = load_candidates(args.config) if args.config else {}
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     path = out / "transcripts.jsonl"
@@ -89,9 +116,7 @@ def main():
             done.add((d["model"], d["condition"], d["scenario"], d["seed"]))
     scenarios = load_scenarios(ROOT / "scenarios")
     for model in args.models:  # one model at a time: Ollama keeps it loaded
-        # phi4 and mistral sometimes write the rest of the dialogue themselves ("Adulte : … Toi : …"):
-        # stop there, as any deployed chat would, and cap the length.
-        client = OllamaClient(model, timeout=300, num_predict=400, stop=STOP)
+        client = make_client(model, candidates.get(model, {}).get("options"))
         for seed in args.seeds:
             for sid, sc in scenarios.items():
                 for cond in args.conditions:

@@ -1,0 +1,81 @@
+# Candidate models for the child's voice (local, Ollama, 2 x TITAN RTX = 48 GB VRAM).
+# Selection: general/chat models (no coder), French quality, instruction following, family diversity.
+#
+#   name      Ollama tag (library) or hf.co/<repo>:<quant> (Hugging Face GGUF)
+#   family    for the "robustness across families" argument
+#   priority  1 = run first, 2 = widen, 3 = optional / to verify
+#   size_gb   approximate download size (Q4_K_M)
+#   options   per-model overrides: think (false | "low" ...), num_ctx
+#   status    reference = already in the v2 ablation; verify = availability or tag not checked yet
+#
+# Sizes and descriptions of models released after mid-2026 come from ollama.com and are not verified.
+
+models:
+  # --- reference set (ablation v2) ---
+  - {name: "qwen3.8:latest", family: qwen, priority: 0, size_gb: 17, status: reference}
+  - {name: "phi4:latest", family: phi, priority: 0, size_gb: 9, status: reference}
+  - {name: "gemma4:latest", family: gemma, priority: 0, size_gb: 10, status: reference}  # = gemma4:e4b (4B effective)
+  - {name: "mistral:latest", family: mistral, priority: 0, size_gb: 4, status: reference}
+
+  # --- priority 1 ---
+  - name: "mistral-small3.2:24b"
+    family: mistral
+    priority: 1
+    size_gb: 15
+    why: "French lab; likely the best spoken French at this size; strong instruction following. Replaces mistral 7B (12 % fallbacks)."
+  - name: "gemma4:31b"
+    family: gemma
+    priority: 1
+    size_gb: 20
+    why: "Size effect within a family already tested (gemma4 small)."
+  - name: "gpt-oss:20b"
+    family: gpt-oss
+    priority: 1
+    size_gb: 14
+    options: {think: "low"}  # reasoning cannot be fully disabled
+    why: "New family (OpenAI open weights). French probably less natural."
+  - name: "olmo-3.1:32b-instruct"  # not the -think variant
+    family: olmo
+    priority: 1
+    size_gb: 20
+    why: "Fully open (weights + data): reproducibility argument for a publication."
+
+  # --- priority 2 ---
+  - name: "aya-expanse:32b"
+    family: aya
+    priority: 2
+    size_gb: 20
+    why: "Cohere multilingual, built for non-English languages."
+  - name: "mistral-nemo:12b"
+    family: mistral
+    priority: 2
+    size_gb: 7
+    why: "Mid-size point, good French, fast."
+  - name: "qwen3.6:27b"
+    family: qwen
+    priority: 2
+    size_gb: 17
+    why: "Previous version of the default model: version sensitivity."
+  - name: "llama3.3:70b"
+    family: llama
+    priority: 2
+    size_gb: 43
+    options: {num_ctx: 8192}
+    why: "Largest model that fits; does a stronger LLM-only baseline hold reluctance? Slow (3-4 h)."
+
+  # --- priority 3: French-specific models from Hugging Face (repos checked 2026-11-16, single Q4_K_M file) ---
+  - name: "hf.co/OpenLLM-France/Lucie-7B-Instruct-v1.1-gguf"
+    family: lucie
+    priority: 3
+    size_gb: 5
+    why: "French-first model (OpenLLM-France / Linagora), trained mostly on French. Official GGUF."
+  - name: "hf.co/jpacifico/Chocolatine-2-14B-Instruct-v2.0.3-Q4_K_M-GGUF"
+    family: chocolatine
+    priority: 3
+    size_gb: 9
+    why: "French fine-tune (by its author), well ranked on French leaderboards."
+  - name: "hf.co/mradermacher/Claire-Mistral-7B-0.1-GGUF:Q4_K_M"
+    family: claire
+    priority: 3
+    size_gb: 4
+    why: "Trained on transcripts of spoken French conversations: oral register. Not instruction-tuned, may ignore the instructions."
