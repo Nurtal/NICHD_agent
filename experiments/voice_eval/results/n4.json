@@ -1,0 +1,157 @@
+{
+ "checks": [
+  {
+   "level": "N4",
+   "metric": "Erreur sur l'instant de prise de parole, propre (ms, moyenne)",
+   "value": 7.2592592592592595,
+   "target": "< 50",
+   "ok": true,
+   "note": "p95 = 16 ms ; 108 échanges"
+  },
+  {
+   "level": "N4",
+   "metric": "Moment de l'interruption bien classé (aucune / silence initial / pause / phrase), propre",
+   "value": 1.0,
+   "target": "≥ 0,95",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Unités non dites : précision / rappel, propre",
+   "value": "1.00 / 1.00",
+   "target": "≥ 0,95 / ≥ 0,95",
+   "ok": true,
+   "note": "50 unités coupées"
+  },
+  {
+   "level": "N4",
+   "metric": "Énoncés non entendus (rejetés), propre",
+   "value": 0,
+   "target": "0",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Erreur sur l'instant de prise de parole, 20 dB (ms, moyenne)",
+   "value": 5.62037037037037,
+   "target": "< 50",
+   "ok": true,
+   "note": "p95 = 15 ms ; 108 échanges"
+  },
+  {
+   "level": "N4",
+   "metric": "Moment de l'interruption bien classé (aucune / silence initial / pause / phrase), 20 dB",
+   "value": 1.0,
+   "target": "≥ 0,95",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Unités non dites : précision / rappel, 20 dB",
+   "value": "1.00 / 1.00",
+   "target": "≥ 0,95 / ≥ 0,95",
+   "ok": true,
+   "note": "46 unités coupées"
+  },
+  {
+   "level": "N4",
+   "metric": "Énoncés non entendus (rejetés), 20 dB",
+   "value": 0,
+   "target": "0",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Erreur sur l'instant de prise de parole, 10 dB (ms, moyenne)",
+   "value": 14.453703703703704,
+   "target": "< 100",
+   "ok": true,
+   "note": "p95 = 47 ms ; 108 échanges"
+  },
+  {
+   "level": "N4",
+   "metric": "Moment de l'interruption bien classé (aucune / silence initial / pause / phrase), 10 dB",
+   "value": 1.0,
+   "target": "≥ 0,95",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Unités non dites : précision / rappel, 10 dB",
+   "value": "1.00 / 1.00",
+   "target": "≥ 0,95 / ≥ 0,95",
+   "ok": true,
+   "note": "45 unités coupées"
+  },
+  {
+   "level": "N4",
+   "metric": "Énoncés non entendus (rejetés), 10 dB",
+   "value": 0,
+   "target": "0",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Erreur sur l'instant de prise de parole, 5 dB (ms, moyenne)",
+   "value": 48.48148148148148,
+   "target": "rapporté",
+   "ok": null,
+   "note": "p95 = 116 ms ; 108 échanges"
+  },
+  {
+   "level": "N4",
+   "metric": "Moment de l'interruption bien classé (aucune / silence initial / pause / phrase), 5 dB",
+   "value": 0.9722222222222222,
+   "target": "rapporté",
+   "ok": null,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Unités non dites : précision / rappel, 5 dB",
+   "value": "1.00 / 0.97",
+   "target": "rapporté",
+   "ok": null,
+   "note": "38 unités coupées"
+  },
+  {
+   "level": "N4",
+   "metric": "Énoncés non entendus (rejetés), 5 dB",
+   "value": 0,
+   "target": "0",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N4",
+   "metric": "Faux positifs : enregistrements sans parole pris pour un énoncé",
+   "value": 0.0,
+   "target": "< 0,02",
+   "ok": true,
+   "note": "silence et bruit blanc à −50, −40, −30 dBFS"
+  },
+  {
+   "level": "N4",
+   "metric": "Cohérence texte/voix sans interruption (décisions et rappel identiques)",
+   "value": 1.0,
+   "target": "1",
+   "ok": true,
+   "note": "104 comparaisons"
+  }
+ ],
+ "confusion": {
+  "none→none": 182,
+  "speech→speech": 125,
+  "onset→onset": 78,
+  "pause→pause": 44,
+  "onset→speech": 2,
+  "speech→pause": 1
+ },
+ "exchanges": 432
+}

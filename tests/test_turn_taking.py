@@ -245,3 +245,23 @@ def test_voiced_bounds_find_the_speech_in_a_recording():
     assert 690 <= start <= 720
     assert abs((a.duration_ms - 500) - end) <= 30
     assert Audio.silence(SR, 500).voiced_bounds() is None
+
+
+def test_voiced_bounds_resist_noise():
+    """Voice evaluation N4: without a noise floor, noise at 10 dB SNR counted as speech from frame 0."""
+    import math
+    import random
+    from array import array
+
+    rng = random.Random(0)
+    a = Audio.silence(SR, 400)
+    a.extend(ToneSpeaker(sample_rate=SR).synthesize("dis-moi tout"))
+    a.extend(Audio.silence(SR, 300))
+    rms = math.sqrt(sum(s * s for s in a.samples if abs(s) > 300) / sum(1 for s in a.samples if abs(s) > 300))
+    sigma = rms / 10 ** (10 / 20)
+    noisy = Audio(SR, array("h", (max(-32768, min(32767, int(s + rng.gauss(0, sigma)))) for s in a.samples)))
+    start, _ = noisy.voiced_bounds()
+    assert abs(start - 400) <= 60
+    click = Audio.silence(SR, 1000)
+    click.samples[8000] = 20000  # an isolated click is not speech
+    assert click.voiced_bounds() is None
