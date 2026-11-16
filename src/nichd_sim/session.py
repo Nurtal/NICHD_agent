@@ -169,7 +169,9 @@ class Session:
         new_violations = self.phases.violations[n_violations:]
 
         history = self.history + [("interviewer", heard)]
-        attempts, response, fallback = self._realize(decision, history, known=before.revealed)
+        # The child may mention what it already said: true units, and the lies it told.
+        known = before.revealed + [lr.lie_unit for lr in self.engine.state.lies if lr.lie_unit]
+        attempts, response, fallback = self._realize(decision, history, known=known)
         if decision.speech_act == SpeechAct.CONFABULATE and decision.new_contamination:
             self.engine.record_confabulation(decision.new_contamination, response)
         after = self.state

@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 
 class ScenarioError(ValueError):
@@ -113,6 +121,48 @@ class ValidationStatus(StrEnum):
     VALIDATED = "validated"
 
 
+class Motive(StrEnum):
+    """Why the child conceals (ADR 0002)."""
+
+    LOYALTY = "loyalty"
+    FEAR = "fear"
+    SHAME = "shame"
+    COACHED = "coached"
+
+
+class LieUnit(_Strict):
+    """Author-written false content (cover story or minimization). The LLM never invents a lie."""
+
+    id: str = Field(min_length=1)
+    value: str = Field(min_length=1, description="Le contenu mensonger, du point de vue de l'enfant.")
+    anchors: list[str] = Field(min_length=1, description="Mots d'ancrage (contrôle de fuite et d'omission).")
+    covers: list[str] = Field(min_length=1, description="Faits protégés que ce contenu remplace.")
+
+
+class Deception(_Strict):
+    """Optional: the child hides or disguises some true facts (absent = MVP child, never lies)."""
+
+    motive: Motive
+    strength: float = Field(ge=0, le=1, description="Pression de dissimulation initiale.")
+    protected: list[str] = Field(
+        min_length=1,
+        description="Unités vraies de l'événement cible que l'enfant cache, de la moins à la plus gardée "
+        "(ordre dans lequel elles peuvent sortir quand la dissimulation baisse).",
+    )
+    cover_stories: list[LieUnit] = Field(default_factory=list)
+    minimizations: list[LieUnit] = Field(default_factory=list)
+
+    @field_validator("minimizations")
+    @classmethod
+    def _one_fact_each(cls, v: list[LieUnit]) -> list[LieUnit]:
+        if any(len(m.covers) != 1 for m in v):
+            raise ValueError("une minimisation atténue exactement un fait protégé (`covers` à un élément)")
+        return v
+
+    def lie_units(self) -> list[LieUnit]:
+        return [*self.cover_stories, *self.minimizations]
+
+
 class EventKind(StrEnum):
     TARGET = "target"
     NEUTRAL = "neutral"
@@ -130,6 +180,9 @@ class Scenario(_Strict):
         default=None, description="Événement neutre récent, pour la pratique narrative."
     )
     parameter_overrides: dict[str, Any] = Field(default_factory=dict)
+    deception: Deception | None = Field(
+        default=None, description="Faits que l'enfant cache ou maquille (ADR 0002). Absent : l'enfant ne ment pas."
+    )
 
     @model_validator(mode="after")
     def _unique_unit_ids(self) -> Scenario:
@@ -138,7 +191,40 @@ class Scenario(_Strict):
             if unit.id in seen:
                 raise ValueError(f"identifiant d'unité dupliqué : {unit.id!r}")
             seen.add(unit.id)
+        if self.deception is not None:
+            target = {u.id for _, u in self.target_units()}
+            for pid in self.deception.protected:
+                if pid not in target:
+                    raise ValueError(f"fait protégé {pid!r} : pas une unité de l'événement cible")
+            for lie in self.deception.lie_units():
+                if lie.id in seen:
+                    raise ValueError(f"identifiant dupliqué : {lie.id!r}")
+                seen.add(lie.id)
+                for cid in lie.covers:
+                    if cid not in self.deception.protected:
+                        raise ValueError(f"{lie.id} couvre {cid!r}, qui n'est pas un fait protégé")
         return self
+
+    # -- deception ----------------------------------------------------------
+
+    def lie_units(self) -> list[LieUnit]:
+        return self.deception.lie_units() if self.deception else []
+
+    def lie_unit(self, lie_id: str) -> LieUnit | None:
+        return next((u for u in self.lie_units() if u.id == lie_id), None)
+
+    def is_protected(self, unit_id: str | None) -> bool:
+        return self.deception is not None and unit_id in self.deception.protected
+
+    def cover_story_for(self, unit_id: str) -> LieUnit | None:
+        if self.deception is None:
+            return None
+        return next((c for c in self.deception.cover_stories if unit_id in c.covers), None)
+
+    def minimization_for(self, unit_id: str) -> LieUnit | None:
+        if self.deception is None:
+            return None
+        return next((m for m in self.deception.minimizations if unit_id in m.covers), None)
 
     def event(self, kind: EventKind) -> Event | None:
         return self.target_event if kind == EventKind.TARGET else self.neutral_event

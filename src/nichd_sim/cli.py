@@ -102,6 +102,14 @@ def play(args: argparse.Namespace) -> int:
             )
             if d.delivery is not None:
                 print(f"  [formateur] diction : {d.delivery.describe()}")
+            if d.lie is not None:
+                print(f"  [formateur] mensonge {d.lie.id} ({d.lie.kind}) sur {d.lie.protected} : {d.lie.value!r}")
+            if d.withheld:
+                print(f"  [formateur] omis volontairement : {', '.join(d.withheld)}")
+            if d.retraction is not None:
+                print(f"  [formateur] revient sur {d.retraction.id} ({d.retraction.kind})")
+            if session.scenario.deception is not None:
+                print(f"  [formateur] dissimulation : {result.state.concealment:.2f}")
             for v in result.violations:
                 print(f"  [formateur] ⚠ {VIOLATION_LABELS[v.kind]} : {v.phase}{' — ' + v.detail if v.detail else ''}")
             if c.suggested_proposition:

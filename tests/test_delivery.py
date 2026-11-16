@@ -198,3 +198,8 @@ def test_turn_result_exposes_the_speech_plan():
     r = ask(s, clf, "Raconte.", C("invitation"))
     assert r.speech_plan[0].kind == ChunkKind.SILENCE
     assert r.speech_plan[0].ms == r.decision.delivery.onset_ms
+
+
+def test_pauses_do_not_split_a_pair_of_connectors():
+    plan = plan_speech("C'était dimanche et puis maman était partie travailler et après la télé.", _delivery(pauses_ms=[700]))
+    assert "et puis maman" in render_plan(plan)

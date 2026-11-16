@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict
 from nichd_sim.classification import OUT_OF_SCENARIO, Classification, QuestionType
 from nichd_sim.delivery import Delivery, HesitationCause, make_delivery
 from nichd_sim.parameters import Parameters
-from nichd_sim.scenario import Centrality, EventKind, InfoUnit, Scenario
+from nichd_sim.scenario import Centrality, EventKind, InfoUnit, LieUnit, Scenario
 from nichd_sim.text import mentions, normalize
 
 
@@ -33,6 +33,37 @@ class SpeechAct(StrEnum):
     """Rapport chit-chat about the child's life, without any scenario fact."""
     CONFUSION = "confusion"
     SILENCE = "silence"
+    RETRACT = "retract"
+    """Takes back an earlier lie and tells the true fact (ADR 0002)."""
+
+
+class LieKind(StrEnum):
+    OMISSION = "omission"
+    """A protected fact left out of a free narrative."""
+    FALSE_DENY = "false_deny"
+    """« Non » to a true yes/no or suggestive question about a protected fact."""
+    FEIGNED_IGNORANCE = "feigned_ignorance"
+    """« Je sais pas » to a directive question about a protected fact."""
+    COVER_STORY = "cover_story"
+    MINIMIZATION = "minimization"
+
+
+class LieRecord(BaseModel):
+    """A lie told by the child: keeps it consistent across turns and feeds the metrics."""
+
+    id: str
+    kind: LieKind
+    protected: str
+    """Protected (true) unit the lie is about."""
+    lie_unit: str | None = None
+    """Author-written lie content said (cover story, minimization), if any."""
+    value: str
+    """What the child said instead of the truth."""
+    turn: int
+    question_type: QuestionType
+    """Type of the question that drew the lie (effective type)."""
+    times: int = 1
+    retracted_turn: int | None = None
 
 
 class AllowedUnit(BaseModel):
@@ -43,6 +74,8 @@ class AllowedUnit(BaseModel):
     contaminated: bool = False
     new: bool = True
     """False when the unit was already said in an earlier turn."""
+    lie: bool = False
+    """Author-written lie content (cover story, minimization), not a true unit."""
 
 
 class Decision(BaseModel):
@@ -64,6 +97,12 @@ class Decision(BaseModel):
     """The disclosure was obtained by a focused (directive, closed or suggestive) prompt."""
     delivery: Delivery | None = None
     """How the child says it (ADR 0002). None in logs older than format 2."""
+    lie: LieRecord | None = None
+    """The lie told at this turn (other than omissions), if any."""
+    withheld: list[str] = []
+    """Protected units deliberately left out of this turn's narrative (omission)."""
+    retraction: LieRecord | None = None
+    """The lie taken back at this turn (speech act `retract`)."""
 
 
 class ContaminatedUnit(BaseModel):
@@ -91,6 +130,9 @@ class EngineState(BaseModel):
     disclosure_pressure: float = 0.0
     ground_rules_given: int = 0
     practice_turns: int = 0
+    concealment: float = 0.0
+    """Probability of hiding or disguising a protected fact (0 when the scenario has no deception)."""
+    lies: list[LieRecord] = []
 
 
 def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
@@ -111,11 +153,21 @@ class BehaviorEngine:
         self.rng = random.Random(seed)
         # Separate streams (ADR 0002): new features never shift the decisions of the MVP stream.
         self.delivery_rng = random.Random(f"{seed}:delivery")
+        self.deception_rng = random.Random(f"{seed}:deception")
+        protected = scenario.deception.protected if scenario.deception else []
+        draws = sorted((self.deception_rng.random() for _ in protected), reverse=True)
+        self._thresholds = dict(zip(protected, draws))
+        """Per protected fact, drawn once: the fact stays hidden while concealment exceeds it.
+        Facts come out one by one as support lowers concealment (pressure hides them again), in
+        the authored order: `protected` lists them from least to most guarded."""
+        self._hidden: dict[str, bool] = {}
+        """Per-turn concealment draws, so that a unit is hidden or not consistently within a turn."""
         profile = scenario.child_profile
         self.state = EngineState(
             reluctance=profile.reluctance,
             verbosity=profile.verbal_skills,
             acquiescence=profile.suggestibility,
+            concealment=scenario.deception.strength if scenario.deception else 0.0,
         )
         self._orders: dict[EventKind, list[InfoUnit]] = {
             EventKind.TARGET: [u for _, u in scenario.target_units()],
@@ -126,6 +178,8 @@ class BehaviorEngine:
 
     def decide(self, c: Classification) -> Decision:
         self.state.turn += 1
+        self._hidden = {}
+        self._withheld: list[str] = []
         effective = c.type
         if c.type == QuestionType.COMPOUND:
             effective = c.inner_type or QuestionType.DIRECTIVE
@@ -138,6 +192,11 @@ class BehaviorEngine:
                 decision = gate.model_copy(update={"effective_type": effective})
                 self._commit(decision)
                 return self._with_delivery(decision, c, about_target)
+        retraction = self._maybe_retract(effective)
+        if retraction is not None:
+            decision = retraction.model_copy(update={"effective_type": effective})
+            self._commit(decision)
+            return self._with_delivery(decision, c, about_target)
         handler = {
             QuestionType.INVITATION: self._invitation,
             QuestionType.CUED_INVITATION: self._cued_invitation,
@@ -150,6 +209,7 @@ class BehaviorEngine:
             QuestionType.OTHER: self._confusion,
         }[effective]
         decision = handler(c, effective).model_copy(update={"effective_type": effective})
+        decision = self._record_deception(decision, effective)
         self._commit(decision)
         if not was_disclosed and self.state.disclosed:
             decision = decision.model_copy(
@@ -169,6 +229,14 @@ class BehaviorEngine:
         elif t == QuestionType.GROUND_RULE and st.ground_rules_given < p["max_effective_ground_rules"]:
             st.ground_rules_given += 1
             st.acquiescence = max(0.0, st.acquiescence - p["ground_rule_acquiescence_drop"])
+        if self.scenario.deception is not None:
+            if t == QuestionType.SUPPORT:
+                st.concealment -= p["support_concealment_drop"]
+            elif t == QuestionType.INVITATION and hint == "rapport":
+                st.concealment -= p["rapport_concealment_drop"]
+            elif t in (QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING) and self.scenario.is_protected(c.target):
+                st.concealment += p["pressure_concealment_rise"]
+            st.concealment = round(min(1.0, max(0.0, st.concealment)), 6)
         if (
             t in (QuestionType.INVITATION, QuestionType.CUED_INVITATION)
             and hint == "narrative_practice"
@@ -234,15 +302,27 @@ class BehaviorEngine:
         """Pick up to n unrevealed units (central first, chronological order),
         possibly with one integrated false detail resurfacing."""
         fresh = self._unrevealed(pool)
-        central = [u for u in fresh if u.centrality == Centrality.CENTRAL]
-        peripheral = [u for u in fresh if u.centrality == Centrality.PERIPHERAL]
-        units = [self._allowed(u) for u in (central + peripheral)[:n]]
+        ordered = [u for u in fresh if u.centrality == Centrality.CENTRAL] + [
+            u for u in fresh if u.centrality == Centrality.PERIPHERAL
+        ]
+        picked: list[InfoUnit] = []
+        for u in ordered:
+            if len(picked) == n:
+                break
+            if self._lies_about(u):  # skipped on purpose: an omission
+                self._withheld.append(u.id)
+            else:
+                picked.append(u)
+        units = [self._allowed(u) for u in picked]
         if recall_contamination:
             resurfacing = self._resurfacing_contamination()
             if resurfacing is not None:
                 units.append(resurfacing)
                 reason += " + faux détail intégré"
         if not units:
+            cover = self._untold_cover_story([u for u in pool if self._hidden.get(u.id)])
+            if cover is not None:
+                return self._lie(LieKind.COVER_STORY, cover.covers[0], f"{reason} : version de couverture", cover)
             return Decision(speech_act=SpeechAct.DONT_KNOW, reason=f"{reason} : plus rien à raconter")
         return Decision(speech_act=SpeechAct.ANSWER, allowed_units=units, reason=f"{reason} : {len(units)} unité(s)")
 
@@ -282,16 +362,23 @@ class BehaviorEngine:
             return Decision(speech_act=SpeechAct.SMALL_TALK, reason="invitation de rapport")
         fresh = self._unrevealed(self._orders[topic])
         central_left = [u for u in fresh if u.centrality == Centrality.CENTRAL]
+        # Hidden central facts do not count as "left to tell": the child moves on to peripheral ones.
+        pool = central_left if self._visible(central_left) else fresh
         label = "invitation" if topic == EventKind.TARGET else "invitation (événement neutre)"
-        return self._narrate(
-            central_left or fresh, self._invitation_size(), label, recall_contamination=topic == EventKind.TARGET
-        )
+        return self._narrate(pool, self._invitation_size(), label, recall_contamination=topic == EventKind.TARGET)
 
     def _anything_else(self) -> Decision:
         """Closure « autre chose ? »: maybe one remaining central unit."""
         remaining = [
-            u for u in self._unrevealed(self._orders[EventKind.TARGET]) if u.centrality == Centrality.CENTRAL
+            u for u in self._visible(self._unrevealed(self._orders[EventKind.TARGET]))
+            if u.centrality == Centrality.CENTRAL
         ]
+        if not remaining:
+            hidden = [
+                u.id for u in self._unrevealed(self._orders[EventKind.TARGET])
+                if u.centrality == Centrality.CENTRAL and self._hidden.get(u.id)
+            ]
+            self._withheld += hidden[:1]
         if remaining and self._draw(self.params["p_closure_reveal"]):
             return Decision(
                 speech_act=SpeechAct.ANSWER,
@@ -326,6 +413,8 @@ class BehaviorEngine:
 
     def _directive(self, c: Classification, t: QuestionType) -> Decision:
         unit = self._target_unit(c)
+        if unit is not None and self._lies_about(unit):
+            return self._lie_to_focused(unit, LieKind.FEIGNED_IGNORANCE, "question directive")
         if unit is not None:
             return Decision(speech_act=SpeechAct.ANSWER, allowed_units=[self._allowed(unit)], reason=f"question directive → {unit.id}")
         if self._draw(self._p("p_confabulation", modulated=True)):
@@ -347,6 +436,8 @@ class BehaviorEngine:
     def _forced_choice(self, c: Classification, t: QuestionType, unit: InfoUnit | None) -> Decision:
         options = c.options or []
         correct = next((o for o in options if unit is not None and proposition_matches(unit, o)), None)
+        if correct is not None and self._lies_about(unit):
+            return self._lie_to_focused(unit, LieKind.FEIGNED_IGNORANCE, "question à choix")
         if correct is not None and self._draw(self.params["p_correct_option"]):
             return Decision(
                 speech_act=SpeechAct.ANSWER,
@@ -373,6 +464,8 @@ class BehaviorEngine:
 
     def _yes_no(self, c: Classification, t: QuestionType, unit: InfoUnit | None) -> Decision:
         prop = c.suggested_proposition
+        if unit is not None and (prop is None or proposition_matches(unit, prop)) and self._lies_about(unit):
+            return self._lie_to_focused(unit, LieKind.FALSE_DENY, "question oui/non vraie")
         if unit is not None and (prop is None or proposition_matches(unit, prop)):
             return Decision(
                 speech_act=SpeechAct.ANSWER,
@@ -393,6 +486,8 @@ class BehaviorEngine:
     def _suggestive(self, c: Classification, t: QuestionType) -> Decision:
         unit = self._target_unit(c)
         prop = c.suggested_proposition
+        if unit is not None and (prop is None or proposition_matches(unit, prop)) and self._lies_about(unit):
+            return self._lie_to_focused(unit, LieKind.FALSE_DENY, "suggestion tombée juste")
         if unit is not None and (prop is None or proposition_matches(unit, prop)):
             return Decision(
                 speech_act=SpeechAct.ACQUIESCE,
@@ -417,6 +512,130 @@ class BehaviorEngine:
 
     def _confusion(self, c: Classification, t: QuestionType) -> Decision:
         return Decision(speech_act=SpeechAct.CONFUSION, reason="énoncé hors protocole")
+
+    # -- deception (ADR 0002) --------------------------------------------------
+
+    def _active_lie(self, unit_id: str) -> LieRecord | None:
+        """The standing (not retracted, not an omission) lie about a protected unit."""
+        return next(
+            (
+                lr for lr in self.state.lies
+                if lr.protected == unit_id and lr.retracted_turn is None and lr.kind != LieKind.OMISSION
+            ),
+            None,
+        )
+
+    def _lies_about(self, unit: InfoUnit) -> bool:
+        """Does the child hide or disguise this fact now? Consistent with earlier lies and truths."""
+        if not self.scenario.is_protected(unit.id) or unit.id in self.state.revealed:
+            return False
+        if self._active_lie(unit.id) is not None:
+            return True  # a lie is only given up by a retraction
+        self._hidden[unit.id] = self.state.concealment > self._thresholds[unit.id]
+        return self._hidden[unit.id]
+
+    def _visible(self, units: list[InfoUnit]) -> list[InfoUnit]:
+        """Units the child is willing to mention in a narrative (protected ones may be omitted)."""
+        return [u for u in units if not self._lies_about(u)]
+
+    def _cover_story(self, unit_id: str) -> LieUnit | None:
+        """The cover story for a fact, unless one of the facts it covers was already told truthfully."""
+        cover = self.scenario.cover_story_for(unit_id)
+        if cover is None or any(cid in self.state.revealed for cid in cover.covers):
+            return None
+        return cover
+
+    def _untold_cover_story(self, hidden: list[InfoUnit]) -> LieUnit | None:
+        told = {lr.lie_unit for lr in self.state.lies}
+        for u in hidden:
+            cover = self._cover_story(u.id)
+            if cover is not None and cover.id not in told:
+                return cover
+        return None
+
+    def _lie(self, kind: LieKind, protected: str, reason: str, content: LieUnit | None = None) -> Decision:
+        """A lie decision; the LieRecord is completed (turn, type) by _record_deception."""
+        if content is not None:
+            act, units = SpeechAct.ANSWER, [AllowedUnit(id=content.id, value=content.value, lie=True)]
+            value = content.value
+        elif kind == LieKind.FALSE_DENY:
+            act, units, value = SpeechAct.DENY, [], "non"
+        else:
+            act, units, value = SpeechAct.DONT_KNOW, [], "je sais pas"
+        record = LieRecord(
+            id="", kind=kind, protected=protected, lie_unit=content.id if content else None,
+            value=value, turn=self.state.turn, question_type=QuestionType.OTHER,
+        )
+        return Decision(speech_act=act, allowed_units=units, lie=record, reason=f"{reason} → mensonge ({kind})")
+
+    def _lie_to_focused(self, unit: InfoUnit, default: LieKind, reason: str) -> Decision:
+        """Lie to a focused question about a protected fact: keep the standing lie, else the
+        softest authored content (minimization, then cover story), else `default`."""
+        standing = self._active_lie(unit.id)
+        if standing is not None:
+            content = self.scenario.lie_unit(standing.lie_unit) if standing.lie_unit else None
+            return self._lie(standing.kind, unit.id, f"{reason} sur {unit.id} (mensonge maintenu)", content)
+        mini = self.scenario.minimization_for(unit.id)
+        if mini is not None:
+            return self._lie(LieKind.MINIMIZATION, unit.id, f"{reason} sur {unit.id}", mini)
+        cover = self._cover_story(unit.id)
+        if cover is not None:
+            return self._lie(LieKind.COVER_STORY, unit.id, f"{reason} sur {unit.id}", cover)
+        return self._lie(default, unit.id, f"{reason} sur {unit.id}")
+
+    def _record_deception(self, d: Decision, t: QuestionType) -> Decision:
+        """Log the lie told and the omissions made at this turn."""
+        st = self.state
+        update: dict = {}
+        if d.lie is not None:
+            standing = self._active_lie(d.lie.protected)
+            if standing is not None and standing.kind == d.lie.kind and standing.lie_unit == d.lie.lie_unit:
+                standing.times += 1
+                update["lie"] = standing.model_copy()
+            else:
+                record = d.lie.model_copy(update={"id": f"l{len(st.lies) + 1}", "question_type": t})
+                st.lies.append(record)
+                update["lie"] = record.model_copy()
+        withheld = [uid for uid in dict.fromkeys(self._withheld) if d.lie is None or uid != d.lie.protected]
+        if withheld:
+            update["withheld"] = withheld
+            for uid in withheld:
+                if not any(lr.protected == uid and lr.kind == LieKind.OMISSION for lr in st.lies):
+                    st.lies.append(
+                        LieRecord(
+                            id=f"l{len(st.lies) + 1}", kind=LieKind.OMISSION, protected=uid,
+                            value="(omis)", turn=st.turn, question_type=t,
+                        )
+                    )
+        return d.model_copy(update=update) if update else d
+
+    def _maybe_retract(self, t: QuestionType) -> Decision | None:
+        """Low concealment + a supportive or open prompt: the child may take back a lie."""
+        st, p = self.state, self.params
+        if self.scenario.deception is None or t not in (
+            QuestionType.SUPPORT, QuestionType.INVITATION, QuestionType.CUED_INVITATION, QuestionType.FACILITATOR
+        ):
+            return None
+        standing = [
+            lr for lr in st.lies
+            if lr.kind != LieKind.OMISSION and lr.retracted_turn is None and lr.protected not in st.revealed
+        ]
+        if not standing or st.concealment >= p["retraction_threshold"]:
+            return None
+        if self.deception_rng.random() >= p["p_retraction"]:
+            return None
+        lie = standing[0]
+        covered = self.scenario.lie_unit(lie.lie_unit).covers if lie.lie_unit else [lie.protected]
+        units = [self._allowed(u) for uid in covered if (u := self.scenario.unit(uid)) and uid not in st.revealed]
+        for lr in st.lies:  # the truth is out: every lie about these facts is retracted
+            if lr.protected in covered and lr.retracted_turn is None and lr.kind != LieKind.OMISSION:
+                lr.retracted_turn = st.turn
+        return Decision(
+            speech_act=SpeechAct.RETRACT,
+            allowed_units=units,
+            retraction=lie.model_copy(update={"retracted_turn": st.turn}),
+            reason=f"dissimulation {st.concealment:.2f} < seuil → revient sur {lie.id} ({lie.kind})",
+        )
 
     # -- delivery (ADR 0002) ---------------------------------------------------
 
@@ -447,7 +666,9 @@ class BehaviorEngine:
         target = [unit for _, unit in true_units if self.scenario.is_target_unit(unit.id)]
         if d.speech_act == SpeechAct.RELUCTANT or any(u.centrality == Centrality.CENTRAL for u in target):
             weight = 1.0
-        elif target or (about_target and d.speech_act in (SpeechAct.DENY, SpeechAct.DONT_KNOW, SpeechAct.ACQUIESCE)):
+        elif target or d.lie is not None or (
+            about_target and d.speech_act in (SpeechAct.DENY, SpeechAct.DONT_KNOW, SpeechAct.ACQUIESCE)
+        ):
             weight = 0.5
         else:
             weight = 0.0
@@ -461,10 +682,18 @@ class BehaviorEngine:
             confusion = conf["compound"]
         elif c.options and len(c.options) >= 3:
             confusion = conf["many_options"]
+        deception = 0.0
+        if d.lie is not None:
+            deception = p["deception_load"][str(d.lie.kind)]
+            if d.lie.times > 1:  # a rehearsed lie costs less
+                deception *= p["rehearsed_lie_factor"]
+        elif d.withheld:
+            deception = p["deception_load"][str(LieKind.OMISSION)]
         return {
             HesitationCause.RETRIEVAL: retrieval,
             HesitationCause.AFFECT: affect,
             HesitationCause.CONFUSION: confusion,
+            HesitationCause.DECEPTION: deception,
         }
 
     # -- helpers ------------------------------------------------------------
@@ -486,10 +715,10 @@ class BehaviorEngine:
 
     def _commit(self, decision: Decision) -> None:
         for au in decision.allowed_units:
-            if not au.contaminated and au.id not in self.state.revealed:
+            if not au.contaminated and not au.lie and au.id not in self.state.revealed:
                 self.state.revealed.append(au.id)
                 if self.scenario.is_target_unit(au.id):
                     self.state.disclosed = True
-        true_units = [au for au in decision.allowed_units if not au.contaminated]
+        true_units = [au for au in decision.allowed_units if not au.contaminated and not au.lie]
         if true_units:
             self.state.last_unit = true_units[-1].id

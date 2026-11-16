@@ -69,17 +69,79 @@ class ContaminationScore(BaseModel):
     entries: list[ContaminationEntry]
 
 
+class LieEntry(BaseModel):
+    id: str
+    kind: str
+    protected: str
+    """Protected (true) unit the lie was about."""
+    value: str
+    turn: int
+    question_type: QuestionType
+    utterance: str
+    """The interviewer's utterance that drew the lie."""
+    times: int
+    retracted_turn: int | None
+
+
+class DeceptionSummary(BaseModel):
+    """What the child hid, how, and what the interviewer finally obtained (ADR 0002)."""
+
+    protected_total: int
+    protected_obtained: list[ElicitedUnit]
+    """Protected facts finally told truthfully, with the question type that obtained them."""
+    lies: list[LieEntry]
+    """Active lies (denials, feigned ignorance, cover stories, minimizations)."""
+    omissions: list[str]
+    """Protected units deliberately left out of a narrative at least once."""
+    retracted: int
+    standing: int
+    """Lies never taken back by the end of the interview."""
+    lies_by_question_type: dict[str, int]
+
+
 class Metrics(BaseModel):
     open_question_ratio: OpenQuestionRatio
     accurate_info_recall: AccurateInfoRecall
     contamination_score: ContaminationScore
+    deception: DeceptionSummary | None = None
+    """Only for scenarios with a `deception` block."""
 
 
 def compute_metrics(log: SessionLog, scenario: Scenario) -> Metrics:
+    recall = _recall(log, scenario)
     return Metrics(
         open_question_ratio=_open_ratio(log),
-        accurate_info_recall=_recall(log, scenario),
+        accurate_info_recall=recall,
         contamination_score=_contamination(log, scenario),
+        deception=_deception(log, scenario, recall) if scenario.deception is not None else None,
+    )
+
+
+def _deception(log: SessionLog, scenario: Scenario, recall: AccurateInfoRecall) -> DeceptionSummary:
+    final = log.turns[-1].state_after if log.turns else None
+    records = final.lies if final else []
+    utterances = {t.index: (t.classification.clean_text or t.utterance) for t in log.turns}
+    lies = [
+        LieEntry(
+            id=lr.id, kind=str(lr.kind), protected=lr.protected, value=lr.value, turn=lr.turn,
+            question_type=lr.question_type, utterance=utterances.get(lr.turn, ""), times=lr.times,
+            retracted_turn=lr.retracted_turn,
+        )
+        for lr in records
+        if lr.kind != "omission"
+    ]
+    by_type: dict[str, int] = {}
+    for e in lies:
+        by_type[e.question_type.value] = by_type.get(e.question_type.value, 0) + 1
+    protected = set(scenario.deception.protected)
+    return DeceptionSummary(
+        protected_total=len(protected),
+        protected_obtained=[e for e in recall.elicited if e.id in protected],
+        lies=lies,
+        omissions=sorted({lr.protected for lr in records if lr.kind == "omission"}),
+        retracted=sum(e.retracted_turn is not None for e in lies),
+        standing=sum(e.retracted_turn is None for e in lies),
+        lies_by_question_type=by_type,
     )
 
 

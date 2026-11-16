@@ -329,3 +329,65 @@ affect_base:
   value: 0.3
   source: Choix de modélisation.
   estimated: true
+
+# --- Mensonge : dissimulation de faits protégés (ADR 0002) -------------------
+# Ne s'appliquent qu'aux scénarios dotés d'un bloc `deception`. La force initiale
+# de la dissimulation est fixée par le scénario (`deception.strength`).
+
+support_concealment_drop:
+  description: Baisse de la pression de dissimulation après chaque énoncé de soutien.
+  value: 0.1
+  source: >
+    Lyon & Dorado (2008), Truth induction in young maltreated children: The effects
+    of oath-taking and reassurance on true and false disclosures, Child Abuse &
+    Neglect 32(7) ; Hershkowitz, Lamb & Katz (2014), voir support_reluctance_drop —
+    le soutien non suggestif favorise le dévoilement des enfants qui cachent.
+  estimated: true
+
+rapport_concealment_drop:
+  description: Baisse de la pression de dissimulation après chaque invitation de rapport.
+  value: 0.04
+  source: Hershkowitz, Lamb & Katz (2014), voir support_reluctance_drop.
+  estimated: true
+
+pressure_concealment_rise:
+  description: >
+    Hausse de la pression de dissimulation après une question suggestive ou à
+    choix portant sur un fait protégé : la pression rend l'enfant défensif.
+  value: 0.08
+  source: >
+    Choix de modélisation ; Bottoms, Goodman, Schwartz-Kenney & Thomas (2002),
+    Understanding children's use of secrecy in the context of eyewitness reports,
+    Law and Human Behavior 26(3) — les enfants maintiennent un secret demandé par
+    un parent, davantage avec l'âge.
+  estimated: true
+
+retraction_threshold:
+  description: >
+    Pression de dissimulation en dessous de laquelle l'enfant peut revenir sur un
+    mensonge (après un soutien ou une question ouverte).
+  value: 0.35
+  source: Choix de modélisation.
+  estimated: true
+
+p_retraction:
+  description: Sous le seuil, probabilité de revenir sur un mensonge à chaque occasion.
+  value: 0.5
+  source: Choix de modélisation.
+  estimated: true
+
+deception_load:
+  description: Charge d'hésitation due au mensonge, selon sa forme (le plus coûteux = construire une version).
+  value: {omission: 0.3, false_deny: 0.5, feigned_ignorance: 0.5, minimization: 0.6, cover_story: 0.8}
+  source: >
+    Vrij (2008), Detecting Lies and Deceit, Wiley — hypothèse de charge cognitive ;
+    Talwar & Lee (2008), Social and cognitive correlates of children's lying
+    behavior, Child Development 79(4) — maintenir un mensonge cohérent sollicite
+    les fonctions exécutives.
+  estimated: true
+
+rehearsed_lie_factor:
+  description: Multiplicateur de la charge d'un mensonge déjà dit (version répétée, moins coûteuse).
+  value: 0.5
+  source: "Choix de modélisation (Vrij, 2008 : un récit préparé réduit la charge cognitive)."
+  estimated: true

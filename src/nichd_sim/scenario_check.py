@@ -47,7 +47,7 @@ class Finding:
 def check_scenario(scenario: Scenario) -> list[Finding]:
     out: list[Finding] = []
     lexicon = load_lexicon()
-    units = [u for _, u in scenario.all_units()]
+    units = [u for _, u in scenario.all_units()] + scenario.lie_units()  # lies are anchored like units
 
     for u in units:
         value = normalize(u.value)

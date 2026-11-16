@@ -148,7 +148,8 @@ WORDS_PER_PAUSE = 4
 # Pause candidates, by preference: after punctuation, before a clause connector, between words.
 _TIERS = (
     re.compile(r"(?<=[,;:.…!?])\s+"),
-    re.compile(r"\s+(?=(?:et|puis|mais|parce|après|alors)\b)", re.IGNORECASE),
+    # before a connector, but not inside a pair of connectors (« et | puis »)
+    re.compile(r"(?<!\bet)(?<!\bpuis)(?<!\bmais)\s+(?=(?:et|puis|mais|parce|après|alors)\b)", re.IGNORECASE),
     re.compile(r"\s+"),
 )
 
