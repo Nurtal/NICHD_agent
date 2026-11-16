@@ -63,7 +63,7 @@ Moyenne sur les 4 modèles, avec [min – max] entre modèles.
 - Interviewer scripté et non adaptatif. 7 scénarios, si bien que les corrélations (n = 7) sont indicatives. Seulement 2 suggestions et 2 questions hors scénario par entretien.
 - Modèles de 7 à 27 B quantifiés, sans réflexion. Un modèle plus gros, ou avec réflexion, pourrait mieux tenir la réticence en condition LLM seul. La conclusion reste « avec ces modèles et ces consignes ».
 - La détection des faits par ancres est lexicale : vérifiée sur échantillon, pas exhaustivement.
-- Les emojis passent encore le filtre de l'hybride (2 cas). Le réalisme perçu n'est pas mesuré : il demande un jugement en aveugle par des formateurs NICHD.
+- Les emojis passaient le filtre de l'hybride (2 cas dans ces données). Le filtre les rejette depuis (après l'ablation). Le réalisme perçu n'est pas mesuré : il demande un jugement en aveugle par des formateurs NICHD.
 
 ## Reproduire
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from importlib import resources
 from typing import Iterable
@@ -30,6 +31,8 @@ class FilterVerdict:
     """A content-free act (don't know, deny, reluctant…) that runs on: likely invented content."""
     contradicts: bool = False
     """The wording flips the engine's decision (a "yes" for a refusal, a "no" for an acquiescence)."""
+    emoji: bool = False
+    """A child speaking aloud does not produce emojis or pictographs."""
 
 
 CONTENT_FREE_ACTS = {
@@ -39,6 +42,8 @@ CONTENT_FREE_ACTS = {
 MAX_CONTENT_FREE_WORDS = 10
 _YES = {"oui", "ouais", "ouai", "exactement"}
 _NO = {"non", "nan"}
+# Pictographs, emoticons, symbols and dingbats, plus the variation selector / ZWJ that glue them.
+_EMOJI = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D]")
 
 
 class OutputFilter:
@@ -79,9 +84,11 @@ class OutputFilter:
         contradicts = (decision.speech_act == SpeechAct.DENY and bool(words & _YES)) or (
             decision.speech_act == SpeechAct.ACQUIESCE and bool(words & _NO) and not words & _YES
         )
+        emoji = bool(_EMOJI.search(text))
         return FilterVerdict(
-            ok=not forbidden and not leaked and not missing and not empty and not too_long and not contradicts,
+            ok=not (forbidden or leaked or missing or empty or too_long or contradicts or emoji),
             contradicts=contradicts,
+            emoji=emoji,
             empty=empty,
             too_long=too_long,
             forbidden_terms=forbidden,
