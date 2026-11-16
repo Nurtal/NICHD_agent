@@ -8,7 +8,7 @@ Le découplage « moteur de comportement déterministe + LLM limité à la mise 
 
 ## Dispositif
 
-- **4 modèles open source, tous locaux** (Ollama, 2 × TITAN RTX) : `qwen3.8` (27 B), `phi4` (14 B), `gemma4` (8 B), `mistral` (7 B). Température 0,7, sans réflexion.
+- **4 modèles open source, tous locaux** (Ollama, 2 × TITAN RTX) : `qwen3.8` (27 B), `phi4` (14 B), `gemma4` (variante E4B : 8 B paramètres, 4 B effectifs), `mistral` (7 B). Température 0,7, sans réflexion.
 - **Mêmes entretiens scriptés** : 23 tours identiques par scénario (rapport, règles de base, pratique narrative, transition, invitations, 3 questions directives dont une répétée, 2 questions sur des détails absents de la fiche, 2 suggestions fausses, rappel libre, clôture). 7 scénarios × 3 graines × 4 modèles = **84 entretiens par condition**, 252 au total, 5 796 réponses.
 - **Trois conditions** :
   - **Hybride** : notre simulateur (moteur v2, calibré sur la littérature), piloté par les étiquettes NICHD de référence. Le classifieur est donc hors comparaison : on ne compare que l'enfant.

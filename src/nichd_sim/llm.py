@@ -39,15 +39,21 @@ class ChatClient(Protocol):
 
 class OllamaClient:
     def __init__(self, model: str = DEFAULT_MODEL, base_url: str = DEFAULT_URL, keep_alive: str = "30m", timeout: float = 120,
-                 num_predict: int | None = None, stop: list[str] | None = None):
+                 num_predict: int | None = None, stop: list[str] | None = None, num_ctx: int | None = None,
+                 think: bool | str | None = None):
+        """`think`, when set, overrides the per-call value (gpt-oss only accepts a level, not false)."""
         self.model = model
+        self.think = think
         self.num_predict = num_predict
+        self.num_ctx = num_ctx
         self.stop = stop
         self.base_url = base_url.rstrip("/")
         self.keep_alive = keep_alive
         self.timeout = timeout
 
     def chat(self, messages, *, temperature, seed=None, think=False, format=None) -> ChatResult:
+        if self.think is not None:
+            think = self.think
         options: dict[str, Any] = {"temperature": temperature}
         if seed is not None:
             options["seed"] = seed
@@ -55,6 +61,8 @@ class OllamaClient:
             options["num_predict"] = self.num_predict
         if self.stop:
             options["stop"] = self.stop
+        if self.num_ctx is not None:
+            options["num_ctx"] = self.num_ctx
         body: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
