@@ -62,8 +62,10 @@ uv run nichd-sim play scenarios/s08_violences_maison_secret.yaml --trainer --voi
 uv run nichd-sim render-audio sessions/session_<id>.json -o audio/<id>   # rejouer un journal en audio
 ```
 
-La voix `tone` (par défaut) est un bourdonnement sans modèle, pour vérifier le rythme ; une vraie voix de synthèse
-s'ajoute derrière le port `Speaker` (`src/nichd_sim/voice/`).
+Voix : `kokoro` (enfant, défaut si installé), `kokoro-adulte`, ou `tone` (bourdonnement sans modèle, pour vérifier le
+rythme). Kokoro tourne dans son propre environnement, sans toucher au venv du projet : installation et criblage dans
+[experiments/voices/](experiments/voices/README.md). La réponse est synthétisée en un seul énoncé puis coupée aux pauses,
+ce qui garde une intonation continue.
 
 ## Organisation
 

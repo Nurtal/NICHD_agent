@@ -65,9 +65,10 @@ def play(args: argparse.Namespace) -> int:
 
         try:
             speaker = make_speaker(args.speaker)
-        except ValueError as e:
+        except (ValueError, RuntimeError) as e:
             print(e, file=sys.stderr)
             return 2
+        print(f"Voix : {args.speaker or type(speaker).__name__}")
     print(f"=== {scenario.title} ===\n{scenario.intake_context.strip()}\n")
     if args.classifier == "manual":
         print(HELP)
@@ -183,7 +184,7 @@ def render_audio_cmd(args: argparse.Namespace) -> int:
     try:
         log = load_log(args.log)
         speaker = make_speaker(args.speaker)
-    except (ReplayError, ValueError) as e:
+    except (ReplayError, ValueError, RuntimeError) as e:
         print(e, file=sys.stderr)
         return 2
     out = Path(args.output or Path("audio") / log.session_id)
@@ -282,13 +283,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-rephrase", action="store_true", help="pas de reformulations LLM dans le retour (hors ligne)")
     p.add_argument("--summary", action="store_true", help="rédiger une synthèse en fin d'entretien, confrontée aux faits")
     p.add_argument("--voice", metavar="DOSSIER", help="écrire la réponse de l'enfant en audio (un WAV par tour)")
-    p.add_argument("--speaker", default="tone", help="voix de synthèse (défaut : tone, sans modèle)")
+    p.add_argument("--speaker", default=None,
+                   help="voix : kokoro (enfant), kokoro-adulte, tone (sans modèle) ; défaut : kokoro si installé")
     p.set_defaults(func=play)
 
     a = sub.add_parser("render-audio", help="rendre en audio les réponses d'un journal de session (sans LLM)")
     a.add_argument("log", help="journal JSON de session")
     a.add_argument("-o", "--output", help="dossier de sortie (défaut : audio/<session>)")
-    a.add_argument("--speaker", default="tone", help="voix de synthèse (défaut : tone, sans modèle)")
+    a.add_argument("--speaker", default=None,
+                   help="voix : kokoro (enfant), kokoro-adulte, tone (sans modèle) ; défaut : kokoro si installé")
     a.set_defaults(func=render_audio_cmd)
 
     r = sub.add_parser("replay", help="rejouer une session depuis son journal, sans LLM")

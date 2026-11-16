@@ -40,14 +40,22 @@ class RenderedSpeech:
 def render_speech(plan: list[SpeechChunk], speaker: Speaker, delivery: Delivery | None = None) -> RenderedSpeech:
     rate = delivery.rate if delivery else 1.0
     gain = VOLUME_GAIN[delivery.volume] if delivery else 1.0
+    texts = [c.text for c in plan if c.kind == ChunkKind.SPEECH]
+    if hasattr(speaker, "synthesize_pieces") and texts:
+        # One utterance cut at the pause points: continuous intonation, fillers in context.
+        spoken = iter(speaker.synthesize_pieces(texts, rate=rate))
+    else:
+        spoken = iter(speaker.synthesize(t, rate=rate) for t in texts)
     audio = Audio(speaker.sample_rate)
     timeline: list[Span] = []
     for chunk in plan:
         start = audio.duration_ms
         if chunk.kind == ChunkKind.SILENCE:
-            piece = Audio.silence(speaker.sample_rate, chunk.ms)
+            piece = Audio.silence(audio.sample_rate, chunk.ms)
         else:
-            piece = speaker.synthesize(chunk.text, rate=rate).trimmed().scaled(gain)
+            piece = next(spoken).trimmed().faded().scaled(gain)
+            if not audio.samples and piece.sample_rate != audio.sample_rate:
+                audio = Audio(piece.sample_rate)  # the speaker reports its real rate on first use
         audio.extend(piece)
         timeline.append(Span(chunk.kind, start, audio.duration_ms, chunk.text))
     return RenderedSpeech(audio, timeline)

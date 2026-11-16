@@ -49,3 +49,28 @@ naturel ni de l'âge perçu.
 - **Rogner l'attaque** de la voix d'enfant (le bref son entendu « Et »).
 - **Écoute** par l'équipe : un même ensemble de 8 segments pour chaque variante, avec un jugement à l'aveugle de l'âge
   perçu et du naturel.
+
+## Suite : branchement de Kokoro et correction des fragments (2026-11-16)
+
+Kokoro est branché derrière le port `Speaker` (`src/nichd_sim/voice/kokoro_speaker.py`). Il tourne dans un processus séparé,
+lancé avec le Python de son propre venv (`kokoro_worker.py`).
+
+**Correction des fragments.** La réponse entière, « euh » compris, est synthétisée en **un seul énoncé**. On la coupe
+ensuite aux points de pause, au milieu de l'espace entre deux mots, d'après les **durées de phonèmes prédites par
+Kokoro** (600 échantillons par unité), et on insère nos silences. Mesure sur 40 réponses réelles avec pauses
+(`render_replies.py`, puis `eval_replies.py`, résultats dans [replies/report.md](replies/report.md)) :
+
+| Mode | WER (réponse entière) | Réponses parfaites | « Et » parasite en tête |
+|---|---|---|---|
+| une synthèse par fragment (avant) | 9,2 % | 13 / 40 | 2 |
+| **un énoncé coupé (après)** | **5,9 %** | **15 / 40** | **0** |
+
+- Les écarts restants sont surtout des normalisations de Whisper (« Je sais pas » transcrit « Je ne sais pas »,
+  « Monsieur » transcrit « M. »).
+- **« euh » : Whisper n'est pas un juge fiable.**
+  - Sur un segment isolé de 400 ms, il hallucine (« Au revoir », « Merci d'avoir regardé cette vidéo ! »).
+  - En contexte, il écrit tantôt « Euh », tantôt « Re » : le [œ] de « euh » est proche du [ʁə] de « re », et
+    Whisper a tendance à effacer les disfluences.
+  - Le son brut, sans coupe, donne le même résultat : la coupe n'est pas en cause.
+  - **Une écoute humaine est nécessaire.**
+- **Coût** : 0,14 s pour une réponse de 3 morceaux, rendu identique d'une fois à l'autre (seed dérivée du texte).

@@ -42,6 +42,18 @@ class Audio:
         start, end = max(0, loud[0] - margin), min(len(self.samples), loud[-1] + 1 + margin)
         return Audio(self.sample_rate, self.samples[start:end])
 
+    def faded(self, ms: int = 8) -> Audio:
+        """Short linear fade in/out: no click where a piece was cut out of an utterance."""
+        n = min(len(self.samples) // 2, round(self.sample_rate * ms / 1000))
+        if n == 0:
+            return self
+        s = array("h", self.samples)
+        for i in range(n):
+            g = i / n
+            s[i] = int(s[i] * g)
+            s[-1 - i] = int(s[-1 - i] * g)
+        return Audio(self.sample_rate, s)
+
     def write_wav(self, path: str | Path) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
