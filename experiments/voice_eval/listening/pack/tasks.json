@@ -1,0 +1,1100 @@
+{
+ "version": 1,
+ "questions": {
+  "hesitation": "Cet enfant hésite-t-il ? (1 = pas du tout, 5 = beaucoup)",
+  "naturalness": "Cette voix est-elle naturelle ? (1 = très artificielle, 5 = très naturelle)",
+  "age": "Quel âge donnez-vous à cet enfant ? (années)",
+  "lie": "Selon vous, cet enfant ment-il ? (oui / non)",
+  "pair": "Lequel des deux enfants hésite le plus ? (A / B)"
+ },
+ "tasks": [
+  {
+   "kind": "pair",
+   "clips": [
+    "c000",
+    "c002"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c001",
+    "c002"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c000",
+    "c001"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c003",
+    "c005"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c004",
+    "c005"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c003",
+    "c004"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c006",
+    "c008"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c007",
+    "c008"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c006",
+    "c007"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c009",
+    "c011"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c010",
+    "c011"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c009",
+    "c010"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c012",
+    "c014"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c013",
+    "c014"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c012",
+    "c013"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c015",
+    "c017"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c016",
+    "c017"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c015",
+    "c016"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c018",
+    "c020"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c019",
+    "c020"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c018",
+    "c019"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c021",
+    "c023"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c022",
+    "c023"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c021",
+    "c022"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c024",
+    "c026"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c025",
+    "c026"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c024",
+    "c025"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c027",
+    "c029"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c028",
+    "c029"
+   ]
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c027",
+    "c028"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c000"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c001"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c002"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c003"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c004"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c005"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c006"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c007"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c008"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c009"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c010"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c011"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c012"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c013"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c014"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c015"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c016"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c017"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c018"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c019"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c020"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c021"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c022"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c023"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c024"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c025"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c026"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c027"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c028"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c029"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c030"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c031"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c032"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c033"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c034"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c035"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c036"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c037"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c038"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c039"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c040"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c041"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c042"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c043"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c044"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c045"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c046"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c047"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c048"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c049"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c050"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c051"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c052"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c053"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c054"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c055"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c056"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c057"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c058"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c059"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c060"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c061"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c062"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c063"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c064"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c065"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c066"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c067"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c068"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c069"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c070"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c071"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c072"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c073"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c074"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c075"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c076"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c077"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  }
+ ]
+}

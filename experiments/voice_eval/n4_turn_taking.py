@@ -19,10 +19,10 @@ import statistics as st
 from array import array
 
 from checks import Check, save
+from doubles import C, ScriptedClassifier, ask, make_session
 from sim import _question, scenarios
 from stats import quantile
 
-from doubles import C, ScriptedClassifier, ask, make_session
 from nichd_sim.realization import TemplateRealizer
 from nichd_sim.session import Session
 from nichd_sim.text import mentions, normalize

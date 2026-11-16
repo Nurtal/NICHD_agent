@@ -26,7 +26,7 @@ def main() -> None:
     args = ap.parse_args()
     replies = corpus(range(args.seeds))
     ds = [r.decision for r in replies]
-    onset = lambda xs: [d.delivery.onset_ms for d in xs]  # noqa: E731
+    onset = lambda xs: [d.delivery.onset_ms for d in xs]
     checks: list[Check] = []
 
     # 1. Onset ordering: small talk < factual answer < reluctance
@@ -54,7 +54,7 @@ def main() -> None:
     #    same protected fact; only the will to conceal differs). Observable cues only.
     ps = pairs(range(args.seeds * 5))
     lies, truths = [p[1] for p in ps], [p[2] for p in ps]
-    audible = lambda xs: [d.delivery.onset_ms + sum(d.delivery.pauses_ms) + FILLER_MS * d.delivery.fillers  # noqa: E731
+    audible = lambda xs: [d.delivery.onset_ms + sum(d.delivery.pauses_ms) + FILLER_MS * d.delivery.fillers
                           for d in xs]
     d_on, a_on = cohen_d(onset(lies), onset(truths)), auc(onset(lies), onset(truths))
     d_au, a_au = cohen_d(audible(lies), audible(truths)), auc(audible(lies), audible(truths))

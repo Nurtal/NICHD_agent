@@ -26,12 +26,13 @@ from nichd_sim.scenario import Scenario, load_scenario
 from nichd_sim.session import TurnResult
 
 STYLES = {
-    # weights: invitation, cued, facilitator, directive, option, suggestive, support
-    "ouvert": (5, 3, 2, 1, 0.3, 0.1, 1),
-    "mixte": (3, 2, 1, 3, 1.5, 0.7, 0.7),
-    "fermé": (1, 0.5, 0.5, 4, 3, 2, 0.3),
+    # weights: invitation, cued, facilitator, directive, option, suggestive, support, compound, other
+    "ouvert": (5, 3, 2, 1, 0.3, 0.1, 1, 0.1, 0.1),
+    "mixte": (3, 2, 1, 3, 1.5, 0.7, 0.7, 0.5, 0.2),
+    "fermé": (1, 0.5, 0.5, 4, 3, 2, 0.3, 1, 0.3),
 }
-KINDS = ["invitation", "cued_invitation", "facilitator", "directive", "option_posing", "suggestive", "support"]
+KINDS = ["invitation", "cued_invitation", "facilitator", "directive", "option_posing", "suggestive", "support",
+         "compound", "other"]
 
 
 @dataclass
@@ -70,6 +71,9 @@ def _question(rng: random.Random, sc: Scenario, style: str, revealed: list[str])
         return C(kind, rng.choice(revealed) if revealed else unit.id)
     if kind == "directive":
         return C(kind, unit.id if rng.random() < 0.85 else OUT_OF_SCENARIO)
+    if kind == "compound":  # e.g. « Il était où et il avait quoi ? »: rules of its most directive part
+        return C(kind, unit.id, inner_type=rng.choice(["directive", "option_posing"]),
+                 suggested_proposition=unit.anchors[0])
     if kind in ("option_posing", "suggestive"):
         true = rng.random() < 0.5
         prop = unit.anchors[0] if true else rng.choice(["un couteau", "la nuit", "à l'école", "son oncle", "en voiture"])

@@ -4,9 +4,9 @@ child's will to conceal differs (deception strength 1.0 vs 0.0). Lying is then t
 
 from __future__ import annotations
 
+from doubles import C, ask, make_session
 from sim import scenarios
 
-from doubles import C, ask, make_session
 from nichd_sim.engine import Decision
 
 QUESTIONS = {
