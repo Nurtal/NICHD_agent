@@ -1,4 +1,8 @@
-# Évaluations du classifieur
+# Évaluations
+
+- [Ablation : enfant hybride vs enfant 100 % LLM](ablation-hybride-vs-llm.md) : même modèle, mêmes entretiens scriptés. Le LLM seul révèle des faits trop tôt (62 % des entretiens) et n'accepte aucune suggestion fausse (0/42). L'hybride suit le profil (réticence ρ = +0,94, suggestibilité ρ = +0,87).
+
+## Classifieur
 
 Jeu de test : `src/nichd_sim/skill/testset.jsonl` (104 énoncés sur les scénarios s01–s03, dont 12 ambigus), disjoint des exemples few-shot. Modèle `qwen3.8:latest` (27B, Q4_K_M) sur 2 × TITAN RTX.
 
