@@ -16,5 +16,4 @@ uv run --no-project --with playwright python build_pdf.py
 ```
 
 Conditions de la vidéo : vrai modèle local (`qwen3.8:latest` via Ollama), classifieur sans réflexion
-(`NICHD_CLASSIFIER_THINK=off`) pour garder un rythme fluide, mode formateur activé. Le panneau formateur
-y est maintenu à l'écran par une règle CSS ajoutée à l'enregistrement uniquement.
+(`NICHD_CLASSIFIER_THINK=off`) pour garder un rythme fluide, mode formateur activé.
