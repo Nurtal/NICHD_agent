@@ -60,3 +60,11 @@ Les 4 candidats tiennent entièrement sur GPU et passent le seuil de 10 % de rep
 | *références : `gemma4` E4B 1,9 %, `qwen3.8` 3,7 %, `phi4` 10,6 %, `mistral` 7B 12,4 %* | | | | |
 
 Le taux de repli ne mesure pas le naturel. Un modèle qui recopie la fiche passe le filtre sans sonner comme un enfant. Tous les modèles restent d'ailleurs proches de la formulation des fiches dans les récits : un enfant de 10 ans qui dit « vers seize heures trente sur le chemin du gymnase derrière le parking » vient de la fiche, pas du modèle. Le choix du modèle par défaut demandera donc un jugement humain en aveugle sur un échantillon de réponses.
+
+## Ablation complète de la priorité 1 (16/11/2026)
+
+Les 4 candidats ont passé l'ablation complète (3 conditions × 7 scénarios × 3 graines, 0 échec, ~3 h). Rapport : `docs/evaluations/ablation-hybride-vs-llm.md` (v3).
+
+- **En hybride**, les 4 donnent exactement le même comportement que les modèles de référence (0 % de faits précoces, ρ réticence +0,94), avec 3 à 23 replis sur 483 tours.
+- **En LLM seul**, `gemma4:31b` est le seul témoin qui approche l'hybride sur la réticence (10 % de faits précoces). Il accepte cependant trop de suggestions fausses (écart au taux visé de 25 %), écrit des didascalies dans 18 % de ses réponses et se dégrade avec le prompt renforcé. Les autres laissent sortir des faits précoces dans 33 % (`mistral-small3.2`) à 71 % (`olmo`) des entretiens.
+- **Pour le modèle par défaut**, `gemma4:31b` est le meilleur candidat : peu de replis (1,4 %), le français le plus naturel à la lecture et 1,4 s par tour. À confirmer par le jugement humain en aveugle.
