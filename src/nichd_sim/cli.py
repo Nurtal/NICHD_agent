@@ -59,6 +59,15 @@ def play(args: argparse.Namespace) -> int:
         summary_matcher=LLMSummaryMatcher(OllamaClient(args.model, args.ollama_url)) if args.summary else None,
     )
     child = scenario.child_profile.name
+    speaker = None
+    if args.voice:
+        from nichd_sim.voice import make_speaker
+
+        try:
+            speaker = make_speaker(args.speaker)
+        except ValueError as e:
+            print(e, file=sys.stderr)
+            return 2
     print(f"=== {scenario.title} ===\n{scenario.intake_context.strip()}\n")
     if args.classifier == "manual":
         print(HELP)
@@ -122,6 +131,13 @@ def play(args: argparse.Namespace) -> int:
             if turn.fallback_used:
                 print("  [filtre] réponse de repli utilisée")
         print(f"{child} > {render_plan(result.speech_plan) if args.trainer else result.response}")
+        if speaker is not None:
+            from nichd_sim.voice import render_speech
+
+            rendered = render_speech(result.speech_plan, speaker, result.decision.delivery)
+            n = len(session.log.turns)
+            path = rendered.audio.write_wav(Path(args.voice) / session.log.session_id / f"turn_{n:03d}.wav")
+            print(f"  ♪ {path} ({rendered.audio.duration_ms / 1000:.1f} s, silence initial {rendered.onset_ms} ms)")
         for notice in result.notices:
             print(f"  ⓘ {notice}")
     summary = None
@@ -159,6 +175,21 @@ def replay_cmd(args: argparse.Namespace) -> int:
     for m in report.mismatches:
         print(f"  - {m}")
     return 1
+
+
+def render_audio_cmd(args: argparse.Namespace) -> int:
+    from nichd_sim.voice import make_speaker, render_log
+
+    try:
+        log = load_log(args.log)
+        speaker = make_speaker(args.speaker)
+    except (ReplayError, ValueError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    out = Path(args.output or Path("audio") / log.session_id)
+    paths = render_log(log, speaker, out)
+    print(f"{len(paths)} fichier(s) audio dans {out}")
+    return 0
 
 
 def export_cmd(args: argparse.Namespace) -> int:
@@ -250,7 +281,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--trainer", action="store_true", help="mode formateur : affiche classification et décision")
     p.add_argument("--no-rephrase", action="store_true", help="pas de reformulations LLM dans le retour (hors ligne)")
     p.add_argument("--summary", action="store_true", help="rédiger une synthèse en fin d'entretien, confrontée aux faits")
+    p.add_argument("--voice", metavar="DOSSIER", help="écrire la réponse de l'enfant en audio (un WAV par tour)")
+    p.add_argument("--speaker", default="tone", help="voix de synthèse (défaut : tone, sans modèle)")
     p.set_defaults(func=play)
+
+    a = sub.add_parser("render-audio", help="rendre en audio les réponses d'un journal de session (sans LLM)")
+    a.add_argument("log", help="journal JSON de session")
+    a.add_argument("-o", "--output", help="dossier de sortie (défaut : audio/<session>)")
+    a.add_argument("--speaker", default="tone", help="voix de synthèse (défaut : tone, sans modèle)")
+    a.set_defaults(func=render_audio_cmd)
 
     r = sub.add_parser("replay", help="rejouer une session depuis son journal, sans LLM")
     r.add_argument("log", help="journal JSON de session")

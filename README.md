@@ -47,13 +47,33 @@ uv run nichd-sim export sessions/session_<id>.json -o codage.csv
 uv run nichd-sim eval-classifier -o docs/evaluations/rapport.md
 ```
 
+### Mensonge, diction et voix (R&D, [ADR 0002](docs/adr/0002-mensonge-diction-voix.md))
+
+L'état texte « chatbot » est figé au tag `v0.1-mvp` (branche `release/mvp`). Depuis :
+
+- chaque réponse a une **diction** (silence avant de répondre, pauses, « euh », débit, volume) à causes multiples
+  (mémoire, émotion, mensonge, confusion), visible en mode formateur ;
+- un scénario peut faire **cacher ou maquiller** des faits par l'enfant (bloc `deception`, exemple
+  `scenarios/s08_violences_maison_secret.yaml`) ;
+- la réponse peut être rendue en **audio**, l'hésitation étant inscrite dans le fichier (silences exacts) :
+
+```bash
+uv run nichd-sim play scenarios/s08_violences_maison_secret.yaml --trainer --voice audio/
+uv run nichd-sim render-audio sessions/session_<id>.json -o audio/<id>   # rejouer un journal en audio
+```
+
+La voix `tone` (par défaut) est un bourdonnement sans modèle, pour vérifier le rythme ; une vraie voix de synthèse
+s'ajoute derrière le port `Speaker` (`src/nichd_sim/voice/`).
+
 ## Organisation
 
 | Chemin | Rôle |
 |---|---|
 | `scenarios/` | fiches de scénario (YAML), en attente de validation par un formateur — voir [docs/guide-scenarios.md](docs/guide-scenarios.md) et `nichd-sim check-scenario` |
 | `src/nichd_sim/session.py` | façade `Session`, unique point d'entrée (CLI, interface, tests) |
-| `src/nichd_sim/engine.py` | moteur de comportement déterministe |
+| `src/nichd_sim/engine.py` | moteur de comportement déterministe (révélation, contamination, mensonge) |
+| `src/nichd_sim/delivery.py` | diction : hésitation à causes multiples, plan d'élocution |
+| `src/nichd_sim/voice/` | couche voix : port `Speaker`, rendu audio des plans d'élocution |
 | `src/nichd_sim/phases.py` | suivi des phases et écarts au protocole |
 | `src/nichd_sim/skill/` | skill NICHD versionné : spécification, exemples, schéma, jeu de test |
 | `src/nichd_sim/data/parameters.yaml` | paramètres de comportement sourcés |

@@ -6,3 +6,4 @@ sessions/
 
 # vidéos de démo (trop lourdes pour le dépôt, gardées en local)
 *.mp4
+audio/
