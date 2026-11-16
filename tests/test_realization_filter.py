@@ -214,3 +214,24 @@ def test_wording_that_flips_the_engine_decision_is_rejected():
     assert f.check("Non, je crois pas.", acquiesce).contradicts
     assert not f.check("Oui… non, enfin oui.", acquiesce).contradicts
 
+
+
+def test_emojis_are_rejected():
+    """phi4 closed interviews with « D'accord, merci. 😊 » (ablation v2)."""
+    from nichd_sim.engine import Decision, SpeechAct
+    from nichd_sim.output_filter import OutputFilter
+
+    f = OutputFilter(load_scenario(S01))
+    ack = Decision(speech_act=SpeechAct.ACKNOWLEDGE)
+    for text in ("D'accord, merci. 😊", "Oui ❤️", "Bof 🤷‍♀️", "Super ☺"):
+        v = f.check(text, ack)
+        assert v.emoji and not v.ok, text
+    for text in ("D'accord… « merci » !", "Ben non.", "Euh… je sais pas."):
+        assert not f.check(text, ack).emoji, text
+
+
+def test_emoji_reply_falls_back_after_regeneration():
+    s, clf = session_with(ScriptedRealizer("Je sais pas 🤷", "Je sais pas 😕"))
+    r = ask(s, clf, "Il avait quelle voiture ?", C("directive", "out_of_scenario"))
+    assert r.fallback_used and r.response == "Je sais pas."
+    assert s.log.turns[0].attempts[0].emoji

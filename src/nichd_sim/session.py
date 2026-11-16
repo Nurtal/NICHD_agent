@@ -32,6 +32,7 @@ class AttemptRecord(BaseModel):
     empty: bool = False
     too_long: bool = False
     contradicts: bool = False
+    emoji: bool = False
     meta: dict = {}
 
 
@@ -228,6 +229,7 @@ class Session:
                     empty=verdict.empty,
                     too_long=verdict.too_long,
                     contradicts=verdict.contradicts,
+                    emoji=verdict.emoji,
                     meta=r.meta,
                 )
             )
