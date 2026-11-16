@@ -2,6 +2,7 @@
 
 > Statut : validé (session de conception du 2026-11-12)
 > Décision d'architecture associée : [ADR 0001](adr/0001-architecture-hybride-moteur-deterministe.md)
+> Évolutions v2 (mensonge, diction, voix) : [ADR 0002](adr/0002-mensonge-diction-voix.md) — l'état v1 est figé au tag `v0.1-mvp`.
 
 ## 1. Objet
 
@@ -11,7 +12,7 @@ Simulateur destiné à entraîner des interviewers au protocole d'audition NICHD
 
 ### Hors périmètre v1
 
-- Interaction vocale (STT/TTS). L'architecture reste toutefois « énoncé entrant → énoncé sortant », compatible avec une couche voix ultérieure.
+- Interaction vocale (STT/TTS). L'architecture reste toutefois « énoncé entrant → énoncé sortant », compatible avec une couche voix ultérieure. → engagée en v2, voir [ADR 0002](adr/0002-mensonge-diction-voix.md).
 - Scénarios d'abus sexuels. Prévus dans une progression ultérieure, après validation du filtre et avis éthique.
 - Événements répétés avec épisodes multiples et confusion inter-épisodes (prévu en v2).
 - Persistance multi-sessions, identité d'apprenant, base de données.
