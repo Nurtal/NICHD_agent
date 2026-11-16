@@ -46,3 +46,17 @@
 1. **Tri rapide** (`screen.py`, ~5 min par modèle) : tient-il entièrement en mémoire GPU ? Puis 7 entretiens hybrides, avec le taux de repli, les motifs de rejet du filtre, la latence, les sorties de rôle et les mots anglais. On élimine les modèles qui replient sur plus de ~10 % des tours ou qui ne tiennent pas sur le GPU.
 2. **Ablation complète** (3 conditions × 7 scénarios × 3 graines) sur les modèles retenus. Durée estimée : 30 à 70 min par modèle de 20–32 B.
 3. **Jugement humain du naturel du français** : les métriques automatiques ne le mesurent pas. Un échantillon de réponses par modèle, à comparer en aveugle, servira à choisir le modèle par défaut et préparera l'évaluation par des formateurs NICHD.
+
+## Tri de la priorité 1 (16/11/2026)
+
+Les 4 candidats tiennent entièrement sur GPU et passent le seuil de 10 % de repli. Résultats complets : `experiments/models/results/screening.md`.
+
+| Modèle | Repli | OK du 1er coup | Latence/tour | Français (lecture d'extraits) |
+|---|---|---|---|---|
+| `gpt-oss:20b` | 1,2 % | 96 % | 0,8 s | Recopie souvent les faits de la fiche en minuscules, sans ponctuation. |
+| `gemma4:31b` | 1,9 % | 98 % | 1,4 s | Le plus naturel : ponctuation, « y avait », hésitations bien placées. |
+| `olmo-3.1:32b-instruct` | 3,1 % | 92 % | 1,7 s | Recopie la fiche, sans ponctuation. Le motif de rejet le plus fréquent est l'oubli du fait autorisé (16). |
+| `mistral-small3.2:24b` | 3,7 % | 93 % | 0,8 s | Correct, un peu écrit. |
+| *références : `gemma4` E4B 1,9 %, `qwen3.8` 3,7 %, `phi4` 10,6 %, `mistral` 7B 12,4 %* | | | | |
+
+Le taux de repli ne mesure pas le naturel. Un modèle qui recopie la fiche passe le filtre sans sonner comme un enfant. Tous les modèles restent d'ailleurs proches de la formulation des fiches dans les récits : un enfant de 10 ans qui dit « vers seize heures trente sur le chemin du gymnase derrière le parking » vient de la fiche, pas du modèle. Le choix du modèle par défaut demandera donc un jugement humain en aveugle sur un échantillon de réponses.
