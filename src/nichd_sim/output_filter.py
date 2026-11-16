@@ -57,14 +57,15 @@ class OutputFilter:
         forbidden = [t for t in self.lexicon if _contains(norm, t)]
 
         permitted_ids = {u.id for u in decision.allowed_units} | set(known_unit_ids)
+        anchored = [u for _, u in self.scenario.all_units()] + self.scenario.lie_units()
         # Words of permitted facts are never a leak, even if they are also another unit's anchor.
         permitted_text = " ".join(
             [u.value for u in decision.allowed_units]
-            + [u.value for _, u in self.scenario.all_units() if u.id in permitted_ids]
+            + [u.value for u in anchored if u.id in permitted_ids]
         )
         permitted_norm = normalize(permitted_text)
         leaked = []
-        for _, unit in self.scenario.all_units():
+        for unit in anchored:
             if unit.id in permitted_ids:
                 continue
             for anchor in unit.anchors:
@@ -72,9 +73,9 @@ class OutputFilter:
                     leaked.append(unit.id)
                     break
         missing = []
-        if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE):
+        if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT):
             for au in decision.allowed_units:
-                unit = self.scenario.unit(au.id)
+                unit = self.scenario.unit(au.id) or self.scenario.lie_unit(au.id)
                 anchors = unit.anchors if unit is not None else []
                 if anchors and not any(_mentions(norm, a) for a in anchors):
                     missing.append(au.id)

@@ -10,6 +10,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from nichd_sim.classification import Classification, ClassificationContext, Classifier
+from nichd_sim.delivery import SpeechChunk, plan_speech
 from nichd_sim.feedback import FeedbackReport, Rephraser, SummaryMatcher, build_feedback
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.output_filter import OutputFilter
@@ -57,7 +58,8 @@ class TurnRecord(BaseModel):
         return self.attempts[-1].prompt if self.attempts else None
 
 
-LOG_FORMAT = 1
+LOG_FORMAT = 2
+"""2: decisions carry a delivery (ADR 0002). Format-1 logs still replay (new fields ignored)."""
 
 
 class SessionLog(BaseModel):
@@ -88,6 +90,8 @@ class TurnResult(BaseModel):
     notices: list[str] = []
     """Non-blocking messages for the learner (e.g. interview length)."""
     fallback_used: bool = False
+    speech_plan: list[SpeechChunk] = []
+    """The response cut into speech and silences according to the decision's delivery (voice, display)."""
 
 
 class SessionEnded(RuntimeError):
@@ -165,7 +169,9 @@ class Session:
         new_violations = self.phases.violations[n_violations:]
 
         history = self.history + [("interviewer", heard)]
-        attempts, response, fallback = self._realize(decision, history, known=before.revealed)
+        # The child may mention what it already said: true units, and the lies it told.
+        known = before.revealed + [lr.lie_unit for lr in self.engine.state.lies if lr.lie_unit]
+        attempts, response, fallback = self._realize(decision, history, known=known)
         if decision.speech_act == SpeechAct.CONFABULATE and decision.new_contamination:
             self.engine.record_confabulation(decision.new_contamination, response)
         after = self.state
@@ -207,6 +213,7 @@ class Session:
             violations=new_violations,
             notices=notices,
             fallback_used=fallback,
+            speech_plan=plan_speech(response, decision.delivery),
         )
 
     @property

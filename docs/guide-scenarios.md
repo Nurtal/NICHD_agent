@@ -76,6 +76,49 @@ Bonnes ancres : noms propres (`Bertin`, `Karim`), objets ou actions distinctifs 
 | `verbal_skills` 0.3 / 0.8 | 1–2 / 3–5 unités par invitation selon l'âge |
 | `suggestibility` 0.2 / 0.8 | acquiescement rare / fréquent aux suggestions fausses |
 
+## Un enfant qui cache des faits (facultatif)
+
+Le bloc `deception` fait jouer un enfant qui **protège** quelqu'un ou se protège : il omet, nie, feint de ne pas
+savoir, minimise, ou donne une version de couverture, puis peut revenir sur son mensonge quand il se sent en
+confiance (voir [ADR 0002](adr/0002-mensonge-diction-voix.md)). Sans ce bloc, l'enfant ne ment jamais.
+Exemple complet : `scenarios/s08_violences_maison_secret.yaml`.
+
+```yaml
+deception:
+  motive: loyalty          # loyalty | fear | shame | coached
+  strength: 0.7            # pression de dissimulation initiale (0–1)
+  protected: [d_karim, d_crie, d_bras, d_tape]   # de la MOINS à la PLUS gardée
+  cover_stories:
+    - id: l_escalier
+      value: "je suis tombée dans l'escalier"
+      anchors: [escalier, tombée]
+      covers: [d_bras, d_tape]   # faits protégés qu'elle remplace
+  minimizations:
+    - id: l_pousse
+      value: "il m'a juste un peu poussée"
+      anchors: [poussée, poussé]
+      covers: [d_tape]           # exactement un fait
+```
+
+- **Ordre de `protected`** : les faits sortent dans cet ordre quand la dissimulation baisse. Mettez d'abord ce que
+  l'enfant concède le plus facilement (qui était là), puis les faits les plus gardés (la répétition, le secret).
+  Un fait dont la valeur nomme une personne doit venir **après** le fait qui la présente.
+- **Contenus mensongers** : rédigés par vous, jamais inventés par le LLM. Ils obéissent aux mêmes règles d'ancres
+  que les unités (`check-scenario` les vérifie). Une version de couverture n'est plus utilisée dès qu'un des faits
+  qu'elle couvre a été dit.
+- **Sans contenu prévu** pour un fait protégé, l'enfant nie (question oui/non ou suggestive) ou dit « je sais pas »
+  (question directive).
+
+| `strength` | Effet observable |
+|---|---|
+| 0.3 | quelques omissions, levées par un ou deux énoncés de soutien |
+| 0.7 | la plupart des faits protégés cachés ; il faut du soutien répété et des questions ouvertes |
+| 1.0 | rien ne sort tant que le soutien n'a pas fait baisser la pression |
+
+Le soutien et le rapport font baisser la dissimulation ; les questions suggestives ou à choix sur un fait protégé
+la font **monter**. En mode formateur, les lignes `mensonge`, `omis volontairement` et `dissimulation` montrent
+l'état de l'enfant.
+
 ## Vérifier en jeu
 
 ```bash

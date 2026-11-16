@@ -10,7 +10,7 @@ from nichd_sim.classification import Classification, ClassificationContext
 from nichd_sim.parameters import Parameters
 from nichd_sim.realization import Realization
 from nichd_sim.scenario import Scenario, ScenarioError, load_scenario
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from nichd_sim.session import LOG_FORMAT, Session, SessionLog
 
@@ -98,13 +98,27 @@ def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
             break
         new = session.log.turns[-1]
         for name in ("decision", "phase", "response", "fallback_used", "state_after"):
-            if getattr(new, name) != getattr(original, name):
+            if not _same(getattr(new, name), getattr(original, name), name, log.log_format):
                 report.mismatches.append(f"tour {original.index} : {name} diffère")
     replayed = session.end()
     if replayed.phase_violations != log.phase_violations:
         report.mismatches.append("écarts au protocole différents")
     report.replayed = replayed
     return report
+
+
+_LEGACY_EXCLUDE = {"decision": {"delivery"}}
+"""Fields that did not exist in format-1 logs and are therefore not compared."""
+
+
+def _same(new, original, name: str, log_format: int) -> bool:
+    """Equality; for format-1 logs, ignore what format 2 added (delivery, new fields at their default)."""
+    if log_format >= 2 or not isinstance(new, BaseModel):
+        return new == original
+    exclude = _LEGACY_EXCLUDE.get(name, set())
+    return new.model_dump(exclude=exclude, exclude_defaults=True) == original.model_dump(
+        exclude=exclude, exclude_defaults=True
+    )
 
 
 CODER_COLUMNS = ["tour", "locuteur", "enonce", "code"]

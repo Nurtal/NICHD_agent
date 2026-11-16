@@ -200,3 +200,194 @@ p_closure_reveal:
   value: 0.3
   source: Choix de modélisation.
   estimated: true
+
+# --- Diction : hésitation à causes multiples (ADR 0002) ---------------------
+# La latence est un indice de mensonge très faible (DePaulo et al., 2003, Cues to
+# deception, Psychological Bulletin 129(1) ; Sporer & Schwandt, 2006, Paraverbal
+# indicators of deception: a meta-analytic synthesis, Applied Cognitive Psychology
+# 20(4) — d ≈ 0,2 pour la latence). L'hésitation est donc la somme de plusieurs
+# causes ; le mensonge n'en est qu'une, de poids modéré.
+
+delivery_base_onset_ms:
+  description: >
+    Silence avant la réponse sans aucune charge d'hésitation (ms). Les enfants
+    prennent leur tour plus lentement que les adultes (~200 ms), et une réponse à
+    une question d'audition demande plus de planification qu'un échange courant.
+  values: {"4_6": 900, "7_9": 700, "10_12": 550}
+  source: >
+    Stivers et al. (2009), Universals and cultural variation in turn-taking in
+    conversation, PNAS 106(26) — écart typique de ~200 ms chez l'adulte ;
+    Casillas, Bobb & Clark (2016), Turn-taking, timing, and planning in early
+    language acquisition, J. Child Language 43(6) — réponses plus lentes chez
+    l'enfant, surtout aux questions qui demandent un contenu.
+  estimated: true
+
+delivery_onset_span_ms:
+  description: Silence supplémentaire (ms) quand l'hésitation combinée vaut 1.
+  value: 2500
+  source: Choix de modélisation (latences de quelques secondes observées sur les sujets difficiles).
+  estimated: true
+
+delivery_onset_noise_ms:
+  description: Écart-type (ms) de la variabilité individuelle du silence initial.
+  value: 200
+  source: Choix de modélisation.
+  estimated: true
+
+delivery_min_onset_ms:
+  description: Silence initial minimal (ms).
+  value: 200
+  source: Stivers et al. (2009), voir delivery_base_onset_ms.
+  estimated: true
+
+hesitation_weights:
+  description: >
+    Poids de chaque cause dans l'hésitation combinée (OU probabiliste des
+    charges pondérées). Le mensonge a un poids modéré, conformément aux
+    méta-analyses.
+  value: {retrieval: 0.8, affect: 0.9, deception: 0.5, confusion: 0.7}
+  source: >
+    Sporer & Schwandt (2006), voir l'en-tête ; Vrij (2008), Detecting Lies and
+    Deceit (2e éd.), Wiley — la charge cognitive allonge la latence, mais
+    l'émotion et la difficulté de récupération aussi.
+  estimated: true
+
+retrieval_difficulty:
+  description: >
+    Charge de récupération en mémoire d'une unité selon sa catégorie. Les repères
+    temporels et la fréquence sont les plus difficiles pour l'enfant.
+  value: {who: 0.3, what: 0.2, where: 0.3, when: 0.6, frequency: 0.5}
+  source: >
+    Friedman (1993), Memory for the time of past events, Psychological Bulletin
+    113(1) ; Lamb et al. (2008), Tell Me What Happened, Wiley — les jeunes enfants
+    situent mal le temps et la fréquence.
+  estimated: true
+
+retrieval_peripheral_bonus:
+  description: Charge de récupération ajoutée pour une unité périphérique.
+  value: 0.2
+  source: Choix de modélisation (les détails périphériques sont moins bien encodés).
+  estimated: true
+
+retrieval_age_factor:
+  description: Multiplicateur de la charge de récupération selon la bande d'âge.
+  values: {"4_6": 1.0, "7_9": 0.8, "10_12": 0.6}
+  source: Choix de modélisation (le rappel s'améliore avec l'âge, Lamb et al., 2003).
+  estimated: true
+
+retrieval_act_load:
+  description: >
+    Charge de récupération des actes sans unité vraie : « je sais pas » (l'enfant a
+    cherché) et confabulation (l'enfant improvise).
+  value: {dont_know: 0.4, confabulate: 0.5}
+  source: Choix de modélisation.
+  estimated: true
+
+confusion_load:
+  description: Charge de confusion selon la forme de la question.
+  value: {confusion: 0.8, compound: 0.5, many_options: 0.3}
+  source: >
+    Choix de modélisation ; les questions composées et les choix multiples
+    surchargent les jeunes enfants (Lamb et al., 2008).
+  estimated: true
+
+delivery_max_pauses:
+  description: Nombre de pauses internes quand l'hésitation combinée vaut 1 (arrondi stochastique).
+  value: 3
+  source: Choix de modélisation.
+  estimated: true
+
+delivery_pause_ms:
+  description: Bornes [min, max] de la durée d'une pause interne (ms), modulée par l'hésitation.
+  value: [300, 1500]
+  source: Choix de modélisation.
+  estimated: true
+
+delivery_max_fillers:
+  description: Nombre de « euh » quand l'hésitation combinée vaut 1 (arrondi stochastique).
+  value: 2
+  source: Choix de modélisation.
+  estimated: true
+
+delivery_rate_drop:
+  description: Baisse relative du débit quand l'hésitation combinée vaut 1.
+  value: 0.25
+  source: Choix de modélisation.
+  estimated: true
+
+affect_volume_thresholds:
+  description: Charge émotionnelle [voix basse, chuchotement] à partir de laquelle le volume baisse.
+  value: [0.5, 0.8]
+  source: Choix de modélisation.
+  estimated: true
+
+affect_base:
+  description: >
+    Part de la charge émotionnelle d'un fait central de l'événement cible qui ne
+    dépend pas de la réticence : même en confiance, en parler reste chargé.
+    Charge = poids × (affect_base + (1 − affect_base) × réticence).
+  value: 0.3
+  source: Choix de modélisation.
+  estimated: true
+
+# --- Mensonge : dissimulation de faits protégés (ADR 0002) -------------------
+# Ne s'appliquent qu'aux scénarios dotés d'un bloc `deception`. La force initiale
+# de la dissimulation est fixée par le scénario (`deception.strength`).
+
+support_concealment_drop:
+  description: Baisse de la pression de dissimulation après chaque énoncé de soutien.
+  value: 0.1
+  source: >
+    Lyon & Dorado (2008), Truth induction in young maltreated children: The effects
+    of oath-taking and reassurance on true and false disclosures, Child Abuse &
+    Neglect 32(7) ; Hershkowitz, Lamb & Katz (2014), voir support_reluctance_drop —
+    le soutien non suggestif favorise le dévoilement des enfants qui cachent.
+  estimated: true
+
+rapport_concealment_drop:
+  description: Baisse de la pression de dissimulation après chaque invitation de rapport.
+  value: 0.04
+  source: Hershkowitz, Lamb & Katz (2014), voir support_reluctance_drop.
+  estimated: true
+
+pressure_concealment_rise:
+  description: >
+    Hausse de la pression de dissimulation après une question suggestive ou à
+    choix portant sur un fait protégé : la pression rend l'enfant défensif.
+  value: 0.08
+  source: >
+    Choix de modélisation ; Bottoms, Goodman, Schwartz-Kenney & Thomas (2002),
+    Understanding children's use of secrecy in the context of eyewitness reports,
+    Law and Human Behavior 26(3) — les enfants maintiennent un secret demandé par
+    un parent, davantage avec l'âge.
+  estimated: true
+
+retraction_threshold:
+  description: >
+    Pression de dissimulation en dessous de laquelle l'enfant peut revenir sur un
+    mensonge (après un soutien ou une question ouverte).
+  value: 0.35
+  source: Choix de modélisation.
+  estimated: true
+
+p_retraction:
+  description: Sous le seuil, probabilité de revenir sur un mensonge à chaque occasion.
+  value: 0.5
+  source: Choix de modélisation.
+  estimated: true
+
+deception_load:
+  description: Charge d'hésitation due au mensonge, selon sa forme (le plus coûteux = construire une version).
+  value: {omission: 0.3, false_deny: 0.5, feigned_ignorance: 0.5, minimization: 0.6, cover_story: 0.8}
+  source: >
+    Vrij (2008), Detecting Lies and Deceit, Wiley — hypothèse de charge cognitive ;
+    Talwar & Lee (2008), Social and cognitive correlates of children's lying
+    behavior, Child Development 79(4) — maintenir un mensonge cohérent sollicite
+    les fonctions exécutives.
+  estimated: true
+
+rehearsed_lie_factor:
+  description: Multiplicateur de la charge d'un mensonge déjà dit (version répétée, moins coûteuse).
+  value: 0.5
+  source: "Choix de modélisation (Vrij, 2008 : un récit préparé réduit la charge cognitive)."
+  estimated: true
