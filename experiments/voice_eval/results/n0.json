@@ -1,0 +1,185 @@
+{
+ "checks": [
+  {
+   "level": "N0",
+   "metric": "Silence initial : erreur absolue moyenne (ms)",
+   "value": 15.550438596491228,
+   "target": "< 30",
+   "ok": true,
+   "note": "456 réponses"
+  },
+  {
+   "level": "N0",
+   "metric": "Silence initial : erreur p95 (ms)",
+   "value": 20.0,
+   "target": "< 60",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "Rappel des silences planifiés (≥ 300 ms)",
+   "value": 1.0,
+   "target": "≥ 0,95",
+   "ok": true,
+   "note": "706 silences"
+  },
+  {
+   "level": "N0",
+   "metric": "Erreur de durée des silences retrouvés (ms)",
+   "value": 13.038243626062323,
+   "target": "< 50",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "Pauses non planifiées (≥ 300 ms) par réponse",
+   "value": 0.1600877192982456,
+   "target": "< 0,2",
+   "ok": true,
+   "note": "73 au total"
+  },
+  {
+   "level": "N0",
+   "metric": "Spearman ρ : hésitation décidée ↔ silence total mesuré",
+   "value": 0.8997188514907855,
+   "target": "≥ 0,8",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "« euh » voisés et de durée plausible (250–700 ms)",
+   "value": 0.9969230769230769,
+   "target": "≥ 0,95",
+   "ok": true,
+   "note": "325 « euh », tous voisés ; 0 trop courts (min 331 ms) ; contrôle acoustique, pas perceptif"
+  },
+  {
+   "level": "N0",
+   "metric": "Audibilité des unités (ancres retrouvées par Whisper)",
+   "value": 0.9783132530120482,
+   "target": "≥ 0,95",
+   "ok": true,
+   "note": "415 unités"
+  },
+  {
+   "level": "N0",
+   "metric": "Déterminisme (même réponse → même audio)",
+   "value": 1.0,
+   "target": "1",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "Débit : erreur relative de durée vs 1/débit (textes identiques)",
+   "value": 0.01745241046308991,
+   "target": "< 0,05",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "Débit : Spearman ρ (débit demandé ↔ vitesse mesurée)",
+   "value": 0.9613468290017755,
+   "target": "≥ 0,7",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "Volume « bas » vs normal (dB)",
+   "value": -4.407996654510498,
+   "target": "−4,4 ± 1",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N0",
+   "metric": "Volume « chuchoté » vs normal (dB)",
+   "value": -8.935815334320068,
+   "target": "−9,1 ± 1",
+   "ok": true,
+   "note": ""
+  }
+ ],
+ "audibility_misses": [
+  {
+   "reply": "r0065",
+   "unit": "n_popcorn",
+   "anchors": [
+    "pop-corn"
+   ],
+   "heard": "on a partage un grand pot de popcorn"
+  },
+  {
+   "reply": "r0102",
+   "unit": "n_papi",
+   "anchors": [
+    "papi"
+   ],
+   "heard": "un dimanche on est alle au zoo j etais avec mon papy j ai vu une girafe qui mangeait des feuilles"
+  },
+  {
+   "reply": "r0105",
+   "unit": "n_popcorn",
+   "anchors": [
+    "pop-corn"
+   ],
+   "heard": "on a partage un grand pot de popcorn"
+  },
+  {
+   "reply": "r0110",
+   "unit": "n_papi",
+   "anchors": [
+    "papi"
+   ],
+   "heard": "un dimanche on est alle au zoo j etais avec mon papy j ai vu une girafe qui mangeait des feuilles"
+  },
+  {
+   "reply": "r0114",
+   "unit": "n_papi",
+   "anchors": [
+    "papi"
+   ],
+   "heard": "re dimanche on est alle au zoo j etais avec mon papy j ai vu une girafe qui mangeait des feuilles"
+  },
+  {
+   "reply": "r0115",
+   "unit": "n_papi",
+   "anchors": [
+    "papi"
+   ],
+   "heard": "un dimanche on est alle au zoo j etais avec mon papy j ai vu une girafe qui mangeait des feuilles"
+  },
+  {
+   "reply": "r0380",
+   "unit": "a_bleu",
+   "anchors": [
+    "bleu",
+    "marque"
+   ],
+   "heard": "j avais un blues sur le bras"
+  },
+  {
+   "reply": "r0401",
+   "unit": "a_bleu",
+   "anchors": [
+    "bleu",
+    "marque"
+   ],
+   "heard": "j avais un blues sur le bras"
+  },
+  {
+   "reply": "r0411",
+   "unit": "a_bleu",
+   "anchors": [
+    "bleu",
+    "marque"
+   ],
+   "heard": "j avais un blues sur le bras"
+  }
+ ]
+}

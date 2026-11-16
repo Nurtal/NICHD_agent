@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Architecture du simulateur NICHD</title>
+<!-- Schémas d'architecture (moteur à états + LLM). Même format que slides.html (1280 × 720).
+     PDF : voir README.md de ce dossier. État du code décrit : main @ a0965ac (2026-11-16). -->
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  :root {
+    --ink: #1c2230; --muted: #5b6475; --line: #dfe3ea; --bg: #ffffff; --soft: #f4f6f9;
+    --accent: #1f4e8c; --accent-soft: #e6eef8;
+    --llm: #5e35b1; --llm-soft: #f1ebfa;
+    --voice: #00796b; --voice-soft: #e0f2f1;
+    --data: #8a93a3;
+    --open: #2e7d32; --dir: #f9a825; --opt: #ef6c00; --sug: #c62828; --sup: #5e35b1; --rule: #1565c0;
+    --arrow: #5b6475;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #888; }
+  body { font: 20px/1.45 "Source Sans 3", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .slide {
+    width: 1280px; height: 720px; background: var(--bg); position: relative; overflow: hidden;
+    padding: 40px 72px 44px; page-break-after: always; break-after: page; display: flex; flex-direction: column;
+    margin: 0 auto 24px;
+  }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+  @media print { .slide { margin: 0; } }
+  .kicker { font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { font-size: 32px; line-height: 1.15; margin: 4px 0 10px; letter-spacing: -.01em; }
+  h2 { font-size: 18px; margin-bottom: 6px; color: var(--accent); }
+  .lead { font-size: 17px; color: var(--muted); margin-bottom: 10px; max-width: 1100px; }
+  .muted { color: var(--muted); }
+  .foot { position: absolute; left: 72px; right: 72px; bottom: 16px; display: flex; justify-content: space-between;
+          font-size: 12px; color: #9aa2b1; }
+  code, .mono { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: .86em; }
+  code { background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+
+  /* legend */
+  .legend { display: flex; gap: 22px; font-size: 14px; color: var(--muted); margin-bottom: 8px; align-items: center; flex-wrap: wrap; }
+  .sw { display: inline-block; width: 22px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; border: 1.5px solid; }
+  .sw.det { background: var(--accent-soft); border-color: var(--accent); }
+  .sw.llm { background: var(--llm-soft); border-color: var(--llm); }
+  .sw.voice { background: var(--voice-soft); border-color: var(--voice); }
+  .sw.data { background: #fff; border-color: var(--data); border-style: dashed; }
+
+  /* svg */
+  svg.diag { width: 100%; height: auto; display: block; font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif; }
+  svg .det   { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+  svg .core  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  svg .llm   { fill: var(--llm-soft); stroke: var(--llm); stroke-width: 1.6; }
+  svg .voice { fill: var(--voice-soft); stroke: var(--voice); stroke-width: 1.6; }
+  svg .data  { fill: #fff; stroke: var(--data); stroke-width: 1.6; stroke-dasharray: 5 3; }
+  svg .soft  { fill: var(--soft); stroke: var(--line); stroke-width: 1.2; }
+  svg .io    { fill: #fff; stroke: var(--ink); stroke-width: 1.6; }
+  svg .out-r { fill: #fdecea; stroke: var(--sug); stroke-width: 1.6; }
+  svg .out-g { fill: #e8f5e9; stroke: var(--open); stroke-width: 1.6; }
+  svg text { fill: var(--ink); font-size: 12.5px; }
+  svg text.h { font-size: 14.5px; font-weight: 700; }
+  svg text.hl { font-size: 14.5px; font-weight: 700; fill: var(--llm); }
+  svg text.k { font-size: 11.5px; fill: var(--muted); }
+  svg text.kl { font-size: 11.5px; fill: var(--llm); font-weight: 600; }
+  svg text.m { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: 11px; }
+  svg .c { text-anchor: middle; }
+  svg .e { text-anchor: end; }
+  svg .ar  { fill: none; stroke: var(--arrow); stroke-width: 1.6; marker-end: url(#arr); }
+  svg .ar0 { fill: none; stroke: var(--arrow); stroke-width: 1.6; }
+  svg .ard { fill: none; stroke: var(--data); stroke-width: 1.4; stroke-dasharray: 5 3; marker-end: url(#arrd); }
+
+  /* cards & tables */
+  .grid { display: grid; gap: 18px; align-items: start; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); }
+  .card { background: var(--soft); border-radius: 12px; padding: 14px 18px; border: 1px solid var(--line); font-size: 15.5px; }
+  .card.llm { background: var(--llm-soft); border-color: #d5c8ee; }
+  .card.llm h2 { color: var(--llm); }
+  .card ul { padding-left: 1.1em; } .card li { margin-bottom: 3px; }
+  .card .no li::marker { content: "✕  "; color: var(--sug); }
+  .card .yes li::marker { content: "✓  "; color: var(--open); }
+  .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 8px 0 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.3; }
+  th, td { text-align: left; padding: 5px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .tag { display: inline-block; color: #fff; border-radius: 999px; padding: 0 9px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .t-open { background: var(--open); } .t-dir { background: var(--dir); color: #3a2c00; } .t-opt { background: var(--opt); }
+  .t-sug { background: var(--sug); } .t-sup { background: var(--sup); } .t-rule { background: var(--rule); } .t-oth { background: #777; }
+  table.rules { font-size: 13px; } table.rules td, table.rules th { padding: 3px 8px; }
+  table.rules .act { white-space: nowrap; }
+  .act { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: 12.5px; color: var(--accent); font-weight: 700; }
+  .lie { color: var(--sug); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px 8px; font-size: 13.5px; }
+  .chip { background: var(--accent-soft); border: 1px solid #c5d5ea; border-radius: 999px; padding: 1px 10px; }
+  .chip b { color: var(--accent); }
+  .note { font-size: 13.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- shared arrow markers -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6475"/>
+    </marker>
+    <marker id="arrd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a93a3"/>
+    </marker>
+  </defs>
+</svg>
+
+<!-- ============================================================ 1. Vue d'ensemble -->
+<section class="slide">
+  <div class="kicker">Architecture · 1 / 7 · vue d'ensemble</div>
+  <h1>Un tour d'entretien : les règles décident, le LLM ne fait que parler</h1>
+  <div class="legend">
+    <span><i class="sw det"></i>déterministe (règles, sans LLM)</span>
+    <span><i class="sw llm"></i>LLM local (Ollama, <code>qwen3.8</code> par défaut)</span>
+    <span><i class="sw voice"></i>voix (facultatif, <code>--extra voice</code>)</span>
+    <span><i class="sw data"></i>données échangées / journalisées</span>
+    <span class="muted">Orchestration : <code>Session.turn()</code></span>
+  </div>
+  <svg class="diag" viewBox="0 0 1136 498" style="max-height:500px">
+    <!-- row A -->
+    <path class="ar" d="M75 30 V12 H530 V30"/>
+    <text class="k c" x="300" y="9">énoncé tapé (mode texte)</text>
+
+    <rect class="io" x="0" y="30" width="150" height="88" rx="10"/>
+    <text class="h c" x="75" y="56">Apprenant</text>
+    <text class="c" x="75" y="76">tape son énoncé</text>
+    <text class="c" x="75" y="94">ou parle au micro</text>
+
+    <rect class="voice" x="190" y="30" width="180" height="88" rx="10"/>
+    <text class="h c" x="280" y="56">Transcription</text>
+    <text class="c" x="280" y="76">faster-whisper large-v3</text>
+    <text class="c" x="280" y="94">+ instant de prise de parole</text>
+
+    <rect class="llm" x="410" y="30" width="240" height="88" rx="10"/>
+    <text class="hl c" x="530" y="54">Classifieur NICHD</text>
+    <text class="c" x="530" y="73">LLM · T = 0 · JSON contraint</text>
+    <text class="c" x="530" y="91">skill versionné (v0.2.0)</text>
+    <text class="k c" x="530" y="108">ou classifieur manuel à balises</text>
+
+    <rect class="data" x="690" y="30" width="266" height="88" rx="10"/>
+    <text class="h c" x="823" y="54">Classification</text>
+    <text class="c" x="823" y="73">type de question · cible (unité)</text>
+    <text class="c" x="823" y="91">proposition suggérée · options</text>
+    <text class="c" x="823" y="108">indice de phase</text>
+
+    <path class="ar" d="M150 74 H190"/>
+    <path class="ar" d="M370 74 H410"/>
+    <path class="ar" d="M650 74 H690"/>
+
+    <!-- row B -->
+    <rect class="soft" x="50" y="158" width="330" height="96" rx="10"/>
+    <text class="h c" x="215" y="182">Entrées de la session</text>
+    <text class="c" x="215" y="201">fiche de scénario (YAML) : profil, unités,</text>
+    <text class="c" x="215" y="219">ancres, événement neutre, tromperie</text>
+    <text class="c" x="215" y="237">paramètres sourcés par âge · seed</text>
+
+    <rect class="det" x="410" y="158" width="210" height="96" rx="10"/>
+    <text class="h c" x="515" y="182">Suivi des phases</text>
+    <text class="c" x="515" y="201">6 phases, n'avance jamais</text>
+    <text class="c" x="515" y="219">en arrière · écarts signalés</text>
+    <text class="k c" x="515" y="237">1er dévoilement → substantive</text>
+
+    <rect class="core" x="700" y="158" width="256" height="96" rx="10"/>
+    <text class="h c" x="828" y="182">Moteur de comportement</text>
+    <text class="c" x="828" y="201">machine à états déterministe</text>
+    <text class="c" x="828" y="219">scénario + seed + classifications</text>
+    <text class="c" x="828" y="237">→ toujours les mêmes décisions</text>
+
+    <path class="ar" d="M823 118 V158"/>
+    <path class="ar" d="M740 118 V138 H515 V158"/>
+    <path class="ar" d="M700 206 H620"/>
+
+    <!-- row C -->
+    <rect class="data" x="700" y="300" width="256" height="92" rx="10"/>
+    <text class="h c" x="828" y="324">Décision</text>
+    <text class="c" x="828" y="343">acte de langage</text>
+    <text class="c" x="828" y="361">unités autorisées (seules transmises)</text>
+    <text class="c" x="828" y="379">diction · mensonge · raison</text>
+    <path class="ar" d="M828 254 V300"/>
+
+    <rect class="llm" x="440" y="300" width="220" height="92" rx="10"/>
+    <text class="hl c" x="550" y="324">Réalisateur</text>
+    <text class="c" x="550" y="343">LLM · T = 0,7</text>
+    <text class="c" x="550" y="361">voit la décision, le profil</text>
+    <text class="c" x="550" y="379">et 3 échanges récents</text>
+    <path class="ar" d="M700 346 H660"/>
+
+    <rect class="det" x="220" y="300" width="180" height="92" rx="10"/>
+    <text class="h c" x="310" y="324">Filtre de sortie</text>
+    <text class="c" x="310" y="343">lexique interdit</text>
+    <text class="c" x="310" y="361">fuite d'ancres, unités</text>
+    <text class="c" x="310" y="379">manquantes, contradiction</text>
+    <path class="ar" d="M440 346 H400"/>
+
+    <rect class="voice" x="0" y="300" width="180" height="92" rx="10"/>
+    <text class="h c" x="90" y="324">Synthèse vocale</text>
+    <text class="c" x="90" y="343">Kokoro, voix d'enfant</text>
+    <text class="c" x="90" y="361">silences insérés par nous</text>
+    <text class="k c" x="90" y="379">(mode voix seulement)</text>
+    <path class="ar" d="M220 346 H180"/>
+    <text class="k c" x="200" y="339">ok</text>
+
+    <!-- regeneration / fallback -->
+    <path class="ar" d="M330 300 V280 H560 V300"/>
+    <text class="k c" x="445" y="275">refus → 1 régénération (T ≤ 0,3)</text>
+    <rect class="det" x="220" y="416" width="180" height="40" rx="10"/>
+    <text class="h c" x="310" y="433" style="font-size:13px">Réponse type (gabarit)</text>
+    <text class="k c" x="310" y="449">sûre par construction</text>
+    <path class="ar" d="M310 392 V416"/>
+    <text class="k" x="318" y="409">2ᵉ refus</text>
+    <path class="ar" d="M220 436 H90 V392"/>
+
+    <!-- reply to learner -->
+    <path class="ar" d="M20 300 V118"/>
+    <text class="k" x="28" y="276">réponse de l'enfant</text>
+
+    <!-- delivery -->
+    <path class="ard" d="M828 392 V474 H40 V392"/>
+    <text class="k c" x="430" y="490">diction → plan d'élocution : silence initial, pauses, « euh », débit, volume</text>
+
+    <!-- journal -->
+    <rect class="data" x="996" y="30" width="140" height="362" rx="10"/>
+    <text class="h c" x="1066" y="54">Journal</text>
+    <text class="h c" x="1066" y="71">de session</text>
+    <text class="k c" x="1066" y="89">JSON · format 2</text>
+    <text class="c" x="1066" y="118">énoncé</text>
+    <text class="c" x="1066" y="137">classification</text>
+    <text class="c" x="1066" y="156">phase</text>
+    <text class="c" x="1066" y="175">état avant / après</text>
+    <text class="c" x="1066" y="194">décision</text>
+    <text class="c" x="1066" y="213">tentatives + prompts</text>
+    <text class="c" x="1066" y="232">réponse</text>
+    <text class="c" x="1066" y="251">latences</text>
+    <text class="c" x="1066" y="270">prise de parole</text>
+    <text class="k c" x="1066" y="310">↓</text>
+    <text class="k c" x="1066" y="330">rejeu, métriques,</text>
+    <text class="k c" x="1066" y="347">retour (page 7)</text>
+    <path class="ard" d="M956 74 H996"/>
+    <path class="ard" d="M956 206 H996"/>
+    <path class="ard" d="M956 346 H996"/>
+  </svg>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span>ADR 0001 · <code>session.py</code></span></div>
+</section>
+
+<!-- ============================================================ 2. Frontière LLM -->
+<section class="slide">
+  <div class="kicker">Architecture · 2 / 7 · rôle du LLM</div>
+  <h1>Ce que chaque appel LLM voit, et ce qu'il ne voit jamais</h1>
+  <p class="lead">Le même LLM local (Ollama) est appelé par quatre composants. Aucun ne décide du comportement de l'enfant :
+    le moteur a décidé avant, et ce qui sort passe par des contrôles déterministes.</p>
+  <div class="grid g3">
+    <div class="card llm">
+      <h2>1 · Classifieur <span class="muted" style="font-weight:400;font-size:14px">chaque tour, avant le moteur</span></h2>
+      <div class="mono" style="font-size:12.5px;color:var(--muted)">T = 0 · seed 0 · réflexion « medium » · sortie JSON au schéma du skill</div>
+      <h3>Voit</h3>
+      <ul class="yes">
+        <li>le skill NICHD : spécification, exemples few-shot sur un catalogue fictif</li>
+        <li>le catalogue des unités du scénario (id, catégorie, valeur)</li>
+        <li>les ids déjà dits par l'enfant, les 3 derniers échanges</li>
+      </ul>
+      <h3>Ne voit pas</h3>
+      <ul class="no">
+        <li>ancres, centralité, profil, état du moteur</li>
+        <li>bloc tromperie (faits protégés, mensonges)</li>
+      </ul>
+      <h3>Garde-fous</h3>
+      <ul><li>cible inconnue → <code>out_of_scenario</code></li><li>sortie invalide / erreur → type <code>other</code></li></ul>
+    </div>
+    <div class="card llm">
+      <h2>2 · Réalisateur <span class="muted" style="font-weight:400;font-size:14px">chaque tour, après le moteur</span></h2>
+      <div class="mono" style="font-size:12.5px;color:var(--muted)">T = 0,7 (≤ 0,3 si régénération) · seed dérivée du tour · sans réflexion</div>
+      <h3>Voit</h3>
+      <ul class="yes">
+        <li>prénom, âge, registre de la bande d'âge</li>
+        <li>la consigne de l'acte de langage décidé</li>
+        <li>les seules <b>valeurs des unités autorisées</b> du tour (vraies, contaminées ou mensongères, sans étiquette)</li>
+        <li>les 3 derniers échanges</li>
+      </ul>
+      <h3>Ne voit pas</h3>
+      <ul class="no">
+        <li>le scénario, les autres unités, les ancres</li>
+        <li>qu'un contenu est un mensonge, sauf pour revenir dessus</li>
+      </ul>
+      <h3>Garde-fous</h3>
+      <ul><li>filtre de sortie, 1 régénération, puis réponse type</li></ul>
+    </div>
+    <div class="card llm">
+      <h2>3 · Retour <span class="muted" style="font-weight:400;font-size:14px">fin de session</span></h2>
+      <h3>Reformulateur (T = 0,3)</h3>
+      <ul class="yes">
+        <li>une question directive, à choix, suggestive ou composée</li>
+        <li>ce que l'enfant a dit jusque-là</li>
+        <li>→ propose une invitation ouverte</li>
+      </ul>
+      <h3>Comparateur de synthèse (facultatif)</h3>
+      <ul class="yes">
+        <li>le récit écrit par l'apprenant</li>
+        <li>les faits vrais et faux réellement dits</li>
+        <li>→ ce que l'apprenant a retenu, ce qu'il a cru à tort</li>
+      </ul>
+      <h3>Hors LLM</h3>
+      <ul><li>toutes les métriques sont calculées depuis le journal</li></ul>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">Modèles : <code>--model</code> pour l'enfant et le retour, <code>--classifier-model</code> pour le classifieur
+    (par défaut, le même). Mode hors ligne : <code>TemplateRealizer</code> + classifieur manuel, sans aucun LLM.</p>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span><code>classifiers/llm.py</code> · <code>realization.py</code> · <code>feedback.py</code></span></div>
+</section>
+
+<!-- ============================================================ 3. Moteur -->
+<section class="slide">
+  <div class="kicker">Architecture · 3 / 7 · moteur de comportement</div>
+  <h1>Comment le moteur décide d'un tour</h1>
+  <p class="lead"><code>BehaviorEngine.decide(classification)</code> : séquence fixe d'étapes. Le hasard passe par des générateurs
+    tirés de la seed, ce qui rend la décision reproductible.</p>
+  <svg class="diag" viewBox="0 0 1136 392" style="max-height:392px">
+    <!-- row 1 -->
+    <rect class="data" x="0" y="32" width="190" height="84" rx="10"/>
+    <text class="h c" x="95" y="56">Type effectif</text>
+    <text class="c" x="95" y="75">question composée →</text>
+    <text class="c" x="95" y="92">son élément le plus</text>
+    <text class="c" x="95" y="108">directif</text>
+
+    <rect class="det" x="225" y="10" width="265" height="128" rx="10"/>
+    <text class="h c" x="357" y="34">Effets de phase sur l'état</text>
+    <text class="c" x="357" y="53">soutien : − réticence, − dissimulation</text>
+    <text class="c" x="357" y="71">rapport : − réticence, − dissimulation</text>
+    <text class="c" x="357" y="89">règle de base : − acquiescement</text>
+    <text class="c" x="357" y="107">pratique narrative : + verbosité</text>
+    <text class="c" x="357" y="125">pression sur fait protégé : + dissim.</text>
+
+    <polygon class="det" points="520,74 620,12 720,74 620,136"/>
+    <text class="c" x="620" y="62" style="font-weight:600">Pas encore dévoilé</text>
+    <text class="c" x="620" y="78">et question sur</text>
+    <text class="c" x="620" y="94">l'événement cible ?</text>
+
+    <polygon class="det" points="785,74 885,12 985,74 885,136"/>
+    <text class="c" x="885" y="62" style="font-weight:600">Mensonge en cours</text>
+    <text class="c" x="885" y="78">et dissimulation</text>
+    <text class="c" x="885" y="94">sous le seuil ?</text>
+
+    <path class="ar" d="M190 74 H225"/>
+    <path class="ar" d="M490 74 H520"/>
+    <path class="ar" d="M720 74 H785"/>
+    <text class="k c" x="745" y="68">non</text>
+
+    <!-- disclosure gate -->
+    <path class="ar" d="M620 136 V166"/>
+    <text class="k" x="627" y="156">oui</text>
+    <rect class="det" x="520" y="166" width="200" height="88" rx="10"/>
+    <text class="h c" x="620" y="189">Porte de dévoilement</text>
+    <text class="c" x="620" y="208">pression += poids(type)</text>
+    <text class="c" x="620" y="226">réticence trop forte ou</text>
+    <text class="c" x="620" y="244">pression &lt; seuil → réticent</text>
+    <path class="ar0" d="M720 190 H752 V74"/>
+    <text class="k" x="758" y="160">seuil atteint :</text>
+    <text class="k" x="758" y="174">l'enfant dévoile</text>
+
+    <!-- retraction -->
+    <path class="ar" d="M885 136 V196"/>
+    <text class="k" x="892" y="150">oui + tirage</text>
+    <text class="k" x="892" y="163">(flux tromperie)</text>
+    <rect class="out-g" x="790" y="196" width="190" height="64" rx="10"/>
+    <text class="h c" x="885" y="218" style="font-size:13.5px">Revenir sur un mensonge</text>
+    <text class="act c" x="885" y="235" style="fill:var(--accent)">retract</text>
+    <text class="k c" x="885" y="251">dit les faits vrais couverts</text>
+
+    <path class="ar" d="M985 74 H1100 V290"/>
+    <text class="k c" x="1010" y="68">non</text>
+
+    <!-- row 2 -->
+    <rect class="det" x="880" y="290" width="256" height="92" rx="10"/>
+    <text class="h c" x="1008" y="314">Règle du type de question</text>
+    <text class="c" x="1008" y="333">invitation, directive, à choix,</text>
+    <text class="c" x="1008" y="351">oui/non, suggestive… (page 4)</text>
+    <text class="k c" x="1008" y="369">tirages : flux principal (seed)</text>
+
+    <rect class="det" x="640" y="290" width="205" height="92" rx="10"/>
+    <text class="h c" x="742" y="314">Mensonges et omissions</text>
+    <text class="c" x="742" y="333">faits protégés retirés</text>
+    <text class="c" x="742" y="351">du récit ; mensonges</text>
+    <text class="c" x="742" y="369">journalisés (LieRecord)</text>
+
+    <rect class="det" x="420" y="290" width="185" height="92" rx="10"/>
+    <text class="h c" x="512" y="314">Mise à jour de l'état</text>
+    <text class="c" x="512" y="333">unités révélées,</text>
+    <text class="c" x="512" y="351">dévoilement,</text>
+    <text class="c" x="512" y="369">dernière unité citée</text>
+
+    <rect class="det" x="175" y="290" width="210" height="92" rx="10"/>
+    <text class="h c" x="280" y="314">Diction</text>
+    <text class="c" x="280" y="333">charges → silence, pauses,</text>
+    <text class="c" x="280" y="351">« euh », débit, volume</text>
+    <text class="k c" x="280" y="369">flux {seed}:delivery (page 6)</text>
+
+    <rect class="data" x="0" y="290" width="140" height="92" rx="10"/>
+    <text class="h c" x="70" y="314">Décision</text>
+    <text class="c" x="70" y="333">acte · unités</text>
+    <text class="c" x="70" y="351">diction · mensonge</text>
+    <text class="c" x="70" y="369">raison (trace)</text>
+
+    <path class="ar" d="M880 336 H845"/>
+    <path class="ar" d="M640 336 H605"/>
+    <path class="ar" d="M420 336 H385"/>
+    <path class="ar" d="M175 336 H140"/>
+
+    <!-- shortcuts to state update -->
+    <path class="ar" d="M560 254 V290"/>
+    <text class="k e" x="553" y="276">réticent</text>
+    <path class="ar" d="M885 260 V272 H595 V290"/>
+  </svg>
+  <div style="margin-top:8px">
+    <div class="note" style="margin-bottom:4px"><b style="color:var(--ink)">État du moteur</b> (<code>EngineState</code>, copié avant et après chaque tour dans le journal) :</div>
+    <div class="chips">
+      <span class="chip"><b>réticence</b> freine le dévoilement</span>
+      <span class="chip"><b>verbosité</b> unités par invitation</span>
+      <span class="chip"><b>acquiescement</b> module la suggestibilité</span>
+      <span class="chip"><b>dissimulation</b> 0–1, tromperie</span>
+      <span class="chip"><b>pression de dévoilement</b></span>
+      <span class="chip"><b>unités révélées</b></span>
+      <span class="chip"><b>unités contaminées</b> + tour source</span>
+      <span class="chip"><b>mensonges</b></span>
+      <span class="chip"><b>dévoilé</b> · dernière unité · tour</span>
+    </div>
+  </div>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span><code>engine.py</code> · <code>data/parameters.yaml</code></span></div>
+</section>
+
+<!-- ============================================================ 4. Règles par type -->
+<section class="slide">
+  <div class="kicker">Architecture · 4 / 7 · règles du moteur</div>
+  <h1>Chaque type de question a sa règle</h1>
+  <table class="rules">
+    <thead><tr><th style="width:140px">Type</th><th style="width:190px">Situation</th><th style="width:150px">Acte de langage</th><th>Effets sur l'état / la trace</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3"><span class="tag t-open">invitation</span></td><td>phase de rapport</td><td class="act">small_talk</td><td>parle de lui, aucun fait du scénario</td></tr>
+      <tr><td>événement neutre ou cible</td><td class="act">answer</td><td><i>n</i> unités non dites, centrales d'abord, ordre chronologique · <i>n</i> = unités/invitation × verbosité · un faux détail intégré peut resurgir · <span class="lie">fait protégé caché → omission</span> · plus rien → <span class="lie">version de couverture</span> ou <span class="act">dont_know</span></td></tr>
+      <tr><td>clôture «&nbsp;autre&nbsp;chose&nbsp;?&nbsp;»</td><td class="act">answer · deny</td><td>peut-être une unité centrale restante, sinon « non, c'est tout »</td></tr>
+      <tr><td><span class="tag t-open">invitation indicée</span></td><td>reprend une unité dite</td><td class="act">answer</td><td>même règle, limitée au segment (avant / pendant / après) de l'unité citée</td></tr>
+      <tr><td><span class="tag t-open">facilitateur</span></td><td>« et après ? »</td><td class="act">answer</td><td>1 unité, suite du segment de la dernière unité citée</td></tr>
+      <tr><td rowspan="2"><span class="tag t-dir">directive</span></td><td>cible = unité du scénario</td><td class="act">answer</td><td>cette unité · <span class="lie">si protégée et cachée : minimisation, sinon couverture, sinon ignorance feinte</span></td></tr>
+      <tr><td>hors scénario</td><td class="act">confabulate · dont_know</td><td>invention (p × suggestibilité) → enregistrée comme contamination</td></tr>
+      <tr><td rowspan="2"><span class="tag t-opt">à choix</span></td><td>options proposées</td><td class="act">answer · acquiesce</td><td>bonne option (p par âge) = <b>suggestion tombée juste</b> · sinon mauvaise option, biais de récence → <b>contamination</b>, parfois intégrée</td></tr>
+      <tr><td>oui / non</td><td class="act">answer · acquiesce · deny</td><td>vraie → tombée juste · fausse → biais du « oui » → contamination, sinon « non » · <span class="lie">vraie mais protégée → fausse dénégation</span></td></tr>
+      <tr><td><span class="tag t-sug">suggestive</span></td><td>proposition présupposée</td><td class="act">acquiesce · deny</td><td>vraie → tombée juste · fausse → acquiescement → contamination (+ intégration) · <span class="lie">protégée → fausse dénégation</span> · ↑ dissimulation</td></tr>
+      <tr><td><span class="tag t-rule">règle</span> <span class="tag t-sup">soutien</span></td><td>—</td><td class="act">acknowledge</td><td>effets de phase : − acquiescement / − réticence, − dissimulation</td></tr>
+      <tr><td><span class="tag t-oth">autre</span></td><td>hors protocole, détournement</td><td class="act">confusion</td><td>signalé dans le retour</td></tr>
+      <tr><td><span class="tag t-oth">composée</span></td><td>plusieurs questions</td><td colspan="2">règle de l'élément le plus directif · charge de « confusion » dans la diction</td></tr>
+    </tbody>
+  </table>
+  <p class="note" style="margin-top:6px">Avant le dévoilement, une question sur l'événement cible passe d'abord par la porte de dévoilement (page 3).
+    Probabilités <i>p</i> : <code>parameters.yaml</code>, sourcées. En <span class="lie">rouge</span> : seulement si le scénario a un bloc <code>deception</code>.</p>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span><code>engine.py</code> (méthodes <code>_invitation</code> … <code>_suggestive</code>)</span></div>
+</section>
+
+<!-- ============================================================ 5. Phases -->
+<section class="slide">
+  <div class="kicker">Architecture · 5 / 7 · suivi des phases</div>
+  <h1>Deuxième machine à états : les phases du protocole</h1>
+  <p class="lead"><code>PhaseTracker</code> : la phase avance selon l'indice de phase du classifieur (ou un énoncé de règle), ne recule jamais,
+    et chaque écart au protocole est consigné pour le retour.</p>
+  <svg class="diag" viewBox="0 0 1136 296" style="max-height:296px">
+    <text class="k c" x="568" y="14">indice de phase du classifieur → la phase n'avance que vers l'avant</text>
+    <path class="ar" d="M0 26 H1134"/>
+
+    <rect class="det" x="0"   y="50" width="160" height="66" rx="12"/>
+    <rect class="det" x="195" y="50" width="160" height="66" rx="12"/>
+    <rect class="det" x="390" y="50" width="160" height="66" rx="12"/>
+    <rect class="det" x="585" y="50" width="160" height="66" rx="12"/>
+    <rect class="core" x="780" y="50" width="160" height="66" rx="12"/>
+    <rect class="det" x="975" y="50" width="160" height="66" rx="12"/>
+    <text class="h c" x="80"   y="78">Rapport</text>
+    <text class="h c" x="275"  y="78">Règles de base</text>
+    <text class="h c" x="470"  y="78">Pratique narrative</text>
+    <text class="h c" x="665"  y="78">Transition</text>
+    <text class="h c" x="860"  y="78">Substantive</text>
+    <text class="h c" x="1055" y="78">Clôture</text>
+    <text class="k c" x="80"   y="98">≥ 2 tours</text>
+    <text class="k c" x="275"  y="98">≥ 2 tours · ou « règle »</text>
+    <text class="k c" x="470"  y="98">≥ 3 tours</text>
+    <text class="k c" x="665"  y="98">invitation à dévoiler</text>
+    <text class="k c" x="860"  y="98">récit de l'événement</text>
+    <text class="k c" x="1055" y="98">obligatoire</text>
+    <path class="ar" d="M160 83 H195"/>
+    <path class="ar" d="M355 83 H390"/>
+    <path class="ar" d="M550 83 H585"/>
+    <path class="ar" d="M745 83 H780"/>
+    <path class="ar" d="M940 83 H975"/>
+
+    <path class="ar0" d="M80 116 V146 H860"/>
+    <path class="ar0" d="M275 116 V146"/>
+    <path class="ar0" d="M470 116 V146"/>
+    <path class="ar0" d="M665 116 V146"/>
+    <path class="ar" d="M860 146 V116"/>
+    <text class="k c" x="470" y="164">1er dévoilement de l'événement cible (décidé par le moteur) → phase substantive, depuis n'importe quelle phase</text>
+
+    <text class="h" x="0" y="196" style="font-size:13px;fill:var(--muted)">EFFET SUR LE MOTEUR</text>
+    <rect class="soft" x="0"   y="206" width="160" height="88" rx="10"/>
+    <rect class="soft" x="195" y="206" width="160" height="88" rx="10"/>
+    <rect class="soft" x="390" y="206" width="160" height="88" rx="10"/>
+    <rect class="soft" x="585" y="206" width="160" height="88" rx="10"/>
+    <rect class="soft" x="780" y="206" width="160" height="88" rx="10"/>
+    <rect class="soft" x="975" y="206" width="160" height="88" rx="10"/>
+    <text class="c" x="80" y="230">invitations →</text><text class="c" x="80" y="248">bavardage</text>
+    <text class="c" x="80" y="266">− réticence</text><text class="c" x="80" y="284">− dissimulation</text>
+    <text class="c" x="275" y="230">énoncé de règle :</text><text class="c" x="275" y="248">− acquiescement</text>
+    <text class="k c" x="275" y="266">(nombre de règles</text><text class="k c" x="275" y="282">efficaces plafonné)</text>
+    <text class="c" x="470" y="230">événement neutre</text><text class="c" x="470" y="248">raconté</text>
+    <text class="c" x="470" y="266">+ verbosité</text><text class="k c" x="470" y="284">(plafonné)</text>
+    <text class="c" x="665" y="230">questions sur</text><text class="c" x="665" y="248">l'événement :</text>
+    <text class="c" x="665" y="266">la pression de</text><text class="c" x="665" y="284">dévoilement monte</text>
+    <text class="c" x="860" y="230">invitations,</text><text class="c" x="860" y="248">questions ciblées,</text>
+    <text class="c" x="860" y="266">contamination,</text><text class="c" x="860" y="284">mensonges</text>
+    <text class="c" x="1055" y="230">« autre chose ? »</text><text class="c" x="1055" y="248">→ une unité</text>
+    <text class="c" x="1055" y="266">centrale restante</text><text class="c" x="1055" y="284">ou « non »</text>
+  </svg>
+  <div class="grid g3" style="margin-top:12px;gap:12px">
+    <div class="card" style="padding:10px 14px;font-size:14px"><b>Phase sautée</b> · <b>phase tronquée</b><br><span class="muted">la phase avance trop vite (minimum de tours non atteint)</span></div>
+    <div class="card" style="padding:10px 14px;font-size:14px"><b>Question focalisée prématurée</b><br><span class="muted">directive, à choix ou suggestive sur l'événement cible avant la transition</span></div>
+    <div class="card" style="padding:10px 14px;font-size:14px"><b>Dévoilement forcé</b> · <b>clôture absente</b><br><span class="muted">dévoilement obtenu par une question focalisée ; fin sans clôture</span></div>
+  </div>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span><code>phases.py</code></span></div>
+</section>
+
+<!-- ============================================================ 6. Mensonge & diction -->
+<section class="slide">
+  <div class="kicker">Architecture · 6 / 7 · extensions de l'ADR 0002</div>
+  <h1>Mensonge et diction : décidés par le moteur, tirés à part</h1>
+  <div class="grid g2" style="grid-template-columns: 1fr 1.15fr; gap:26px">
+    <div>
+      <h2>Dissimulation (scénario avec bloc <code>deception</code>)</h2>
+      <svg class="diag" viewBox="0 0 520 150">
+        <defs><linearGradient id="gc" x1="0" x2="1"><stop offset="0" stop-color="#e8f5e9"/><stop offset="1" stop-color="#fdecea"/></linearGradient></defs>
+        <rect x="10" y="62" width="500" height="20" rx="10" fill="url(#gc)" stroke="#dfe3ea"/>
+        <text class="k" x="10" y="100">0</text><text class="k e" x="510" y="100">1</text>
+        <!-- thresholds per protected fact -->
+        <line x1="185" y1="56" x2="185" y2="88" stroke="#5b6475" stroke-width="2"/>
+        <line x1="310" y1="56" x2="310" y2="88" stroke="#5b6475" stroke-width="2"/>
+        <line x1="435" y1="56" x2="435" y2="88" stroke="#5b6475" stroke-width="2"/>
+        <text class="k c" x="185" y="116">seuil fait A</text>
+        <text class="k c" x="310" y="116">seuil fait B</text>
+        <text class="k c" x="435" y="116">seuil fait C</text>
+        <line x1="110" y1="56" x2="110" y2="88" stroke="#2e7d32" stroke-width="2" stroke-dasharray="3 2"/>
+        <text class="k c" x="110" y="136" style="fill:#2e7d32">seuil de rétractation</text>
+        <!-- current value -->
+        <polygon points="365,52 357,38 373,38" fill="#c62828"/>
+        <text class="c" x="365" y="30" style="font-weight:700;fill:#c62828">dissimulation</text>
+        <path class="ar" d="M330 18 H230"/><text class="k e" x="225" y="14">soutien, rapport</text>
+        <path class="ar" d="M400 18 H500"/>        <text class="k" x="430" y="12">pression</text>
+      </svg>
+      <ul style="font-size:14.5px;padding-left:1.1em;margin-top:4px">
+        <li>Un seuil par fait protégé, tiré une fois : le fait reste caché tant que la dissimulation le dépasse.</li>
+        <li>Formes : <b>omission</b>, <b>fausse dénégation</b>, <b>ignorance feinte</b>, <b>version de couverture</b>, <b>minimisation</b>.
+          Les contenus mensongers sont <b>écrits par l'auteur</b> du scénario, avec leurs ancres.</li>
+        <li>Mensonge maintenu d'un tour à l'autre ; levé seulement par une <b>rétractation</b> (dissimulation basse + question ouverte ou soutien).</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Diction : l'hésitation a plusieurs causes</h2>
+      <svg class="diag" viewBox="0 0 580 300">
+        <rect class="det" x="0" y="0"   width="170" height="44" rx="8"/>
+        <rect class="det" x="0" y="52"  width="170" height="44" rx="8"/>
+        <rect class="det" x="0" y="104" width="170" height="44" rx="8"/>
+        <rect class="det" x="0" y="156" width="170" height="44" rx="8"/>
+        <text class="h c" x="85" y="18"  style="font-size:13px">récupération</text><text class="k c" x="85" y="35">fait périphérique, âge</text>
+        <text class="h c" x="85" y="70"  style="font-size:13px">émotion</text><text class="k c" x="85" y="87">fait central, réticence</text>
+        <text class="h c" x="85" y="122" style="font-size:13px">mensonge</text><text class="k c" x="85" y="139">selon la forme</text>
+        <text class="h c" x="85" y="174" style="font-size:13px">confusion</text><text class="k c" x="85" y="191">composée, ≥ 3 options</text>
+        <path class="ar" d="M170 22 L215 88"/>
+        <path class="ar" d="M170 74 L215 94"/>
+        <path class="ar" d="M170 126 L215 106"/>
+        <path class="ar" d="M170 178 L215 112"/>
+        <rect class="core" x="215" y="72" width="130" height="56" rx="10"/>
+        <text class="h c" x="280" y="95">hésitation h</text>
+        <text class="k c" x="280" y="113">OU pondéré + bruit</text>
+        <path class="ar" d="M345 100 H375"/>
+        <rect class="data" x="375" y="0"   width="205" height="32" rx="8"/><text class="c" x="477" y="21">silence initial (onset)</text>
+        <rect class="data" x="375" y="40"  width="205" height="32" rx="8"/><text class="c" x="477" y="61">pauses internes</text>
+        <rect class="data" x="375" y="80"  width="205" height="32" rx="8"/><text class="c" x="477" y="101">« euh »</text>
+        <rect class="data" x="375" y="120" width="205" height="32" rx="8"/><text class="c" x="477" y="141">débit ralenti</text>
+        <rect class="data" x="375" y="160" width="205" height="32" rx="8"/><text class="c" x="477" y="181">volume (selon l'émotion)</text>
+
+        <text class="h" x="0" y="232" style="font-size:13px">Plan d'élocution → synthèse vocale</text>
+        <rect x="0"   y="242" width="110" height="26" rx="4" fill="#f4f6f9" stroke="#dfe3ea"/><text class="k c" x="55"  y="259">silence 900 ms</text>
+        <rect x="114" y="242" width="46"  height="26" rx="4" class="voice"/><text class="c" x="137" y="259">euh…</text>
+        <rect x="164" y="242" width="30"  height="26" rx="4" fill="#f4f6f9" stroke="#dfe3ea"/>
+        <rect x="198" y="242" width="150" height="26" rx="4" class="voice"/><text class="c" x="273" y="259">« il m'a juste »</text>
+        <rect x="352" y="242" width="70"  height="26" rx="4" fill="#f4f6f9" stroke="#dfe3ea"/><text class="k c" x="387" y="259">pause</text>
+        <rect x="426" y="242" width="154" height="26" rx="4" class="voice"/><text class="c" x="503" y="259">« un peu poussée »</text>
+        <text class="k" x="0" y="290">Kokoro synthétise la parole ; les silences sont insérés à la concaténation (exacts et rejouables).</text>
+      </svg>
+      <p class="note">L'hésitation n'est pas un détecteur de mensonge : mentir sur un fait coûte la même récupération et la même
+        émotion que le dire ; seule la charge « mensonge » s'y ajoute.</p>
+    </div>
+  </div>
+  <div class="chips" style="margin-top:10px">
+    <span class="note" style="margin-right:4px">Trois flux aléatoires dérivés de la seed :</span>
+    <span class="chip"><b>seed</b> décisions du MVP (inchangées)</span>
+    <span class="chip"><b>{seed}:deception</b> seuils, rétractations</span>
+    <span class="chip"><b>{seed}:delivery</b> diction</span>
+    <span class="note">→ un scénario sans tromperie rejoue à l'identique les journaux de <code>v0.1-mvp</code>.</span>
+  </div>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span>ADR 0002 · <code>engine.py</code> · <code>delivery.py</code> · <code>voice/</code></span></div>
+</section>
+
+<!-- ============================================================ 7. Après la session -->
+<section class="slide">
+  <div class="kicker">Architecture · 7 / 7 · journal, évaluation, carte du code</div>
+  <h1>Après la session : tout repart du journal</h1>
+  <svg class="diag" viewBox="0 0 1136 236" style="max-height:236px">
+    <rect class="data" x="0" y="72" width="160" height="92" rx="10"/>
+    <text class="h c" x="80" y="100">Journal</text>
+    <text class="c" x="80" y="120">session_&lt;id&gt;.json</text>
+    <text class="k c" x="80" y="138">source de vérité</text>
+    <text class="k c" x="80" y="154">scénario, seed, paramètres</text>
+
+    <path class="ar" d="M160 100 H185 V56 H210"/>
+    <path class="ar" d="M185 100 V178 H210"/>
+
+    <rect class="det" x="210" y="0" width="260" height="114" rx="10"/>
+    <text class="h c" x="340" y="24">Métriques (sans LLM)</text>
+    <text class="c" x="340" y="44">proportion de questions ouvertes</text>
+    <text class="c" x="340" y="62">informations exactes (centrales / périph.)</text>
+    <text class="c" x="340" y="80">score de contamination</text>
+    <text class="c" x="340" y="98">mensonges · prise de parole (voix)</text>
+
+    <rect class="det" x="210" y="130" width="260" height="96" rx="10"/>
+    <text class="h c" x="340" y="154">Rejeu (sans LLM)</text>
+    <text class="c" x="340" y="174">classifications et réponses relues</text>
+    <text class="c" x="340" y="192">du journal → décisions identiques ?</text>
+    <text class="k c" x="340" y="210">garde-fou : journaux du MVP</text>
+
+    <path class="ar" d="M470 56 H510"/>
+    <rect class="det" x="510" y="0" width="300" height="114" rx="10"/>
+    <text class="h c" x="660" y="24">Retour structuré</text>
+    <text class="c" x="660" y="44">métriques · frise des phases · écarts</text>
+    <text class="c" x="660" y="62">transcription annotée par type</text>
+    <text class="c" x="660" y="80" style="fill:var(--llm);font-weight:600">reformulations ouvertes (LLM)</text>
+    <text class="c" x="660" y="98" style="fill:var(--llm);font-weight:600">synthèse de l'apprenant (LLM, facultatif)</text>
+
+    <path class="ar" d="M160 140 H185"/>
+    <rect class="soft" x="510" y="130" width="300" height="96" rx="10"/>
+    <text class="h c" x="660" y="154">Exports</text>
+    <text class="c" x="660" y="174">render-audio : un WAV par tour</text>
+    <text class="c" x="660" y="192">export : CSV vierge pour codeurs</text>
+    <text class="k c" x="660" y="210">(étude d'accord κ)</text>
+    <path class="ar" d="M470 178 H510"/>
+
+    <rect class="voice" x="850" y="0" width="286" height="226" rx="10"/>
+    <text class="h c" x="993" y="24">Prise de parole (voix)</text>
+    <text class="c" x="993" y="46">l'instant où l'apprenant parle est</text>
+    <text class="c" x="993" y="64">une entrée du tour, journalisée</text>
+    <text class="c" x="993" y="90">parole avant la fin de l'enfant</text>
+    <text class="c" x="993" y="108">= interruption (silence initial,</text>
+    <text class="c" x="993" y="126">pause ou phrase)</text>
+    <text class="c" x="993" y="152">les unités non dites sont</text>
+    <text class="c" x="993" y="170">reprises par le moteur (unsay) :</text>
+    <text class="c" x="993" y="188">elles ne comptent pas comme révélées</text>
+    <text class="k c" x="993" y="212">mesure sur l'énergie du signal</text>
+  </svg>
+  <h2 style="margin-top:12px">Carte du code (<code>src/nichd_sim/</code>)</h2>
+  <div class="grid g2" style="gap:24px">
+    <table>
+      <tr><td><code>session.py</code></td><td>façade : orchestre un tour, journal, fin de session</td></tr>
+      <tr><td><code>engine.py</code></td><td>moteur de comportement (machine à états)</td></tr>
+      <tr><td><code>phases.py</code></td><td>suivi des phases et écarts</td></tr>
+      <tr><td><code>delivery.py</code></td><td>diction et plan d'élocution</td></tr>
+      <tr><td><code>classifiers/</code> · <code>skill/</code></td><td>classifieur LLM ou manuel · skill NICHD versionné</td></tr>
+      <tr><td><code>realization.py</code></td><td>réalisateur LLM et gabarit sans LLM</td></tr>
+    </table>
+    <table>
+      <tr><td><code>output_filter.py</code></td><td>lexique interdit, contrôle de fuite</td></tr>
+      <tr><td><code>scenario.py</code> · <code>parameters.py</code></td><td>fiches YAML · paramètres sourcés</td></tr>
+      <tr><td><code>metrics.py</code> · <code>feedback.py</code></td><td>métriques sans LLM · retour</td></tr>
+      <tr><td><code>replay.py</code></td><td>rejeu, export pour codeurs</td></tr>
+      <tr><td><code>voice/</code></td><td>ports Speaker / Listener, workers Kokoro et Whisper</td></tr>
+      <tr><td><code>cli.py</code> · <code>ui/app.py</code></td><td>commandes <code>nichd-sim</code> · interface Streamlit</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>Simulateur NICHD · architecture</span><span>état du code : <code>main</code> @ a0965ac</span></div>
+</section>
+
+</body>
+</html>

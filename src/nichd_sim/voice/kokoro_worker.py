@@ -75,7 +75,35 @@ def synthesize(pipe: KPipeline, pieces: list[str], rate: float, voice: str, fact
     if factor != 1.0:
         up, down = _ratio(factor)
         out = [resample_poly(a, up, down).astype(np.float32) if len(a) else a for a in out]
-    return out
+    return [_lengthen_filler(a) if _is_filler(p) else a for p, a in zip(pieces, out)]
+
+
+FILLERS = {"euh", "euh…", "euh...", "heu", "heu…"}
+MIN_FILLER_S = 0.30
+TARGET_FILLER_S = 0.38
+LOUD = 0.01  # |sample| above this counts as sound
+
+
+def _is_filler(piece: str) -> bool:
+    return piece.strip().lower() in FILLERS
+
+
+def _lengthen_filler(audio: np.ndarray) -> np.ndarray:
+    """A hesitation « euh » is a drawn-out vowel: stretch it (pitch kept) when Kokoro made it too
+    short (voice evaluation N0: 8 % under 250 ms, down to 130 ms)."""
+    loud = np.flatnonzero(np.abs(audio) > LOUD)
+    if len(loud) < 2:
+        return audio
+    start, end = loud[0], loud[-1] + 1
+    voiced_s = (end - start) / SR
+    if voiced_s >= MIN_FILLER_S:
+        return audio
+    try:
+        import librosa
+    except ImportError:  # optional: without librosa, the filler stays as Kokoro made it
+        return audio
+    stretched = librosa.effects.time_stretch(audio[start:end], rate=voiced_s / TARGET_FILLER_S)
+    return np.concatenate([audio[:start], stretched.astype(np.float32), audio[end:]])
 
 
 def _pcm(audio: np.ndarray) -> str:
