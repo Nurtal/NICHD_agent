@@ -245,11 +245,16 @@ hesitation_weights:
     Poids de chaque cause dans l'hésitation combinée (OU probabiliste des
     charges pondérées). Le mensonge a un poids modéré, conformément aux
     méta-analyses.
-  value: {retrieval: 0.8, affect: 0.9, deception: 0.5, confusion: 0.7}
+  value: {retrieval: 0.8, affect: 0.9, deception: 0.15, confusion: 0.7}
   source: >
     Sporer & Schwandt (2006), voir l'en-tête ; Vrij (2008), Detecting Lies and
     Deceit (2e éd.), Wiley — la charge cognitive allonge la latence, mais
     l'émotion et la difficulté de récupération aussi.
+    Calibration 2026-11-16 (évaluation vocale N2, experiments/voice_eval) : sur
+    des paires contrôlées mensonge/vérité (même question, même fait protégé), le
+    poids 0,15 du mensonge donne d ≈ 0,3 et une AUC ≈ 0,60 pour les indices
+    audibles (silences, « euh ») — l'ordre de grandeur des méta-analyses. 0,5
+    donnait d ≈ 1,2 (AUC 0,81) : un faux indice de mensonge.
   estimated: true
 
 retrieval_difficulty:

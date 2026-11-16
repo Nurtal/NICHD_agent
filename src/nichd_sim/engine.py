@@ -659,22 +659,32 @@ class BehaviorEngine:
             if not au.contaminated and (unit := self.scenario.unit(au.id)) is not None
         ]
         # Memory retrieval: the hardest unit said, eased when it was already said.
+        def difficulty(unit: InfoUnit, new: bool) -> float:
+            load = p["retrieval_difficulty"].get(str(unit.category), 0.3)
+            if unit.centrality == Centrality.PERIPHERAL:
+                load += p["retrieval_peripheral_bonus"]
+            return load if new else load * 0.3
+
         act_load = p["retrieval_act_load"]
-        if str(d.speech_act) in act_load:
+        hidden = self.scenario.unit(d.lie.protected) if d.lie is not None else None
+        if hidden is not None:
+            # Lying about a fact means recalling it too: same retrieval load as telling it, so that
+            # only the deception load tells a lie from the truth (ADR 0002, voice evaluation N2).
+            retrieval = difficulty(hidden, d.lie.times == 1)
+        elif str(d.speech_act) in act_load:
             retrieval = act_load[str(d.speech_act)]
         else:
-            retrieval = 0.0
-            for au, unit in true_units:
-                load = p["retrieval_difficulty"].get(str(unit.category), 0.3)
-                if unit.centrality == Centrality.PERIPHERAL:
-                    load += p["retrieval_peripheral_bonus"]
-                retrieval = max(retrieval, load if au.new else load * 0.3)
+            retrieval = max((difficulty(unit, au.new) for au, unit in true_units), default=0.0)
         retrieval *= p["retrieval_age_factor"]
         # Emotion: talking about the target event, more so its central facts and when reluctant.
         target = [unit for _, unit in true_units if self.scenario.is_target_unit(unit.id)]
+        if hidden is not None:
+            # A lie is about the same painful fact as the truth it hides: same emotional load
+            # (otherwise a fast answer would give the lie away — an inverted false cue).
+            target.append(hidden)
         if d.speech_act == SpeechAct.RELUCTANT or any(u.centrality == Centrality.CENTRAL for u in target):
             weight = 1.0
-        elif target or d.lie is not None or (
+        elif target or (
             about_target and d.speech_act in (SpeechAct.DENY, SpeechAct.DONT_KNOW, SpeechAct.ACQUIESCE)
         ):
             weight = 0.5

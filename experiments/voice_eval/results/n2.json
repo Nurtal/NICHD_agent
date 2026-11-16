@@ -1,0 +1,113 @@
+{
+ "checks": [
+  {
+   "level": "N2",
+   "metric": "Silence initial moyen : bavardage < réponse < réticence (ms)",
+   "value": "649 < 1813 < 2089",
+   "target": "ordre respecté, p < 0,01",
+   "ok": true,
+   "note": "p = 8e-164 ; 3e-19"
+  },
+  {
+   "level": "N2",
+   "metric": "Charge de récupération moyenne 4–6 > 7–9 > 10–12",
+   "value": "0.35 > 0.27 > 0.18",
+   "target": "ordre respecté",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N2",
+   "metric": "Mensonge vs vérité (paires contrôlées) : d de Cohen, silence initial",
+   "value": 0.31519017771580743,
+   "target": "0,1 ≤ d ≤ 0,5",
+   "ok": true,
+   "note": "802 paires"
+  },
+  {
+   "level": "N2",
+   "metric": "AUC « détecteur de mensonge » sur le silence initial",
+   "value": 0.5988131292715841,
+   "target": "0,55 ≤ AUC ≤ 0,65",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N2",
+   "metric": "d de Cohen, tous indices audibles (silences + « euh »)",
+   "value": 0.3821735383633183,
+   "target": "0,1 ≤ d ≤ 0,5",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N2",
+   "metric": "AUC « détecteur de mensonge » sur tous les indices audibles",
+   "value": 0.6106173158127126,
+   "target": "0,55 ≤ AUC ≤ 0,65",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N2",
+   "metric": "Silence initial : médiane (ms)",
+   "value": 1516.0,
+   "target": "500–2000",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N2",
+   "metric": "Silence initial : p95 (ms)",
+   "value": 2475.0499999999993,
+   "target": "< 5000",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "level": "N2",
+   "metric": "Part des mensonges (dont omissions) parmi les hésitations fortes (≥ 0,6)",
+   "value": 0.15620094191522763,
+   "target": "< 0,40",
+   "ok": true,
+   "note": "1274 hésitations fortes ; mensonge cause dominante : 2%"
+  },
+  {
+   "level": "N2",
+   "metric": "… dans les seuls scénarios avec mensonge (s08 et variantes)",
+   "value": 0.2888243831640058,
+   "target": "< 0,40",
+   "ok": true,
+   "note": "689 hésitations fortes"
+  }
+ ],
+ "replies": 7200,
+ "acts": {
+  "answer": 3085,
+  "dont_know": 1399,
+  "acquiesce": 307,
+  "deny": 584,
+  "confabulate": 21,
+  "acknowledge": 1142,
+  "reluctant": 360,
+  "small_talk": 300,
+  "confusion": 0,
+  "silence": 0,
+  "retract": 2
+ },
+ "lie_auc_by_question": {
+  "directive": 0.6047639676538542,
+  "option_posing": 0.6138877242695427,
+  "suggestive": 0.6138877242695427
+ },
+ "onset_by_act": {
+  "small_talk": 648.74,
+  "answer": 1813.469692058347,
+  "reluctant": 2088.75
+ },
+ "retrieval_by_band": {
+  "4_6": 0.35356091030789827,
+  "7_9": 0.2743113604488079,
+  "10_12": 0.17661143523920653
+ }
+}
