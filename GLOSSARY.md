@@ -89,10 +89,38 @@ D'après Lamb et al.
 | Intégration | `integrated` | Un faux détail intégré peut réapparaître spontanément plus tard. |
 | Type effectif | `effective_type` | Type de question auquel le moteur a appliqué ses règles (l'élément le plus directif d'une question composée). |
 | Biais de récence | `recency_bias` | Tendance à choisir la dernière option proposée. |
-| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `confabulate` (inventer une réponse), `reluctant` (refus vague avant le dévoilement), `small_talk` (bavardage de rapport), `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`. |
-| Décision | `decision` | Acte de langage et unités autorisées pour le tour. |
+| Acte de langage | `speech_act` | Ce que l'enfant fait dans le tour : `answer`, `dont_know`, `acquiesce`, `deny`, `confabulate` (inventer une réponse), `reluctant` (refus vague avant le dévoilement), `small_talk` (bavardage de rapport), `acknowledge` (accuser réception d'une règle ou d'un soutien), `confusion`, `silence`, `retract` (revenir sur un mensonge). |
+| Décision | `decision` | Acte de langage, unités autorisées et diction pour le tour. |
 | Unités autorisées | `allowed_units` | Seules unités transmises au LLM pour le tour. |
 | Paramètres | `parameters` | Probabilités et effets, chacun avec sa source. `estimated` si la valeur est extrapolée. |
+
+## Mensonge (ADR 0002)
+
+| Français | Identifiant | Définition |
+|---|---|---|
+| Tromperie | `deception` | Bloc facultatif du scénario : motif, force, faits protégés, contenus mensongers rédigés. Absent = enfant qui ne ment pas (comportement du MVP). |
+| Motif | `motive` | Raison de la dissimulation : `loyalty` (protéger un proche), `fear` (peur), `shame` (honte), `coached` (consigne reçue). |
+| Fait protégé | `protected_unit` | Unité vraie de l'événement cible que l'enfant cherche à cacher. |
+| Pression de dissimulation | `concealment` | Variable d'état (0–1) : probabilité de cacher ou maquiller un fait protégé. Baisse avec le soutien et le rapport, monte sous la pression. |
+| Contenu mensonger | `lie_unit` | Contenu faux rédigé par l'auteur du scénario, avec ses ancres : version de couverture ou minimisation. Le LLM ne l'invente jamais. |
+| Version de couverture | `cover_story` | Fausse explication qui remplace un ou plusieurs faits protégés (« je suis tombée dans l'escalier »). |
+| Minimisation | `minimization` | Version atténuée d'un fait protégé (« il m'a juste un peu poussée »). |
+| Forme de mensonge | `lie_kind` | `omission` (fait retiré d'un récit libre), `false_deny` (dénégation), `feigned_ignorance` (« je sais pas » mensonger), `cover_story`, `minimization`. |
+| Mensonge (trace) | `lie_record` | Mensonge journalisé : fait protégé, forme, contenu, tour. Assure la cohérence et les métriques. |
+| Revenir sur un mensonge | `retraction` | L'enfant dit qu'il n'a pas dit la vérité et livre le fait vrai. À ne pas confondre avec la *recantation* de la littérature (revenir sur un dévoilement **vrai**), non modélisée. |
+
+## Diction et voix (ADR 0002)
+
+| Français | Identifiant | Définition |
+|---|---|---|
+| Diction | `delivery` | Comment l'enfant dit sa réponse : silence initial, pauses, « euh », débit, volume. Décidée par le moteur. |
+| Latence de réponse | `onset_ms` | Silence avant la première syllabe, en millisecondes. |
+| Charge | `load` | Contribution (0–1) d'une cause à l'hésitation. |
+| Cause d'hésitation | `hesitation_cause` | `retrieval` (recherche en mémoire), `affect` (émotion), `deception` (mensonge en cours), `confusion` (question mal comprise). |
+| Plan d'élocution | `speech_plan` | Suite de segments de parole et de silences, calculée à partir de la réponse et de la diction. |
+| Segment d'élocution | `speech_chunk` | Élément du plan : `speech` (texte à dire) ou `silence` (durée). |
+| Synthèse vocale | `speaker` | Port qui transforme un plan d'élocution en audio (TTS). |
+| Transcription | `listener` | Port qui transforme la parole de l'apprenant en texte (STT). Prévu, pas encore implémenté. |
 
 ## LLM et contrôle du contenu
 
