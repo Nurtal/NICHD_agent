@@ -14,6 +14,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 from nichd_sim.classification import OUT_OF_SCENARIO, Classification, QuestionType
+from nichd_sim.delivery import Delivery, HesitationCause, make_delivery
 from nichd_sim.parameters import Parameters
 from nichd_sim.scenario import Centrality, EventKind, InfoUnit, Scenario
 from nichd_sim.text import mentions, normalize
@@ -61,6 +62,8 @@ class Decision(BaseModel):
     """This turn is the child's first disclosure of the target event."""
     forced_disclosure: bool = False
     """The disclosure was obtained by a focused (directive, closed or suggestive) prompt."""
+    delivery: Delivery | None = None
+    """How the child says it (ADR 0002). None in logs older than format 2."""
 
 
 class ContaminatedUnit(BaseModel):
@@ -106,6 +109,8 @@ class BehaviorEngine:
         self.scenario = scenario
         self.params = params
         self.rng = random.Random(seed)
+        # Separate streams (ADR 0002): new features never shift the decisions of the MVP stream.
+        self.delivery_rng = random.Random(f"{seed}:delivery")
         profile = scenario.child_profile
         self.state = EngineState(
             reluctance=profile.reluctance,
@@ -126,12 +131,13 @@ class BehaviorEngine:
             effective = c.inner_type or QuestionType.DIRECTIVE
         self._apply_phase_effects(c, effective)
         was_disclosed = self.state.disclosed
-        if not was_disclosed and self._about_target(c, effective):
+        about_target = self._about_target(c, effective)
+        if not was_disclosed and about_target:
             gate = self._disclosure_gate(effective)
             if gate is not None:
                 decision = gate.model_copy(update={"effective_type": effective})
                 self._commit(decision)
-                return decision
+                return self._with_delivery(decision, c, about_target)
         handler = {
             QuestionType.INVITATION: self._invitation,
             QuestionType.CUED_INVITATION: self._cued_invitation,
@@ -149,7 +155,7 @@ class BehaviorEngine:
             decision = decision.model_copy(
                 update={"disclosure": True, "forced_disclosure": effective in _FOCUSED}
             )
-        return decision
+        return self._with_delivery(decision, c, about_target)
 
     # -- phase effects & disclosure ------------------------------------------
 
@@ -411,6 +417,55 @@ class BehaviorEngine:
 
     def _confusion(self, c: Classification, t: QuestionType) -> Decision:
         return Decision(speech_act=SpeechAct.CONFUSION, reason="énoncé hors protocole")
+
+    # -- delivery (ADR 0002) ---------------------------------------------------
+
+    def _with_delivery(self, d: Decision, c: Classification, about_target: bool) -> Decision:
+        loads = self._hesitation_loads(d, c, about_target)
+        delivery = make_delivery(loads, self.params, self.delivery_rng, speaks=d.speech_act != SpeechAct.SILENCE)
+        return d.model_copy(update={"delivery": delivery})
+
+    def _hesitation_loads(self, d: Decision, c: Classification, about_target: bool) -> dict[HesitationCause, float]:
+        p, st = self.params, self.state
+        true_units = [
+            (au, unit) for au in d.allowed_units
+            if not au.contaminated and (unit := self.scenario.unit(au.id)) is not None
+        ]
+        # Memory retrieval: the hardest unit said, eased when it was already said.
+        act_load = p["retrieval_act_load"]
+        if str(d.speech_act) in act_load:
+            retrieval = act_load[str(d.speech_act)]
+        else:
+            retrieval = 0.0
+            for au, unit in true_units:
+                load = p["retrieval_difficulty"].get(str(unit.category), 0.3)
+                if unit.centrality == Centrality.PERIPHERAL:
+                    load += p["retrieval_peripheral_bonus"]
+                retrieval = max(retrieval, load if au.new else load * 0.3)
+        retrieval *= p["retrieval_age_factor"]
+        # Emotion: talking about the target event, more so its central facts and when reluctant.
+        target = [unit for _, unit in true_units if self.scenario.is_target_unit(unit.id)]
+        if d.speech_act == SpeechAct.RELUCTANT or any(u.centrality == Centrality.CENTRAL for u in target):
+            weight = 1.0
+        elif target or (about_target and d.speech_act in (SpeechAct.DENY, SpeechAct.DONT_KNOW, SpeechAct.ACQUIESCE)):
+            weight = 0.5
+        else:
+            weight = 0.0
+        affect = weight * (p["affect_base"] + (1 - p["affect_base"]) * st.reluctance)
+        # Confusion: hard-to-parse questions.
+        conf = p["confusion_load"]
+        confusion = 0.0
+        if d.speech_act == SpeechAct.CONFUSION:
+            confusion = conf["confusion"]
+        elif c.type == QuestionType.COMPOUND:
+            confusion = conf["compound"]
+        elif c.options and len(c.options) >= 3:
+            confusion = conf["many_options"]
+        return {
+            HesitationCause.RETRIEVAL: retrieval,
+            HesitationCause.AFFECT: affect,
+            HesitationCause.CONFUSION: confusion,
+        }
 
     # -- helpers ------------------------------------------------------------
 

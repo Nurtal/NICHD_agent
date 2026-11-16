@@ -8,6 +8,7 @@ from pathlib import Path
 
 from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
+from nichd_sim.delivery import render_plan
 from nichd_sim.feedback import LLMRephraser, LLMSummaryMatcher, render_text
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
@@ -99,6 +100,8 @@ def play(args: argparse.Namespace) -> int:
                 f"  [formateur] {c.type}{inner}{' → ' + c.target if c.target else ''}{phase}"
                 f" | {d.speech_act} | {d.reason} | phase {result.phase} | {turn.latency_s.get('total', 0):.1f}s"
             )
+            if d.delivery is not None:
+                print(f"  [formateur] diction : {d.delivery.describe()}")
             for v in result.violations:
                 print(f"  [formateur] ⚠ {VIOLATION_LABELS[v.kind]} : {v.phase}{' — ' + v.detail if v.detail else ''}")
             if c.suggested_proposition:
@@ -110,7 +113,7 @@ def play(args: argparse.Namespace) -> int:
                     print(f"  [filtre] essai {i + 1} rejeté : {a.forbidden_terms + a.leaked_units + ['manque:' + m for m in a.missing_units] + (['vide'] if a.empty else []) + (['trop long'] if a.too_long else []) + (['contredit la décision'] if a.contradicts else []) + (['emoji'] if a.emoji else [])} — {a.text!r}")
             if turn.fallback_used:
                 print("  [filtre] réponse de repli utilisée")
-        print(f"{child} > {result.response}")
+        print(f"{child} > {render_plan(result.speech_plan) if args.trainer else result.response}")
         for notice in result.notices:
             print(f"  ⓘ {notice}")
     summary = None
