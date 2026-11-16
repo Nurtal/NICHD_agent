@@ -4,20 +4,22 @@ from __future__ import annotations
 
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel
 
 from nichd_sim.classification import Classification, ClassificationContext, Classifier
 from nichd_sim.delivery import SpeechChunk, plan_speech
-from nichd_sim.feedback import FeedbackReport, Rephraser, SummaryMatcher, build_feedback
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
+from nichd_sim.feedback import FeedbackReport, Rephraser, SummaryMatcher, build_feedback
 from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
 from nichd_sim.phases import Phase, PhaseTracker, PhaseViolation, ViolationKind
 from nichd_sim.realization import Realizer, TemplateRealizer
 from nichd_sim.scenario import Scenario
+from nichd_sim.text import mentions, normalize
 
 MAX_REALIZATION_ATTEMPTS = 2  # first try + one regeneration, then fallback response
 SOFT_TURN_LIMIT = 60  # warn (never interrupt) once the interview reaches this many turns
@@ -37,6 +39,28 @@ class AttemptRecord(BaseModel):
     meta: dict = {}
 
 
+class BargeIn(BaseModel):
+    """The learner spoke before the end of the child's previous reply."""
+
+    during: Literal["onset", "pause", "speech"]
+    """`onset`: before the child started answering (initial silence or « euh »); `pause`: in a
+    pause or a filler mid-reply; `speech`: while the child was talking."""
+    at_ms: int
+    """Offset in the child's reply audio where the learner started speaking."""
+    heard_text: str
+    """What the child had said before being cut off."""
+
+
+class TurnTiming(BaseModel):
+    """When the learner spoke (voice sessions only)."""
+
+    wait_ms: int
+    """Learner speech start − end of the child's previous reply audio (negative: interruption)."""
+    barge_in: BargeIn | None = None
+    speech_ms: int | None = None
+    """Duration of the learner's utterance."""
+
+
 class TurnRecord(BaseModel):
     index: int
     utterance: str
@@ -52,6 +76,12 @@ class TurnRecord(BaseModel):
     fallback_used: bool = False
     response: str
     latency_s: dict[str, float] = {}
+    timing: TurnTiming | None = None
+    """When the learner asked this (voice sessions)."""
+    heard_response: str | None = None
+    """Set when the learner interrupted this reply: the part the child had time to say."""
+    unheard_units: list[str] = []
+    """Units of this reply cut off by the interruption (taken back by the engine)."""
 
     @property
     def prompt(self) -> str | None:
@@ -143,9 +173,13 @@ class Session:
     def state(self) -> EngineState:
         return self.engine.state.model_copy(deep=True)
 
-    def turn(self, utterance: str) -> TurnResult:
+    def turn(self, utterance: str, timing: TurnTiming | None = None) -> TurnResult:
+        """One interviewer utterance. `timing` (voice): when the learner spoke, and whether they
+        interrupted the child's previous reply — the cut-off part was then not said."""
         if self._ended:
             raise SessionEnded("la session est terminée")
+        if timing is not None and timing.barge_in is not None and self.log.turns:
+            self._interrupt(timing.barge_in)
         context = ClassificationContext(
             scenario=self.scenario,
             revealed_unit_ids=list(self.engine.state.revealed),
@@ -196,6 +230,7 @@ class Session:
                     "realization": round(t2 - t1, 3),
                     "total": round(t2 - t0, 3),
                 },
+                timing=timing,
             )
         )
         self.log.phase_violations = list(self.phases.violations)
@@ -215,6 +250,24 @@ class Session:
             fallback_used=fallback,
             speech_plan=plan_speech(response, decision.delivery),
         )
+
+    def _interrupt(self, barge: BargeIn) -> None:
+        """The previous reply was cut: keep what was heard, take back the units not said."""
+        last = self.log.turns[-1]
+        heard = normalize(barge.heard_text)
+        unheard = []
+        for au in last.decision.allowed_units:
+            unit = self.scenario.unit(au.id)
+            if au.contaminated or au.lie or not au.new or unit is None:
+                continue
+            if not any(mentions(heard, a) for a in unit.anchors):
+                unheard.append(au.id)
+        self.engine.unsay(unheard)
+        last.heard_response = barge.heard_text
+        last.unheard_units = unheard
+        if self.history and self.history[-1][0] == "child":
+            cut = barge.heard_text.strip()
+            self.history[-1] = ("child", f"{cut} —" if cut else "…")
 
     @property
     def phase(self) -> Phase:
@@ -278,4 +331,4 @@ def _describe(component) -> str:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")

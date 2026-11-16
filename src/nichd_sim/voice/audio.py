@@ -54,6 +54,46 @@ class Audio:
             s[-1 - i] = int(s[-1 - i] * g)
         return Audio(self.sample_rate, s)
 
+    def voiced_bounds(self, frame_ms: int = 20, rel: float = 0.1, floor: int = 200) -> tuple[int, int] | None:
+        """(start_ms, end_ms) of the sound, by frame energy: frames louder than `rel` × the loudest
+        frame (and than `floor`). More precise than STT word timings for measuring turn-taking."""
+        n = max(1, round(self.sample_rate * frame_ms / 1000))
+        rms = []
+        for i in range(0, len(self.samples), n):
+            frame = self.samples[i : i + n]
+            rms.append((sum(s * s for s in frame) / len(frame)) ** 0.5 if frame else 0.0)
+        if not rms or max(rms) < floor:
+            return None
+        threshold = max(floor, rel * max(rms))
+        loud = [i for i, v in enumerate(rms) if v >= threshold]
+        return loud[0] * frame_ms, (loud[-1] + 1) * frame_ms
+
+    def mix_at(self, other: Audio, at_ms: int) -> None:
+        """Add `other` starting at `at_ms`, extending with silence as needed (overlaps are summed)."""
+        if other.sample_rate != self.sample_rate:
+            raise ValueError(f"fréquences d'échantillonnage différentes : {other.sample_rate} ≠ {self.sample_rate}")
+        start = round(self.sample_rate * at_ms / 1000)
+        end = start + len(other.samples)
+        if end > len(self.samples):
+            self.samples.extend(array("h", bytes(2 * (end - len(self.samples)))))
+        for i, s in enumerate(other.samples):
+            self.samples[start + i] = max(-32768, min(32767, self.samples[start + i] + s))
+
+    def resampled(self, sample_rate: int) -> Audio:
+        """Linear-interpolation resampling: good enough for a listening track, not for analysis."""
+        if sample_rate == self.sample_rate or not self.samples:
+            return Audio(sample_rate, array("h", self.samples))
+        n = round(len(self.samples) * sample_rate / self.sample_rate)
+        src, out = self.samples, array("h")
+        step = (len(src) - 1) / max(1, n - 1)
+        for i in range(n):
+            x = i * step
+            k = int(x)
+            frac = x - k
+            nxt = src[min(k + 1, len(src) - 1)]
+            out.append(int(src[k] + (nxt - src[k]) * frac))
+        return Audio(sample_rate, out)
+
     def write_wav(self, path: str | Path) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)

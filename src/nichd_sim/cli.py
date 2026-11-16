@@ -193,6 +193,85 @@ def render_audio_cmd(args: argparse.Namespace) -> int:
     return 0
 
 
+def transcribe_cmd(args: argparse.Namespace) -> int:
+    from nichd_sim.voice import Audio, VoiceError
+    from nichd_sim.voice.listener import WhisperListener
+
+    try:
+        with WhisperListener() as listener:
+            for path in args.wavs:
+                t = listener.transcribe(Audio.read_wav(path))
+                print(f"{path} : [{t.speech_start_ms}–{t.speech_end_ms} ms] {t.text}")
+    except (VoiceError, ValueError, OSError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    return 0
+
+
+def converse_cmd(args: argparse.Namespace) -> int:
+    """Scripted voice conversation (YAML): interviewer turns as text (adult voice) or WAV."""
+    import json
+
+    import yaml
+
+    from nichd_sim.voice import Audio, KokoroSpeaker, VoiceError, make_speaker
+    from nichd_sim.voice.conversation import VoiceConversation
+    from nichd_sim.voice.listener import WhisperListener
+
+    spec = yaml.safe_load(Path(args.script).read_text(encoding="utf-8"))
+    base = Path(args.script).parent
+    out = Path(args.output)
+    try:
+        scenario = load_scenario(spec["scenario"])
+    except ScenarioError as e:
+        print(e, file=sys.stderr)
+        return 2
+    session = Session(scenario, build_classifier(args), build_realizer(args), seed=spec.get("seed", 0),
+                      rephraser=None, log_dir=out)
+    try:
+        speaker = make_speaker(args.speaker)
+        interviewer = (KokoroSpeaker(child=False, share_with=speaker) if isinstance(speaker, KokoroSpeaker)
+                       else make_speaker("tone"))
+        listener = WhisperListener()
+        conv = VoiceConversation(session, speaker, listener)
+        child = scenario.child_profile.name
+        for i, turn in enumerate(spec["turns"], 1):
+            if "wav" in turn:
+                audio = Audio.read_wav(base / turn["wav"])
+            else:
+                audio = Audio.silence(24000, 150)
+                audio.extend(interviewer.synthesize(turn["say"]))
+                audio.extend(Audio.silence(24000, 150))
+            ex = conv.exchange(audio, turn.get("after_ms", 800), tag=turn.get("tag"))
+            b = ex.timing.barge_in
+            if b is None:
+                when = f"attend {ex.timing.wait_ms} ms"
+            elif b.during == "onset":
+                when = "coupe l'enfant pendant son hésitation, avant sa réponse"
+            else:
+                moment = "pendant une pause" if b.during == "pause" else "en pleine phrase"
+                when = f"coupe l'enfant {moment}, après « {b.heard_text} »"
+            print(f"[{i:02d}] Vous ({when}) > {ex.transcript.text}")
+            if args.trainer:
+                d = ex.result.decision
+                print(f"      [formateur] {ex.result.classification.type} | {d.speech_act} | {d.reason}")
+            print(f"     {child} > {render_plan(ex.result.speech_plan)}")
+        log = session.end()
+    except (VoiceError, ValueError, OSError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    conv.track.write_wav(out / "conversation.wav")
+    (out / "conversation.json").write_text(json.dumps(
+        [e.__dict__ for e in conv.events], ensure_ascii=False, indent=1), encoding="utf-8")
+    tt = log.feedback.metrics.turn_taking
+    if tt is not None:
+        print(f"\nTours de parole : attente médiane {tt.median_wait_ms} ms ; interruptions {tt.interruptions or 'aucune'} ; "
+              f"hésitations respectées {tt.hesitations_respected}/{tt.hesitations} ; "
+              f"unités coupées {', '.join(tt.units_cut) or 'aucune'}")
+    print(f"Audio : {out / 'conversation.wav'}  —  journal : {out / f'session_{log.session_id}.json'}")
+    return 0
+
+
 def export_cmd(args: argparse.Namespace) -> int:
     try:
         log = load_log(args.log)
@@ -299,6 +378,24 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--scenario", help="fichier de scénario (sinon recherché par identifiant)")
     r.add_argument("--scenarios-dir", default="scenarios")
     r.set_defaults(func=replay_cmd)
+
+    c = sub.add_parser("converse", help="conversation vocale scriptée (YAML) : transcription, session, voix")
+    c.add_argument("script", help="script YAML (scenario, seed, turns: say|wav, after_ms, tag)")
+    c.add_argument("-o", "--output", default="audio/conversation", help="dossier de sortie")
+    c.add_argument("--classifier", default="manual", choices=["manual", "llm"])
+    c.add_argument("--classifier-model", default=None)
+    c.add_argument("--classifier-think", default=DEFAULT_CLASSIFIER_THINK)
+    c.add_argument("--realizer", default="template", choices=["template", "llm"])
+    c.add_argument("--model", default=DEFAULT_MODEL)
+    c.add_argument("--ollama-url", default=DEFAULT_URL)
+    c.add_argument("--speaker", default=None, help="voix de l'enfant (défaut : kokoro si installé)")
+    c.add_argument("--seed", type=int, default=0, help="seed du réaliseur LLM")
+    c.add_argument("--trainer", action="store_true")
+    c.set_defaults(func=converse_cmd)
+
+    w = sub.add_parser("transcribe", help="transcrire des enregistrements WAV (Whisper large-v3)")
+    w.add_argument("wavs", nargs="+")
+    w.set_defaults(func=transcribe_cmd)
 
     e = sub.add_parser("export", help="exporter une transcription vierge (CSV) pour des codeurs humains")
     e.add_argument("log", help="journal JSON de session")

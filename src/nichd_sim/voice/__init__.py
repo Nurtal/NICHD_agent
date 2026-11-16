@@ -8,6 +8,7 @@ from nichd_sim.voice.audio import Audio
 from nichd_sim.voice.kokoro_speaker import KokoroSpeaker, SpeakerError
 from nichd_sim.voice.render import RenderedSpeech, Span, render_log, render_speech
 from nichd_sim.voice.speaker import Speaker, ToneSpeaker
+from nichd_sim.voice.worker import VoiceError
 
 SPEAKERS = {
     "tone": ToneSpeaker,
@@ -19,12 +20,13 @@ SPEAKERS = {
 
 def default_speaker_name() -> str:
     """`kokoro` (child voice) when its environment is installed, else the model-free `tone`."""
-    from nichd_sim.voice.kokoro_speaker import find_python
+    from nichd_sim.voice.kokoro_speaker import ENV_VAR
+    from nichd_sim.voice.worker import find_python
 
     try:
-        find_python()
+        find_python(ENV_VAR)
         return "kokoro"
-    except SpeakerError:
+    except VoiceError:
         return "tone"
 
 
@@ -46,6 +48,7 @@ __all__ = [
     "Speaker",
     "SpeakerError",
     "ToneSpeaker",
+    "VoiceError",
     "default_speaker_name",
     "make_speaker",
     "render_log",

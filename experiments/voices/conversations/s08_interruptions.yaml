@@ -1,0 +1,26 @@
+# Conversation vocale scriptée (nichd-sim converse) : Emma (s08) protège Karim.
+# L'interviewer est dit par la voix adulte ; `after_ms` = début de l'enregistrement par rapport à la fin
+# de la réponse de l'enfant (négatif : l'interviewer parle par-dessus, éventuellement une interruption).
+# `tag` : classification manuelle (sans LLM) ; ignoré avec --classifier llm.
+scenario: scenarios/s08_violences_maison_secret.yaml
+seed: 0
+turns:
+  - say: "Bonjour Emma. Je suis contente de te voir. Tu peux tout me dire."
+    tag: soutien
+  - say: "Dis-moi pourquoi tu es venue aujourd'hui."
+    tag: inv@transition
+  - say: "Dis-moi pourquoi tu es là."
+    tag: inv@transition
+    after_ms: -1500     # coupe l'enfant pendant son hésitation
+  - say: "Raconte-moi tout ce qui s'est passé."
+    tag: inv
+    after_ms: 1200
+  - say: "Et après ?"
+    tag: fac
+    after_ms: -5500     # coupe l'enfant en plein récit
+  - say: "Tu as parlé de la cuisine. Dis-m'en plus."
+    tag: ind:b_cuisine
+    after_ms: 1500
+  - say: "Qui était là ?"
+    tag: dir:d_karim
+    after_ms: 600

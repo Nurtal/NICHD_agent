@@ -93,6 +93,14 @@ Trois risques encadrent la conception :
   silence en tête du fichier. La réflexion du classifieur est conservée.
 - **Première étape : sortie vocale seule**, l'apprenant tape. La transcription de l'apprenant (STT) et les
   métriques de tour de parole (temps d'attente, interruptions) viendront ensuite.
+- **Ajout (STT)** : la transcription passe par un port `Listener` (faster-whisper large-v3, dans l'environnement voix).
+  La **prise de parole** de l'apprenant est une entrée de la session (`TurnTiming`), journalisée et rejouée.
+  - Si l'apprenant parle avant la fin de la réponse de l'enfant, c'est une **interruption** : pendant le silence
+    initial (`onset`), une pause ou une phrase.
+  - Les unités que l'enfant n'a pas eu le temps de dire sont **reprises par le moteur** (`unsay`) : elles ne
+    comptent pas comme révélées, et l'enfant pourra les redire.
+  - Les instants de prise de parole sont mesurés sur l'**énergie du signal**. Les horodatages de mots de Whisper sont
+    décalés de plusieurs centaines de millisecondes.
 - **Voix d'enfant synthétique**. On ne clone jamais la voix d'un enfant réel.
 - Les dépendances vocales lourdes restent **optionnelles** (`uv sync --extra voice`), pour que le MVP texte reste
   léger.

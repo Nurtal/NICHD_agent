@@ -41,3 +41,22 @@ experiments/voices/run.sh
 
 Les fichiers audio (`results/audio/`, non versionnés) servent à l'écoute : l'évaluation objective ne dit rien du
 naturel ni de l'âge perçu.
+
+## Conversations vocales scriptées
+
+`conversations/*.yaml` : des tours d'interviewer, soit en texte (dit par la voix adulte de Kokoro), soit en
+enregistrement WAV (`wav: chemin`, par exemple enregistré sur votre poste puis copié). `after_ms` fixe le début de
+l'enregistrement par rapport à la fin de la réponse de l'enfant ; une valeur négative fait parler l'interviewer
+par-dessus l'enfant. `tag` donne la classification manuelle (sans LLM).
+
+```bash
+uv run nichd-sim converse experiments/voices/conversations/s08_interruptions.yaml -o audio/conv --trainer
+# avec le classifieur LLM (les tags sont alors ignorés)
+uv run nichd-sim converse … --classifier llm --realizer llm
+```
+
+Sorties : `conversation.wav` (toute la conversation sur une seule piste), `conversation.json` (qui parle quand) et
+le journal de session.
+
+Limite constatée : Whisper transcrit mal les énoncés très courts de la voix de synthèse (« Et après ? » → « Il
+apprêt. »). À vérifier sur de vraies voix.

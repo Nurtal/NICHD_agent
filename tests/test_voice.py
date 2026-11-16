@@ -175,8 +175,8 @@ def test_render_uses_one_utterance_when_the_speaker_supports_it(fake_kokoro):
 def test_missing_kokoro_env_is_a_clear_error(monkeypatch, tmp_path):
     monkeypatch.delenv("NICHD_KOKORO_PYTHON", raising=False)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("nichd_sim.voice.kokoro_speaker.Path.exists", lambda self: False)
-    with pytest.raises(SpeakerError, match="environnement Kokoro introuvable"):
+    monkeypatch.setattr("nichd_sim.voice.worker.Path.exists", lambda self: False)
+    with pytest.raises(SpeakerError, match="environnement voix introuvable"):
         KokoroSpeaker()
 
 

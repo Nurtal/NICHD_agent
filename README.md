@@ -67,6 +67,17 @@ rythme). Kokoro tourne dans son propre environnement, sans toucher au venv du pr
 [experiments/voices/](experiments/voices/README.md). La réponse est synthétisée en un seul énoncé puis coupée aux pauses,
 ce qui garde une intonation continue.
 
+L'apprenant peut aussi **parler** : la transcription (Whisper large-v3, même environnement que Kokoro) mesure quand il
+prend la parole. S'il coupe l'enfant (pendant son hésitation, une pause ou une phrase), ce que l'enfant n'a pas eu le
+temps de dire **n'est pas compté comme dit** : il pourra le redire plus tard. Le retour indique l'attente médiane, les
+interruptions et les hésitations respectées. Sans interface micro pour l'instant, on scripte la conversation (texte dit
+par la voix adulte, ou enregistrements WAV) :
+
+```bash
+uv run nichd-sim converse experiments/voices/conversations/s08_interruptions.yaml -o audio/conv --trainer
+uv run nichd-sim transcribe mon_enregistrement.wav
+```
+
 ## Organisation
 
 | Chemin | Rôle |
