@@ -113,7 +113,10 @@ D'après Lamb et al.
 
 | Français | Identifiant | Définition |
 |---|---|---|
-| Diction | `delivery` | Comment l'enfant dit sa réponse : silence initial, pauses, « euh », débit, volume. Décidée par le moteur. |
+| Diction | `delivery` | Comment l'enfant dit sa réponse : silence initial, pauses, « euh », faux départs, débit, volume, voix tremblante. Décidée par le moteur. |
+| Débit | `rate` | Vitesse relative de parole : 1,0 normal, moins lent (hésitation), plus accéléré (forte activation, ADR 0003). |
+| Faux départ | `false_start` | Début de phrase répété ou abandonné (« il… il m'a »), bafouillement. Causes : émotion, confusion, faiblement le mensonge (ADR 0003). |
+| Voix tremblante | `tremor` | Voix qui tremble sous l'émotion (ADR 0003). À distinguer du tremblement visible (signe de la famille `tremor`). |
 | Latence de réponse | `onset_ms` | Silence avant la première syllabe, en millisecondes. |
 | Charge | `load` | Contribution (0–1) d'une cause à l'hésitation. |
 | Cause d'hésitation | `hesitation_cause` | `retrieval` (recherche en mémoire), `affect` (émotion), `deception` (mensonge en cours), `confusion` (question mal comprise). |
@@ -127,6 +130,19 @@ D'après Lamb et al.
 | Partie entendue | `heard_text` | Ce que l'enfant a eu le temps de dire avant d'être interrompu. |
 | Unités non dites | `unheard_units` | Unités autorisées pour un tour mais coupées par une interruption : le moteur les reprend, l'enfant pourra les dire plus tard. |
 | Conversation vocale | `voice_conversation` | Enchaînement transcription → session → synthèse, avec une piste audio de tout l'échange. |
+
+## Activation et comportement non verbal (ADR 0003)
+
+| Français | Identifiant | Définition |
+|---|---|---|
+| Activation | `arousal` | Variable d'état (0–1) : activation émotionnelle de l'enfant, avec inertie d'un tour à l'autre. Monte avec l'événement cible et la pression, baisse avec le soutien et le rapport. Pilote la diction et le corps, pas les actes de langage. |
+| Activation de base | `arousal_baseline` | Niveau vers lequel l'activation revient à chaque tour. Dérivé de la réticence et de la bande d'âge. |
+| Comportement non verbal | `demeanor` | Ce que l'enfant montre de son corps pendant sa réponse : liste de signes avec leur intensité. Décidé par le moteur. |
+| Signe | `cue` | Élément du catalogue fermé de comportements non verbaux (regard baissé, jambes qui s'agitent, larmes…). |
+| Famille de signes | `cue_family` | `gaze` (regard), `fidget` (agitation), `tension` (crispation), `breathing` (respiration), `tremor` (tremblement), `withdrawal` (repli), `freeze` (figement), `tears` (pleurs), `ease` (détente). |
+| Intensité | `intensity` | `slight` (légère), `clear` (nette), `strong` (forte). |
+| Style d'expression | `expression_style` | Trait de profil : `agitated` (agité), `frozen` (figé : peu de signes visibles malgré une activation haute), `mixed` (mixte). Défaut selon la bande d'âge. |
+| Didascalie | `stage_direction` | Phrase qui décrit le ton et la posture de l'enfant avant sa réponse. Rendue par gabarit à partir du comportement non verbal et de la diction ; jamais écrite par le LLM. |
 
 ## LLM et contrôle du contenu
 

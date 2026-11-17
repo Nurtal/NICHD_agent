@@ -141,6 +141,8 @@ Machine à états déterministe pour une seed donnée.
 - unités vraies révélées
 - unités contaminées, chacune avec le tour qui l'a introduite
 - phase courante (fournie par le suivi des phases)
+- `concealment` : pression de dissimulation (ADR 0002)
+- `arousal` : activation émotionnelle, avec inertie ; pilote la diction et le comportement non verbal, pas les actes de langage (ADR 0003)
 
 ### 6.2 Effets des phases préparatoires
 
@@ -174,6 +176,8 @@ Fichier de paramètres où **chaque valeur cite sa source** (Ceci & Bruck, Bruck
 ### 6.6 Décision émise
 
 À chaque tour, le moteur produit : l'**acte de langage** (répondre, dire « je sais pas », acquiescer, nier, confusion, silence…) et la **liste des unités autorisées** (vraies et/ou contaminées).
+
+Depuis l'ADR 0002, la décision porte aussi la **diction** (comment l'enfant le dit). Depuis l'ADR 0003, elle porte le **comportement non verbal** (signes et intensités), d'où une **didascalie** rendue par gabarit et montrée à l'apprenant. Le LLM ne voit ni l'un ni l'autre.
 
 ## 7. Suivi des phases
 
