@@ -1,0 +1,52 @@
+{
+ "checks": [
+  {
+   "level": "coût",
+   "metric": "Latence, synthèse (Kokoro, réponse entière)",
+   "value": "p50 0.17 s, p95 0.48 s",
+   "target": "rapporté",
+   "ok": null,
+   "note": "20 mesures"
+  },
+  {
+   "level": "coût",
+   "metric": "Latence, transcription (Whisper large-v3)",
+   "value": "p50 0.50 s, p95 0.68 s",
+   "target": "rapporté",
+   "ok": null,
+   "note": "20 mesures"
+  },
+  {
+   "level": "coût",
+   "metric": "Latence, classification (qwen3.8:latest, réflexion medium)",
+   "value": "p50 10.69 s, p95 33.64 s",
+   "target": "rapporté",
+   "ok": null,
+   "note": "10 mesures"
+  },
+  {
+   "level": "coût",
+   "metric": "Latence, réalisation (qwen3.8:latest)",
+   "value": "p50 2.20 s, p95 2.72 s",
+   "target": "rapporté",
+   "ok": null,
+   "note": "10 mesures"
+  },
+  {
+   "level": "coût",
+   "metric": "Tour vocal complet (somme des médianes, hors silence simulé)",
+   "value": "13.6 s",
+   "target": "rapporté",
+   "ok": null,
+   "note": "optimisation prévue plus tard"
+  },
+  {
+   "level": "coût",
+   "metric": "Mémoire GPU des modèles vocaux (Kokoro + Whisper)",
+   "value": "4.3 Go",
+   "target": "rapporté",
+   "ok": null,
+   "note": ""
+  }
+ ]
+}

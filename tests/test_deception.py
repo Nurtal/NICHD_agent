@@ -321,3 +321,16 @@ def test_s08_session_replays_identically(monkeypatch):
         ask(s, clf, f"u{i}", c)
     log = s.end()
     assert replay(log, find_scenario(log)).identical
+
+
+def test_lie_and_truth_about_the_same_fact_differ_only_by_the_deception_load():
+    """Voice evaluation N2: otherwise a fast (or slow) answer would give the lie away."""
+    def answer(strength):
+        s, clf, _ = open_session(strength=strength, seed=4)
+        return ask(s, clf, "Il t'a attrapé ?", C("option_posing", "d_bras", suggested_proposition="bras")).decision
+    lie, truth = answer(1.0), answer(0.0)
+    assert lie.lie is not None and truth.lie is None
+    for cause in (HesitationCause.RETRIEVAL, HesitationCause.AFFECT):
+        assert lie.delivery.loads.get(cause) == truth.delivery.loads.get(cause)
+    assert lie.delivery.loads[HesitationCause.DECEPTION] > 0
+    assert HesitationCause.DECEPTION not in truth.delivery.loads

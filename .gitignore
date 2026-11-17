@@ -10,3 +10,6 @@ audio/
 experiments/voices/.envs/
 experiments/voices/results/audio/
 experiments/voices/results/replies/audio/
+experiments/voice_eval/results/audio/
+experiments/voice_eval/listening/pack/clips/
+experiments/voice_eval/listening/ratings/

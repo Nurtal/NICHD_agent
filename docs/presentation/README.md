@@ -7,6 +7,8 @@
 | `slides.html` | Source des slides |
 | `build_pdf.py` | Régénère `slides.pdf` à partir de `slides.html` (Chrome sans interface) |
 | `img/` | Captures extraites de la vidéo |
+| `architecture.pdf` | 7 schémas d'architecture : vue d'ensemble d'un tour, ce que voit chaque LLM, décision du moteur, règles par type de question, phases, mensonge et diction, journal et carte du code |
+| `architecture.html` | Source des schémas (SVG en ligne, même format 1280 × 720 que les slides). PDF : même commande que ci-dessous, en remplaçant `slides` par `architecture` dans `build_pdf.py` |
 
 Régénérer le PDF :
 

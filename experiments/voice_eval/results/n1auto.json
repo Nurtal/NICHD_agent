@@ -1,0 +1,44 @@
+{
+ "checks": [
+  {
+   "level": "N1-auto",
+   "metric": "Débit (syllabes/s, pauses comprises) ↔ hésitation",
+   "value": -0.8480526649127796,
+   "target": "ρ ≤ −0,7",
+   "ok": true,
+   "note": "135 réponses ≥ 8 mots ; toutes (358) : ρ = -0.71"
+  },
+  {
+   "level": "N1-auto",
+   "metric": "Longueur moyenne des segments de parole ↔ hésitation",
+   "value": -0.6592160044340227,
+   "target": "ρ ≤ −0,6",
+   "ok": true,
+   "note": "135 réponses ≥ 8 mots ; toutes (358) : ρ = -0.26"
+  },
+  {
+   "level": "N1-auto",
+   "metric": "Proportion de temps de parole ↔ hésitation",
+   "value": -0.8123239998674291,
+   "target": "ρ ≤ −0,7",
+   "ok": true,
+   "note": "135 réponses ≥ 8 mots ; toutes (358) : ρ = -0.50"
+  },
+  {
+   "level": "N1-auto",
+   "metric": "Pauses silencieuses par minute ↔ hésitation",
+   "value": 0.6324900303761896,
+   "target": "ρ > 0",
+   "ok": true,
+   "note": "135 réponses ≥ 8 mots ; toutes (358) : ρ = 0.33"
+  },
+  {
+   "level": "N1-auto",
+   "metric": "« euh » par minute ↔ hésitation",
+   "value": 0.29177099200232365,
+   "target": "ρ > 0",
+   "ok": true,
+   "note": "135 réponses ≥ 8 mots ; toutes (358) : ρ = 0.26"
+  }
+ ]
+}

@@ -1,0 +1,2007 @@
+{
+ "version": 1,
+ "clips": [
+  {
+   "id": "c000",
+   "text": "C'était à la maison, dans la cuisine. J'avais renversé mon verre de jus d'orange. Karim, le copain de maman, était là. Je suis allée dans ma chambre.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 0,
+   "level": 0.0
+  },
+  {
+   "id": "c001",
+   "text": "C'était à la maison, dans la cuisine. J'avais renversé mon verre de jus d'orange. Karim, le copain de maman, était là. Je suis allée dans ma chambre.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 0,
+   "level": 0.5
+  },
+  {
+   "id": "c002",
+   "text": "C'était à la maison, dans la cuisine. J'avais renversé mon verre de jus d'orange. Karim, le copain de maman, était là. Je suis allée dans ma chambre.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 0,
+   "level": 0.9
+  },
+  {
+   "id": "c003",
+   "text": "Maman pleurait dans la cuisine. La voisine Madame Roux a sonné chez nous.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 1,
+   "level": 0.0
+  },
+  {
+   "id": "c004",
+   "text": "Maman pleurait dans la cuisine. La voisine Madame Roux a sonné chez nous.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 1,
+   "level": 0.5
+  },
+  {
+   "id": "c005",
+   "text": "Maman pleurait dans la cuisine. La voisine Madame Roux a sonné chez nous.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 1,
+   "level": 0.9
+  },
+  {
+   "id": "c006",
+   "text": "Après on est rentrés à la maison pour le goûter.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 2,
+   "level": 0.0
+  },
+  {
+   "id": "c007",
+   "text": "Après on est rentrés à la maison pour le goûter.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 2,
+   "level": 0.5
+  },
+  {
+   "id": "c008",
+   "text": "Après on est rentrés à la maison pour le goûter.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 2,
+   "level": 0.9
+  },
+  {
+   "id": "c009",
+   "text": "Papa a poussé maman contre le mur. Maman pleurait dans la cuisine.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 3,
+   "level": 0.0
+  },
+  {
+   "id": "c010",
+   "text": "Papa a poussé maman contre le mur. Maman pleurait dans la cuisine.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 3,
+   "level": 0.5
+  },
+  {
+   "id": "c011",
+   "text": "Papa a poussé maman contre le mur. Maman pleurait dans la cuisine.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 3,
+   "level": 0.9
+  },
+  {
+   "id": "c012",
+   "text": "Papa et maman se disputaient. Papa criait des gros mots.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 4,
+   "level": 0.0
+  },
+  {
+   "id": "c013",
+   "text": "Papa et maman se disputaient. Papa criait des gros mots.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 4,
+   "level": 0.5
+  },
+  {
+   "id": "c014",
+   "text": "Papa et maman se disputaient. Papa criait des gros mots.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 4,
+   "level": 0.9
+  },
+  {
+   "id": "c015",
+   "text": "C'était mon anniversaire, samedi. Il y avait mes copains Tom et Inès.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 5,
+   "level": 0.0
+  },
+  {
+   "id": "c016",
+   "text": "C'était mon anniversaire, samedi. Il y avait mes copains Tom et Inès.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 5,
+   "level": 0.5
+  },
+  {
+   "id": "c017",
+   "text": "C'était mon anniversaire, samedi. Il y avait mes copains Tom et Inès.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 5,
+   "level": 0.9
+  },
+  {
+   "id": "c018",
+   "text": "Papi a pris des photos avec son téléphone.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 6,
+   "level": 0.0
+  },
+  {
+   "id": "c019",
+   "text": "Papi a pris des photos avec son téléphone.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 6,
+   "level": 0.5
+  },
+  {
+   "id": "c020",
+   "text": "Papi a pris des photos avec son téléphone.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 6,
+   "level": 0.9
+  },
+  {
+   "id": "c021",
+   "text": "Dimanche on est allés au zoo. J'étais avec mon papi. J'ai vu une girafe qui mangeait des feuilles.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 7,
+   "level": 0.0
+  },
+  {
+   "id": "c022",
+   "text": "Dimanche on est allés au zoo. J'étais avec mon papi. J'ai vu une girafe qui mangeait des feuilles.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 7,
+   "level": 0.5
+  },
+  {
+   "id": "c023",
+   "text": "Dimanche on est allés au zoo. J'étais avec mon papi. J'ai vu une girafe qui mangeait des feuilles.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 7,
+   "level": 0.9
+  },
+  {
+   "id": "c024",
+   "text": "Ma petite sœur Jade est là aussi, elle a deux ans. On avait faim et il y avait rien dans le frigo. La lumière s'est éteinte et on avait peur du noir.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 8,
+   "level": 0.0
+  },
+  {
+   "id": "c025",
+   "text": "Ma petite sœur Jade est là aussi, elle a deux ans. On avait faim et il y avait rien dans le frigo. La lumière s'est éteinte et on avait peur du noir.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 8,
+   "level": 0.5
+  },
+  {
+   "id": "c026",
+   "text": "Ma petite sœur Jade est là aussi, elle a deux ans. On avait faim et il y avait rien dans le frigo. La lumière s'est éteinte et on avait peur du noir.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 8,
+   "level": 0.9
+  },
+  {
+   "id": "c027",
+   "text": "Je suis allée dans ma chambre. J'avais un bleu sur le bras.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "gradient",
+   "text_id": 9,
+   "level": 0.0
+  },
+  {
+   "id": "c028",
+   "text": "Je suis allée dans ma chambre. J'avais un bleu sur le bras.",
+   "hesitation": 0.5,
+   "loads": {
+    "affect": 0.556
+   },
+   "block": "gradient",
+   "text_id": 9,
+   "level": 0.5
+  },
+  {
+   "id": "c029",
+   "text": "Je suis allée dans ma chambre. J'avais un bleu sur le bras.",
+   "hesitation": 0.9,
+   "loads": {
+    "affect": 1.0
+   },
+   "block": "gradient",
+   "text_id": 9,
+   "level": 0.9
+  },
+  {
+   "id": "c030",
+   "text": "La dernière fois c'était vendredi.",
+   "hesitation": 0.609,
+   "loads": {
+    "retrieval": 0.64,
+    "affect": 0.22
+   },
+   "block": "causes",
+   "cause": "retrieval"
+  },
+  {
+   "id": "c031",
+   "text": "La dernière fois c'était vendredi. J'ai donné des céréales à ma petite sœur. J'ai regardé des dessins animés sur la tablette.",
+   "hesitation": 0.609,
+   "loads": {
+    "retrieval": 0.64,
+    "affect": 0.22
+   },
+   "block": "causes",
+   "cause": "retrieval"
+  },
+  {
+   "id": "c032",
+   "text": "Une autre fois déjà ils s'étaient disputés devant chez nous.",
+   "hesitation": 0.619,
+   "loads": {
+    "retrieval": 0.7,
+    "affect": 0.15
+   },
+   "block": "causes",
+   "cause": "retrieval"
+  },
+  {
+   "id": "c033",
+   "text": "La dernière fois c'était vendredi. J'ai regardé des dessins animés sur la tablette. Le voisin Monsieur Diallo a frappé pour voir si ça allait.",
+   "hesitation": 0.621,
+   "loads": {
+    "retrieval": 0.64,
+    "affect": 0.248
+   },
+   "block": "causes",
+   "cause": "retrieval"
+  },
+  {
+   "id": "c034",
+   "text": "La dernière fois c'était vendredi. J'ai regardé des dessins animés sur la tablette.",
+   "hesitation": 0.621,
+   "loads": {
+    "retrieval": 0.64,
+    "affect": 0.248
+   },
+   "block": "causes",
+   "cause": "retrieval"
+  },
+  {
+   "id": "c035",
+   "text": "La dernière fois c'était vendredi. Le voisin Monsieur Diallo a frappé pour voir si ça allait. Le lendemain j'étais trop fatigué en classe.",
+   "hesitation": 0.621,
+   "loads": {
+    "retrieval": 0.64,
+    "affect": 0.248
+   },
+   "block": "causes",
+   "cause": "retrieval"
+  },
+  {
+   "id": "c036",
+   "text": "Je leur ai donné les dix euros de la cantine. C'était la troisième fois depuis les vacances. Ils sont partis en rigolant vers le centre commercial. Le soir j'ai tout raconté à ma mère.",
+   "hesitation": 0.603,
+   "loads": {
+    "retrieval": 0.3,
+    "affect": 0.531
+   },
+   "block": "causes",
+   "cause": "affect"
+  },
+  {
+   "id": "c037",
+   "text": "Je leur ai donné les dix euros de la cantine. C'était la troisième fois depuis les vacances. Ils sont partis en rigolant vers le centre commercial. Le soir j'ai tout raconté à ma mère.",
+   "hesitation": 0.603,
+   "loads": {
+    "retrieval": 0.3,
+    "affect": 0.531
+   },
+   "block": "causes",
+   "cause": "affect"
+  },
+  {
+   "id": "c038",
+   "text": "Je leur ai donné les dix euros de la cantine. C'était la troisième fois depuis les vacances. Ils sont partis en rigolant vers le centre commercial. Le soir j'ai tout raconté à ma mère.",
+   "hesitation": 0.603,
+   "loads": {
+    "retrieval": 0.3,
+    "affect": 0.531
+   },
+   "block": "causes",
+   "cause": "affect"
+  },
+  {
+   "id": "c039",
+   "text": "Je leur ai donné les dix euros de la cantine. C'était la troisième fois depuis les vacances. Ils sont partis en rigolant vers le centre commercial. Le soir j'ai tout raconté à ma mère.",
+   "hesitation": 0.603,
+   "loads": {
+    "retrieval": 0.3,
+    "affect": 0.531
+   },
+   "block": "causes",
+   "cause": "affect"
+  },
+  {
+   "id": "c040",
+   "text": "Je leur ai donné les dix euros de la cantine. C'était la troisième fois depuis les vacances. Ils sont partis en rigolant vers le centre commercial. Le soir j'ai tout raconté à ma mère.",
+   "hesitation": 0.603,
+   "loads": {
+    "retrieval": 0.3,
+    "affect": 0.531
+   },
+   "block": "causes",
+   "cause": "affect"
+  },
+  {
+   "id": "c041",
+   "text": "Je leur ai donné les dix euros de la cantine. C'était la troisième fois depuis les vacances. Ils sont partis en rigolant vers le centre commercial. Le soir j'ai tout raconté à ma mère.",
+   "hesitation": 0.603,
+   "loads": {
+    "retrieval": 0.3,
+    "affect": 0.531
+   },
+   "block": "causes",
+   "cause": "affect"
+  },
+  {
+   "id": "c042",
+   "text": "Je sais pas.",
+   "hesitation": 0.597,
+   "loads": {
+    "retrieval": 0.096,
+    "affect": 0.336,
+    "confusion": 0.5,
+    "deception": 0.25
+   },
+   "block": "causes",
+   "cause": "confusion"
+  },
+  {
+   "id": "c043",
+   "text": "J'étais au parc avec ma mamie.",
+   "hesitation": 0.59,
+   "loads": {
+    "retrieval": 0.09,
+    "affect": 0.356,
+    "confusion": 0.5
+   },
+   "block": "causes",
+   "cause": "confusion"
+  },
+  {
+   "id": "c044",
+   "text": "Ça arrive presque tous les soirs.",
+   "hesitation": 0.615,
+   "loads": {
+    "retrieval": 0.12,
+    "affect": 0.384,
+    "confusion": 0.5
+   },
+   "block": "causes",
+   "cause": "confusion"
+  },
+  {
+   "id": "c045",
+   "text": "Les deux messieurs criaient très fort.",
+   "hesitation": 0.579,
+   "loads": {
+    "retrieval": 0.06,
+    "affect": 0.356,
+    "confusion": 0.5
+   },
+   "block": "causes",
+   "cause": "confusion"
+  },
+  {
+   "id": "c046",
+   "text": "Les deux messieurs criaient très fort.",
+   "hesitation": 0.579,
+   "loads": {
+    "retrieval": 0.06,
+    "affect": 0.356,
+    "confusion": 0.5
+   },
+   "block": "causes",
+   "cause": "confusion"
+  },
+  {
+   "id": "c047",
+   "text": "Le monsieur au blouson rouge est parti en courant.",
+   "hesitation": 0.579,
+   "loads": {
+    "retrieval": 0.06,
+    "affect": 0.356,
+    "confusion": 0.5
+   },
+   "block": "causes",
+   "cause": "confusion"
+  },
+  {
+   "id": "c048",
+   "text": "Karim a crié très fort sur moi.",
+   "hesitation": 0.677,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 0,
+   "question": "directive"
+  },
+  {
+   "id": "c049",
+   "text": "Karim a crié très fort sur moi.",
+   "hesitation": 0.706,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699,
+    "deception": 0.6
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 0,
+   "question": "directive",
+   "lie_kind": "minimization"
+  },
+  {
+   "id": "c050",
+   "text": "Karim, le copain de maman, était là.",
+   "hesitation": 0.65,
+   "loads": {
+    "retrieval": 0.072,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 1,
+   "question": "option_posing"
+  },
+  {
+   "id": "c051",
+   "text": "Karim, le copain de maman, était là.",
+   "hesitation": 0.723,
+   "loads": {
+    "retrieval": 0.24,
+    "affect": 0.699,
+    "deception": 0.5
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 1,
+   "question": "option_posing",
+   "lie_kind": "false_deny"
+  },
+  {
+   "id": "c052",
+   "text": "Il m'a tapé dans le dos avec sa main.",
+   "hesitation": 0.677,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 2,
+   "question": "directive"
+  },
+  {
+   "id": "c053",
+   "text": "Il m'a tapé dans le dos avec sa main.",
+   "hesitation": 0.706,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699,
+    "deception": 0.6
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 2,
+   "question": "directive",
+   "lie_kind": "minimization"
+  },
+  {
+   "id": "c054",
+   "text": "Oui. Il l'a déjà fait d'autres fois quand maman n'est pas là.",
+   "hesitation": 0.748,
+   "loads": {
+    "retrieval": 0.4,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 3,
+   "question": "suggestive"
+  },
+  {
+   "id": "c055",
+   "text": "Oui. Il l'a déjà fait d'autres fois quand maman n'est pas là.",
+   "hesitation": 0.767,
+   "loads": {
+    "retrieval": 0.4,
+    "affect": 0.699,
+    "deception": 0.5
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 3,
+   "question": "suggestive",
+   "lie_kind": "false_deny"
+  },
+  {
+   "id": "c056",
+   "text": "Il m'a tapé dans le dos avec sa main.",
+   "hesitation": 0.677,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 4,
+   "question": "directive"
+  },
+  {
+   "id": "c057",
+   "text": "Il m'a tapé dans le dos avec sa main.",
+   "hesitation": 0.706,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699,
+    "deception": 0.6
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 4,
+   "question": "directive",
+   "lie_kind": "minimization"
+  },
+  {
+   "id": "c058",
+   "text": "Oui. Il l'a déjà fait d'autres fois quand maman n'est pas là.",
+   "hesitation": 0.748,
+   "loads": {
+    "retrieval": 0.4,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 5,
+   "question": "suggestive"
+  },
+  {
+   "id": "c059",
+   "text": "Oui. Il l'a déjà fait d'autres fois quand maman n'est pas là.",
+   "hesitation": 0.767,
+   "loads": {
+    "retrieval": 0.4,
+    "affect": 0.699,
+    "deception": 0.5
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 5,
+   "question": "suggestive",
+   "lie_kind": "false_deny"
+  },
+  {
+   "id": "c060",
+   "text": "Oui. Il m'a attrapé le bras très fort.",
+   "hesitation": 0.677,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 6,
+   "question": "suggestive"
+  },
+  {
+   "id": "c061",
+   "text": "Oui. Il m'a attrapé le bras très fort.",
+   "hesitation": 0.715,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699,
+    "deception": 0.8
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 6,
+   "question": "suggestive",
+   "lie_kind": "cover_story"
+  },
+  {
+   "id": "c062",
+   "text": "Oui. Karim m'a dit de ne rien dire à maman.",
+   "hesitation": 0.49,
+   "loads": {
+    "retrieval": 0.32,
+    "affect": 0.35
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 7,
+   "question": "suggestive"
+  },
+  {
+   "id": "c063",
+   "text": "Oui. Karim m'a dit de ne rien dire à maman.",
+   "hesitation": 0.529,
+   "loads": {
+    "retrieval": 0.32,
+    "affect": 0.35,
+    "deception": 0.5
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 7,
+   "question": "suggestive",
+   "lie_kind": "false_deny"
+  },
+  {
+   "id": "c064",
+   "text": "Il m'a attrapé le bras très fort.",
+   "hesitation": 0.677,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 8,
+   "question": "directive"
+  },
+  {
+   "id": "c065",
+   "text": "Il m'a attrapé le bras très fort.",
+   "hesitation": 0.715,
+   "loads": {
+    "retrieval": 0.16,
+    "affect": 0.699,
+    "deception": 0.8
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 8,
+   "question": "directive",
+   "lie_kind": "cover_story"
+  },
+  {
+   "id": "c066",
+   "text": "Il l'a déjà fait d'autres fois quand maman n'est pas là.",
+   "hesitation": 0.748,
+   "loads": {
+    "retrieval": 0.4,
+    "affect": 0.699
+   },
+   "block": "lie",
+   "lie": false,
+   "pair": 9,
+   "question": "directive"
+  },
+  {
+   "id": "c067",
+   "text": "Il l'a déjà fait d'autres fois quand maman n'est pas là.",
+   "hesitation": 0.767,
+   "loads": {
+    "retrieval": 0.4,
+    "affect": 0.699,
+    "deception": 0.5
+   },
+   "block": "lie",
+   "lie": true,
+   "pair": 9,
+   "question": "directive",
+   "lie_kind": "feigned_ignorance"
+  },
+  {
+   "id": "c068",
+   "text": "C'était à la maison, dans la cuisine. J'avais renversé mon verre de jus d'orange. Karim, le copain de maman, était là. Je suis allée dans ma chambre.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "enfant sans diction"
+  },
+  {
+   "id": "c069",
+   "text": "C'était à la maison, dans la cuisine. J'avais renversé mon verre de jus d'orange. Karim, le copain de maman, était là. Je suis allée dans ma chambre.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "adulte"
+  },
+  {
+   "id": "c070",
+   "text": "Maman pleurait dans la cuisine. La voisine Madame Roux a sonné chez nous.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "enfant sans diction"
+  },
+  {
+   "id": "c071",
+   "text": "Maman pleurait dans la cuisine. La voisine Madame Roux a sonné chez nous.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "adulte"
+  },
+  {
+   "id": "c072",
+   "text": "Après on est rentrés à la maison pour le goûter.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "enfant sans diction"
+  },
+  {
+   "id": "c073",
+   "text": "Après on est rentrés à la maison pour le goûter.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "adulte"
+  },
+  {
+   "id": "c074",
+   "text": "Papa a poussé maman contre le mur. Maman pleurait dans la cuisine.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "enfant sans diction"
+  },
+  {
+   "id": "c075",
+   "text": "Papa a poussé maman contre le mur. Maman pleurait dans la cuisine.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "adulte"
+  },
+  {
+   "id": "c076",
+   "text": "Papa et maman se disputaient. Papa criait des gros mots.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "enfant sans diction"
+  },
+  {
+   "id": "c077",
+   "text": "Papa et maman se disputaient. Papa criait des gros mots.",
+   "hesitation": 0.0,
+   "loads": {},
+   "block": "reference",
+   "voice": "adulte"
+  }
+ ],
+ "tasks": [
+  {
+   "kind": "pair",
+   "clips": [
+    "c000",
+    "c002"
+   ],
+   "more_hesitant": "c002"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c001",
+    "c002"
+   ],
+   "more_hesitant": "c002"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c000",
+    "c001"
+   ],
+   "more_hesitant": "c001"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c003",
+    "c005"
+   ],
+   "more_hesitant": "c005"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c004",
+    "c005"
+   ],
+   "more_hesitant": "c005"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c003",
+    "c004"
+   ],
+   "more_hesitant": "c004"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c006",
+    "c008"
+   ],
+   "more_hesitant": "c008"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c007",
+    "c008"
+   ],
+   "more_hesitant": "c008"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c006",
+    "c007"
+   ],
+   "more_hesitant": "c007"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c009",
+    "c011"
+   ],
+   "more_hesitant": "c011"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c010",
+    "c011"
+   ],
+   "more_hesitant": "c011"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c009",
+    "c010"
+   ],
+   "more_hesitant": "c010"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c012",
+    "c014"
+   ],
+   "more_hesitant": "c014"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c013",
+    "c014"
+   ],
+   "more_hesitant": "c014"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c012",
+    "c013"
+   ],
+   "more_hesitant": "c013"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c015",
+    "c017"
+   ],
+   "more_hesitant": "c017"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c016",
+    "c017"
+   ],
+   "more_hesitant": "c017"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c015",
+    "c016"
+   ],
+   "more_hesitant": "c016"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c018",
+    "c020"
+   ],
+   "more_hesitant": "c020"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c019",
+    "c020"
+   ],
+   "more_hesitant": "c020"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c018",
+    "c019"
+   ],
+   "more_hesitant": "c019"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c021",
+    "c023"
+   ],
+   "more_hesitant": "c023"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c022",
+    "c023"
+   ],
+   "more_hesitant": "c023"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c021",
+    "c022"
+   ],
+   "more_hesitant": "c022"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c024",
+    "c026"
+   ],
+   "more_hesitant": "c026"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c025",
+    "c026"
+   ],
+   "more_hesitant": "c026"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c024",
+    "c025"
+   ],
+   "more_hesitant": "c025"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c027",
+    "c029"
+   ],
+   "more_hesitant": "c029"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c028",
+    "c029"
+   ],
+   "more_hesitant": "c029"
+  },
+  {
+   "kind": "pair",
+   "clips": [
+    "c027",
+    "c028"
+   ],
+   "more_hesitant": "c028"
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c000"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c001"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c002"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c003"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c004"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c005"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c006"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c007"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c008"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c009"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c010"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c011"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c012"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c013"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c014"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c015"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c016"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c017"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c018"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c019"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c020"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c021"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c022"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c023"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c024"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c025"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c026"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c027"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c028"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c029"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c030"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c031"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c032"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c033"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c034"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c035"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c036"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c037"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c038"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c039"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c040"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c041"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c042"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c043"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c044"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c045"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c046"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c047"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c048"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c049"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c050"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c051"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c052"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c053"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c054"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c055"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c056"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c057"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c058"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c059"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c060"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c061"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c062"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c063"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c064"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c065"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c066"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c067"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age",
+    "lie"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c068"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c069"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c070"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c071"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c072"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c073"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c074"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c075"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c076"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  },
+  {
+   "kind": "rate",
+   "clips": [
+    "c077"
+   ],
+   "questions": [
+    "hesitation",
+    "naturalness",
+    "age"
+   ]
+  }
+ ],
+ "questions": {
+  "hesitation": "Cet enfant hésite-t-il ? (1 = pas du tout, 5 = beaucoup)",
+  "naturalness": "Cette voix est-elle naturelle ? (1 = très artificielle, 5 = très naturelle)",
+  "age": "Quel âge donnez-vous à cet enfant ? (années)",
+  "lie": "Selon vous, cet enfant ment-il ? (oui / non)",
+  "pair": "Lequel des deux enfants hésite le plus ? (A / B)"
+ }
+}

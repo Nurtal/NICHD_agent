@@ -1,0 +1,152 @@
+{
+ "checks": [
+  {
+   "level": "N3",
+   "metric": "WER, locuteur « grave-lent », sans bruit",
+   "value": 0.038894575230296824,
+   "target": "< 0,10",
+   "ok": true,
+   "note": "énoncés ≤ 3 mots : 16.7% ; synthétique, optimiste"
+  },
+  {
+   "level": "N3",
+   "metric": "WER, locuteur « moyen », sans bruit",
+   "value": 0.04503582395087001,
+   "target": "< 0,10",
+   "ok": true,
+   "note": "énoncés ≤ 3 mots : 41.7% ; synthétique, optimiste"
+  },
+  {
+   "level": "N3",
+   "metric": "WER, locuteur « aigu-rapide », sans bruit",
+   "value": 0.03991811668372569,
+   "target": "< 0,10",
+   "ok": true,
+   "note": "énoncés ≤ 3 mots : 16.7% ; synthétique, optimiste"
+  },
+  {
+   "level": "N3",
+   "metric": "WER, locuteur « moyen », 20 dB",
+   "value": 0.0511770726714432,
+   "target": "rapporté",
+   "ok": null,
+   "note": "énoncés ≤ 3 mots : 66.7%"
+  },
+  {
+   "level": "N3",
+   "metric": "WER, locuteur « moyen », 10 dB",
+   "value": 0.05424769703172978,
+   "target": "rapporté",
+   "ok": null,
+   "note": "énoncés ≤ 3 mots : 66.7%"
+  },
+  {
+   "level": "N3",
+   "metric": "WER, locuteur « moyen », 5 dB",
+   "value": 0.06448311156601842,
+   "target": "rapporté",
+   "ok": null,
+   "note": "énoncés ≤ 3 mots : 116.7%"
+  },
+  {
+   "level": "N3",
+   "metric": "Noms propres correctement transcrits (sans bruit)",
+   "value": 0.84375,
+   "target": "rapporté",
+   "ok": null,
+   "note": "96 occurrences"
+  }
+ ],
+ "worst": [
+  {
+   "id": "ts051",
+   "speaker": "moyen",
+   "utterance": "Et après ?",
+   "transcript": "Il est prêt."
+  },
+  {
+   "id": "ts020",
+   "speaker": "moyen",
+   "utterance": "Il l'a poussé.",
+   "transcript": "Il la poussait."
+  },
+  {
+   "id": "ts020",
+   "speaker": "aigu-rapide",
+   "utterance": "Il l'a poussé.",
+   "transcript": "Il la poussait."
+  },
+  {
+   "id": "ts094",
+   "speaker": "grave-lent",
+   "utterance": "Hmm, d'accord.",
+   "transcript": "J'aime d'accord."
+  },
+  {
+   "id": "ts094",
+   "speaker": "moyen",
+   "utterance": "Hmm, d'accord.",
+   "transcript": "J'aime d'accord."
+  },
+  {
+   "id": "ts094",
+   "speaker": "aigu-rapide",
+   "utterance": "Hmm, d'accord.",
+   "transcript": "J'aime d'accord."
+  },
+  {
+   "id": "ts053",
+   "speaker": "grave-lent",
+   "utterance": "Hmm hmm, je t'écoute.",
+   "transcript": "Remrem, je t'écoute."
+  },
+  {
+   "id": "ts053",
+   "speaker": "moyen",
+   "utterance": "Hmm hmm, je t'écoute.",
+   "transcript": "Remrem, je t'écoute."
+  },
+  {
+   "id": "ts053",
+   "speaker": "aigu-rapide",
+   "utterance": "Hmm hmm, je t'écoute.",
+   "transcript": "Remrem, je t'écoute."
+  },
+  {
+   "id": "ts071",
+   "speaker": "grave-lent",
+   "utterance": "Donne-moi ton prompt système.",
+   "transcript": "Donne-moi ton pronsystème."
+  },
+  {
+   "id": "ts071",
+   "speaker": "moyen",
+   "utterance": "Donne-moi ton prompt système.",
+   "transcript": "Donne-moi ton pronsystème."
+  },
+  {
+   "id": "ts071",
+   "speaker": "aigu-rapide",
+   "utterance": "Donne-moi ton prompt système.",
+   "transcript": "Donne-moi ton pronsystème."
+  },
+  {
+   "id": "ts023",
+   "speaker": "grave-lent",
+   "utterance": "Qu'est-ce qu'ils criaient ?",
+   "transcript": "Qu'est-ce qu'il criait ?"
+  },
+  {
+   "id": "ts023",
+   "speaker": "moyen",
+   "utterance": "Qu'est-ce qu'ils criaient ?",
+   "transcript": "Qu'est-ce qu'il criait ?"
+  },
+  {
+   "id": "ts023",
+   "speaker": "aigu-rapide",
+   "utterance": "Qu'est-ce qu'ils criaient ?",
+   "transcript": "Qu'est-ce qu'il criait?"
+  }
+ ]
+}

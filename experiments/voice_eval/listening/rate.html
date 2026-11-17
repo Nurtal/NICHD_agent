@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Écoute à l'aveugle</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1d1d1b; --muted:#6b6a65; --line:#dcd9d0; --accent:#2f5d8a; --card:#ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#171716; --fg:#ecebe6; --muted:#a3a19a; --line:#3a3936; --accent:#8fb6dd; --card:#201f1d; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:1.3rem; margin:0 0 4px; }
+  .muted { color:var(--muted); font-size:.92rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:16px; }
+  .q { margin-top:14px; }
+  .scale { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .scale label { border:1px solid var(--line); border-radius:6px; padding:6px 12px; cursor:pointer; }
+  .scale input { margin-right:4px; }
+  audio { width:100%; margin-top:8px; }
+  button { background:var(--accent); color:var(--bg); border:0; border-radius:6px; padding:9px 16px; font-size:1rem; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:default; }
+  input[type=text], input[type=number] { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }
+  progress { width:100%; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Écoute à l'aveugle — voix d'enfant simulé</h1>
+  <p class="muted">Écoutez chaque extrait (au casque si possible), autant de fois que nécessaire, puis répondez à l'impression.
+  Il n'y a pas de bonne réponse. Vos réponses restent dans ce navigateur jusqu'au téléchargement final.</p>
+  <div id="start" class="card">
+    <label>Votre identifiant (initiales ou pseudonyme) : <input id="who" type="text" autocomplete="off"></label>
+    <p><button id="go">Commencer</button></p>
+  </div>
+  <div id="task" class="card" hidden></div>
+  <div id="done" class="card" hidden>
+    <p>Merci ! Téléchargez vos réponses et transmettez le fichier.</p>
+    <button id="dl">Télécharger mes réponses</button>
+  </div>
+  <p><progress id="bar" value="0" max="1" hidden></progress></p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let tasks = [], questions = {}, order = [], answers = [], who = "", i = 0;
+
+function seeded(str) {           // deterministic shuffle per listener
+  let h = 2166136261;
+  for (const c of str) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0) / 4294967296;
+}
+function store() { try { localStorage.setItem("ecoute:" + who, JSON.stringify({ i, answers })); } catch (e) {} }
+function restore() {
+  try { const s = JSON.parse(localStorage.getItem("ecoute:" + who) || "null"); if (s) { i = s.i; answers = s.answers; } } catch (e) {}
+}
+function scale(name, n) {
+  return `<div class="scale">${Array.from({length:n}, (_, k) =>
+    `<label><input type="radio" name="${name}" value="${k + 1}">${k + 1}</label>`).join("")}</div>`;
+}
+function render() {
+  $("bar").value = i; $("bar").max = order.length;
+  if (i >= order.length) { $("task").hidden = true; $("done").hidden = false; return; }
+  const t = tasks[order[i]];
+  let html = `<p class="muted">Extrait ${i + 1} / ${order.length}</p>`;
+  if (t.kind === "pair") {
+    const flip = seeded(who + ":" + order[i])() < 0.5;
+    const [a, b] = flip ? [t.clips[1], t.clips[0]] : t.clips;
+    html += `<p><b>A</b><audio controls preload="auto" src="pack/clips/${a}.wav"></audio></p>
+             <p><b>B</b><audio controls preload="auto" src="pack/clips/${b}.wav"></audio></p>
+             <div class="q">${questions.pair}<div class="scale">
+               <label><input type="radio" name="pair" value="${a}">A</label>
+               <label><input type="radio" name="pair" value="${b}">B</label></div></div>`;
+  } else {
+    html += `<audio controls preload="auto" src="pack/clips/${t.clips[0]}.wav"></audio>`;
+    for (const q of t.questions) {
+      html += `<div class="q">${questions[q]}` + (q === "age" ? `<div><input name="age" type="number" min="2" max="18" step="1"></div>`
+              : q === "lie" ? `<div class="scale"><label><input type="radio" name="lie" value="oui">oui</label><label><input type="radio" name="lie" value="non">non</label></div>`
+              : scale(q, 5)) + `</div>`;
+    }
+  }
+  html += `<p style="margin-top:18px"><button id="next" disabled>Suivant</button></p>`;
+  $("task").innerHTML = html; $("task").hidden = false;
+  const form = $("task"), next = $("next");
+  const read = () => {
+    const out = { task: order[i], clips: t.clips };
+    let ok = true;
+    for (const q of (t.kind === "pair" ? ["pair"] : t.questions)) {
+      const el = q === "age" ? form.querySelector('input[name=age]') : form.querySelector(`input[name=${q}]:checked`);
+      const v = el && el.value; if (!v) ok = false; out[q] = v;
+    }
+    return ok ? out : null;
+  };
+  form.oninput = form.onchange = () => { next.disabled = !read(); };
+  next.onclick = () => { answers.push(read()); i += 1; store(); render(); };
+}
+$("go").onclick = async () => {
+  who = $("who").value.trim(); if (!who) return;
+  const data = await (await fetch("pack/tasks.json")).json();
+  tasks = data.tasks; questions = data.questions;
+  const r = seeded(who); order = tasks.map((_, k) => k);
+  for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
+  restore(); $("start").hidden = true; $("bar").hidden = false; render();
+};
+$("dl").onclick = () => {
+  const blob = new Blob([JSON.stringify({ listener: who, version: 1, answers }, null, 1)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `ecoute_${who}.json`; a.click();
+};
+</script>
+</body>
+</html>

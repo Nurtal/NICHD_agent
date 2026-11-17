@@ -54,9 +54,16 @@ class Audio:
             s[-1 - i] = int(s[-1 - i] * g)
         return Audio(self.sample_rate, s)
 
-    def voiced_bounds(self, frame_ms: int = 20, rel: float = 0.1, floor: int = 200) -> tuple[int, int] | None:
-        """(start_ms, end_ms) of the sound, by frame energy: frames louder than `rel` × the loudest
-        frame (and than `floor`). More precise than STT word timings for measuring turn-taking."""
+    def voiced_bounds(self, frame_ms: int = 20, rel: float = 0.1, floor: int = 200, noise_ratio: float = 2.5,
+                      min_frames: int = 3) -> tuple[int, int] | None:
+        """(start_ms, end_ms) of the sound, by frame energy. More precise than STT word timings
+        for measuring turn-taking.
+
+        A frame is loud above max(`floor`, `rel` × the loudest frame, `noise_ratio` × the noise
+        floor), where the noise floor is the 10th percentile of frame energy (voice evaluation N4:
+        without it, noise at 10 dB SNR counted as speech from the first frame). Speech starts (ends)
+        at the first (last) run of `min_frames` loud frames, so an isolated click is ignored, then
+        extends over the soft edges of speech while the energy stays above 1.5 × the noise floor."""
         n = max(1, round(self.sample_rate * frame_ms / 1000))
         rms = []
         for i in range(0, len(self.samples), n):
@@ -64,9 +71,21 @@ class Audio:
             rms.append((sum(s * s for s in frame) / len(frame)) ** 0.5 if frame else 0.0)
         if not rms or max(rms) < floor:
             return None
-        threshold = max(floor, rel * max(rms))
-        loud = [i for i, v in enumerate(rms) if v >= threshold]
-        return loud[0] * frame_ms, (loud[-1] + 1) * frame_ms
+        noise = sorted(rms)[len(rms) // 10]
+        threshold = max(floor, rel * max(rms), min(noise_ratio * noise, 0.5 * max(rms)))
+        loud = [v >= threshold for v in rms]
+        runs = [i for i in range(len(loud) - min_frames + 1) if all(loud[i : i + min_frames])]
+        if not runs:
+            return None
+        # Hysteresis: extend over the soft edges of speech (onset consonants, final decay) while the
+        # energy stays clearly above the noise floor.
+        low = max(floor, 1.5 * noise) if noise > 0 else threshold
+        start, end = runs[0], runs[-1] + min_frames - 1
+        while start > 0 and rms[start - 1] >= low:
+            start -= 1
+        while end < len(rms) - 1 and rms[end + 1] >= low:
+            end += 1
+        return start * frame_ms, (end + 1) * frame_ms
 
     def mix_at(self, other: Audio, at_ms: int) -> None:
         """Add `other` starting at `at_ms`, extending with silence as needed (overlaps are summed)."""
