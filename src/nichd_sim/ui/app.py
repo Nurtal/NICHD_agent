@@ -7,6 +7,7 @@ Run with:  uv run nichd-sim ui   (or: uv run streamlit run src/nichd_sim/ui/app.
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -23,7 +24,7 @@ from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
 from nichd_sim.scenario import ExpressionStyle
 from nichd_sim.session import Session
-from nichd_sim.ui import engine_view
+from nichd_sim.ui import engine_view, flow_view
 
 SCENARIOS_DIR = Path(os.environ.get("NICHD_SCENARIOS", Path(__file__).resolve().parents[3] / "scenarios"))
 LOG_DIR = os.environ.get("NICHD_LOG_DIR", "sessions")
@@ -233,11 +234,11 @@ if st.session_state.get("ending"):
 # -- interview ---------------------------------------------------------------------
 
 
-def submit(prompt: str) -> None:
-    """One interviewer utterance, from either view."""
+def submit(prompt: str, on_step=None) -> None:
+    """One interviewer utterance, from any view. `on_step`: live display of the turn's steps."""
     try:
         with st.spinner(f"{session.scenario.child_profile.name} réfléchit…"):
-            result = session.turn(prompt)
+            result = session.turn(prompt, on_step=on_step)
     except ManualClassificationError as e:
         st.error(str(e))
     except LLMError as e:
@@ -257,7 +258,7 @@ def submit(prompt: str) -> None:
         st.rerun()
 
 
-def conversation(key: str) -> None:
+def conversation(key: str, on_step=None) -> None:
     if isinstance(session.classifier, ManualClassifier):
         with st.expander("Classification manuelle : syntaxe"):
             st.code(HELP)
@@ -272,12 +273,52 @@ def conversation(key: str) -> None:
             st.info(n)
     prompt = st.chat_input("Votre énoncé…", key=key)
     if prompt:
-        submit(prompt)
+        submit(prompt, on_step=on_step)
+
+
+# Pause after each step of the live map, so that the eye can follow it (the engine itself takes
+# milliseconds; the LLM steps take seconds on their own). "decided" lets the engine path play out.
+FLOW_DWELL_S = {"classify": 0.3, "classified": 0.5, "decided": 1.8, "filtered": 0.6, "fallback": 0.6}
+
+
+def live_map(slot):
+    """Step listener redrawing the system map while the turn runs."""
+    state = flow_view.FlowState(deception=session.scenario.deception is not None)
+    shown: set[str] = set()
+
+    def on_step(step: str, data: dict) -> None:
+        state.on_step(step, data)
+        lit = set(flow_view.lit_nodes(state))
+        slot.html(flow_view.render(state, fresh=lit - shown))
+        shown.update(lit)
+        if step == "done":
+            st.session_state.flow_static = True  # already played: no replay after the rerun
+        time.sleep(FLOW_DWELL_S.get(step, 0))
+
+    return on_step
 
 
 view = st.segmented_control(
-    "Vue", ["Entretien", "Moteur en direct"], default="Entretien", key="view", label_visibility="collapsed"
+    "Vue", ["Entretien", "Moteur en direct", "Graphe du système"], default="Entretien", key="view",
+    label_visibility="collapsed",
 )
+
+if view == "Graphe du système":
+    st.caption("Carte du système : le chemin du tour s'allume pendant qu'il est traité. Bleu : règles déterministes · "
+               "violet : appels au LLM · pointillés : données · grisé : non emprunté à ce tour.")
+    chat, graph = st.columns([1.4, 5])
+    with graph:
+        slot = st.empty()
+        deception = session.scenario.deception is not None
+        if session.log.turns:
+            last = flow_view.FlowState.from_record(session.log.turns[-1], session.phases.violations, deception)
+            slot.html(flow_view.render(last, fresh=set() if st.session_state.pop("flow_static", False) else None))
+        else:
+            slot.html(flow_view.render(flow_view.FlowState(deception=deception)))
+    with chat, st.container(height=760, border=False):
+        st.subheader(f"Entretien avec {session.scenario.child_profile.name}")
+        conversation("graph_input", on_step=live_map(slot))
+    st.stop()
 
 if view == "Moteur en direct":
     st.caption("Vue de démonstration et de débogage : ce que le moteur de comportement décide à chaque tour.")

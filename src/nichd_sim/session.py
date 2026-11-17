@@ -6,7 +6,8 @@ import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -22,6 +23,11 @@ from nichd_sim.scenario import Scenario
 from nichd_sim.text import mentions, normalize
 
 MAX_REALIZATION_ATTEMPTS = 2  # first try + one regeneration, then fallback response
+
+StepListener = Callable[[str, dict[str, Any]], None]
+"""Called at each step of a turn (live display only): `classify`, `classified`, `decided`, `realize`,
+`filtered`, `fallback`, `done`. It must not act on the session."""
+
 SOFT_TURN_LIMIT = 60  # warn (never interrupt) once the interview reaches this many turns
 
 
@@ -174,9 +180,13 @@ class Session:
     def state(self) -> EngineState:
         return self.engine.state.model_copy(deep=True)
 
-    def turn(self, utterance: str, timing: TurnTiming | None = None) -> TurnResult:
+    def turn(
+        self, utterance: str, timing: TurnTiming | None = None, on_step: StepListener | None = None
+    ) -> TurnResult:
         """One interviewer utterance. `timing` (voice): when the learner spoke, and whether they
-        interrupted the child's previous reply — the cut-off part was then not said."""
+        interrupted the child's previous reply — the cut-off part was then not said.
+        `on_step`: live display of the turn's progress (see `StepListener`); no effect on the turn."""
+        emit = on_step or (lambda step, data: None)
         if self._ended:
             raise SessionEnded("la session est terminée")
         if timing is not None and timing.barge_in is not None and self.log.turns:
@@ -186,9 +196,11 @@ class Session:
             revealed_unit_ids=list(self.engine.state.revealed),
             history=list(self.history),
         )
+        emit("classify", {"utterance": utterance})
         t0 = time.perf_counter()
         classification = self.classifier.classify(utterance, context)
         t1 = time.perf_counter()
+        emit("classified", {"classification": classification})
         heard = classification.clean_text or utterance
         before = self.state
         n_violations = len(self.phases.violations)
@@ -202,11 +214,15 @@ class Session:
         if decision.forced_disclosure:
             self.phases.flag(ViolationKind.FORCED_DISCLOSURE, detail=f"{decision.effective_type}")
         new_violations = self.phases.violations[n_violations:]
+        emit("decided", {
+            "decision": decision, "asked_in": asked_in, "phase": phase, "violations": list(new_violations),
+            "state_before": before, "state_after": self.state,
+        })
 
         history = self.history + [("interviewer", heard)]
         # The child may mention what it already said: true units, and the lies it told.
         known = before.revealed + [lr.lie_unit for lr in self.engine.state.lies if lr.lie_unit]
-        attempts, response, fallback = self._realize(decision, history, known=known)
+        attempts, response, fallback = self._realize(decision, history, known=known, emit=emit)
         if decision.speech_act == SpeechAct.CONFABULATE and decision.new_contamination:
             self.engine.record_confabulation(decision.new_contamination, response)
         after = self.state
@@ -240,7 +256,7 @@ class Session:
             notices.append(
                 f"L'entretien atteint {SOFT_TURN_LIMIT} tours : pensez à la durée et à la fatigue de l'enfant."
             )
-        return TurnResult(
+        result = TurnResult(
             response=response,
             classification=classification,
             decision=decision,
@@ -251,6 +267,8 @@ class Session:
             fallback_used=fallback,
             speech_plan=plan_speech(response, decision.delivery),
         )
+        emit("done", {"result": result})
+        return result
 
     def _interrupt(self, barge: BargeIn) -> None:
         """The previous reply was cut: keep what was heard, take back the units not said."""
@@ -274,11 +292,16 @@ class Session:
     def phase(self) -> Phase:
         return self.phases.phase
 
-    def _realize(self, decision: Decision, history, known: list[str]) -> tuple[list[AttemptRecord], str, bool]:
+    def _realize(
+        self, decision: Decision, history, known: list[str], emit: StepListener | None = None
+    ) -> tuple[list[AttemptRecord], str, bool]:
+        emit = emit or (lambda step, data: None)
         attempts: list[AttemptRecord] = []
         for attempt in range(MAX_REALIZATION_ATTEMPTS):
+            emit("realize", {"attempt": attempt + 1})
             r = self.realizer.realize(decision, self.scenario.child_profile, list(history), attempt=attempt)
             verdict = self.output_filter.check(r.text, decision, known_unit_ids=known)
+            emit("filtered", {"attempt": attempt + 1, "ok": verdict.ok, "text": r.text})
             attempts.append(
                 AttemptRecord(
                     text=r.text,
@@ -297,6 +320,7 @@ class Session:
             if verdict.ok:
                 return attempts, r.text, False
         # Fallback: authored unit values / canned response — safe by construction.
+        emit("fallback", {})
         fallback = TemplateRealizer().realize(decision, self.scenario.child_profile, list(history)).text
         return attempts, fallback, True
 
