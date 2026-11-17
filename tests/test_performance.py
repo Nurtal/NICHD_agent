@@ -127,3 +127,28 @@ def test_avatar_client_files_are_present_and_parse():
         src = (ROOT / "avatar" / f).read_text(encoding="utf-8")
         r = subprocess.run([node, "--input-type=module", "--check"], input=src, text=True, capture_output=True)
         assert r.returncode == 0, (f, r.stderr)
+
+
+def test_debug_map_is_exported_beside_the_contract_not_inside(tmp_path, monkeypatch):
+    import xml.etree.ElementTree as ET
+    monkeypatch.chdir(ROOT)
+    log_dir = tmp_path / "logs"
+    s, clf, _ = make_session(s08(1.0, reluctance=0.0), seed=4, log_dir=log_dir)
+    for i, c in enumerate([C("support"), C("invitation", phase_hints=["transition"]),
+                           C("option_posing", "d_bras", suggested_proposition="bras")]):
+        ask(s, clf, f"u{i}", c)
+    s.end()
+    log_path = next(log_dir.glob("*.json"))
+    plain, debug = tmp_path / "plain", tmp_path / "debug"
+    assert main(["export-avatar", str(log_path), "-o", str(plain)]) == 0
+    assert main(["export-avatar", str(log_path), "-o", str(debug), "--debug-map"]) == 0
+    # the contract is the same with or without the map
+    assert (plain / "performance.json").read_text() == (debug / "performance.json").read_text()
+    assert not (plain / "debug").exists()
+    index = json.loads((debug / "debug" / "maps.json").read_text())
+    assert list(index) == ["1", "2", "3"] and all(len(v) == 3 for v in index.values())
+    last = (debug / "debug" / index["3"][2]).read_text(encoding="utf-8")
+    ET.fromstring(last)
+    assert "class='n det on" in last and "Dissimulation" in last  # the lie's path lights up on the map
+    first = (debug / "debug" / index["3"][0]).read_text(encoding="utf-8")
+    assert "class='n core on" not in first  # step 1: the decision is not taken yet

@@ -33,6 +33,20 @@ TYPE_LABELS = {
     QuestionType.OTHER: "hors protocole",
 }
 
+SPEECH_ACT_LABELS = {
+    SpeechAct.ANSWER: "répond",
+    SpeechAct.DONT_KNOW: "« je sais pas »",
+    SpeechAct.ACQUIESCE: "acquiesce",
+    SpeechAct.DENY: "nie",
+    SpeechAct.CONFABULATE: "invente",
+    SpeechAct.RELUCTANT: "réticent",
+    SpeechAct.SMALL_TALK: "bavarde",
+    SpeechAct.ACKNOWLEDGE: "accuse réception",
+    SpeechAct.CONFUSION: "confus",
+    SpeechAct.SILENCE: "silence",
+    SpeechAct.RETRACT: "revient sur un mensonge",
+}
+
 PHASE_LABELS = {
     Phase.RAPPORT: "rapport",
     Phase.GROUND_RULES: "règles de base",

@@ -226,6 +226,18 @@ def export_avatar_cmd(args: argparse.Namespace) -> int:
             print(f"voix indisponible ({e}) : chronologie estimée", file=sys.stderr)
     perf = build_session(log, name, age, speaker=speaker, out_dir=out)
     path = write_session(perf, out)
+    if args.debug_map:
+        import json
+
+        from nichd_sim.ui.flow_view import write_session_maps
+
+        try:
+            deception = find_scenario(log, args.scenarios_dir).deception is not None
+        except ReplayError:
+            deception = any(t.state_after.concealment > 0 for t in log.turns)
+        index = write_session_maps(log, deception, out / "debug")
+        (out / "debug" / "maps.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
+        print(f"carte du système : {sum(map(len, index.values()))} image(s) dans {out / 'debug'} (débogage)")
     voiced = f", {len(perf.turns)} fichier(s) audio" if speaker is not None else " (chronologie estimée, sans audio)"
     print(f"{path}{voiced}")
     print(f"Lancer l'avatar : nichd-sim avatar {out}")
@@ -450,6 +462,8 @@ def main(argv: list[str] | None = None) -> int:
     x.add_argument("-o", "--output", help="dossier de sortie (défaut : avatar_sessions/<session>)")
     x.add_argument("--voice", action="store_true", help="rendre aussi l'audio de chaque réponse")
     x.add_argument("--speaker", default=None, help="voix : kokoro (défaut si installé), tone…")
+    x.add_argument("--debug-map", action="store_true",
+                   help="exporter aussi la carte du système de chaque tour (débogage, hors contrat)")
     x.add_argument("--scenarios-dir", default="scenarios")
     x.set_defaults(func=export_avatar_cmd)
 

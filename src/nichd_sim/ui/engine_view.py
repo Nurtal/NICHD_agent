@@ -14,25 +14,12 @@ import streamlit as st
 from nichd_sim.delivery import CAUSE_LABELS, HesitationCause
 from nichd_sim.demeanor import CUE_LABELS, INTENSITY_LABELS, STYLE_LABELS, stage_direction
 from nichd_sim.engine import EngineState, SpeechAct
-from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS
+from nichd_sim.feedback import PHASE_LABELS, SPEECH_ACT_LABELS, TYPE_LABELS
 from nichd_sim.phases import ORDER as PHASE_ORDER
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.scenario import Centrality, Scenario
 from nichd_sim.session import Session
 
-SPEECH_ACT_LABELS = {
-    SpeechAct.ANSWER: "répond",
-    SpeechAct.DONT_KNOW: "« je sais pas »",
-    SpeechAct.ACQUIESCE: "acquiesce",
-    SpeechAct.DENY: "nie",
-    SpeechAct.CONFABULATE: "invente",
-    SpeechAct.RELUCTANT: "réticent",
-    SpeechAct.SMALL_TALK: "bavarde",
-    SpeechAct.ACKNOWLEDGE: "accuse réception",
-    SpeechAct.CONFUSION: "confus",
-    SpeechAct.SILENCE: "silence",
-    SpeechAct.RETRACT: "revient sur un mensonge",
-}
 
 # State variables, in a fixed order with fixed colors (validated categorical slots 1–5).
 VARIABLES = {

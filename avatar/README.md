@@ -18,7 +18,22 @@ Options d'URL :
 - `?turn=N` : tour de départ ;
 - `?autoplay=0` : pas d'enchaînement automatique ;
 - `?at=MS` : figer la réponse à cet instant (captures) ;
-- `?start=1` : démarrer sans cliquer (l'audio peut alors être bloqué par le navigateur).
+- `?start=1` : démarrer sans cliquer (l'audio peut alors être bloqué par le navigateur) ;
+- `?map=1` : afficher la carte du système en arrière-plan (voir plus bas).
+
+## Carte du système en arrière-plan (débogage)
+
+`--debug-map` exporte aussi, dans `debug/`, la carte du système (celle de la vue « Graphe du système » de
+l'UI) pour chaque tour, en 3 étapes : classification, décision, fin du tour.
+
+Le bouton **Carte**, ou `?map=1` dans l'URL, l'affiche derrière l'enfant, qui se décale alors vers la droite.
+La carte suit le tour :
+- étape « classification » pendant la question ;
+- étape « décision » au début de la réponse ;
+- étape « fin » quand la réponse est finie.
+
+C'est un **canal de débogage, hors contrat**. La carte montre les rouages du moteur (règle, mensonge,
+filtre), que `performance.json` ne contient jamais. Sans `--debug-map`, le bouton est désactivé.
 
 Sans `--voice`, la chronologie est estimée (environ 65 ms par caractère, silences exacts) et l'avatar reste
 muet.

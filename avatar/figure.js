@@ -21,14 +21,15 @@ function capsule(radius, length, material) {
 }
 
 export function buildScene(container) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.shadowMap.enabled = true;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#eef1f5");
+  const background = new THREE.Color("#eef1f5");
+  scene.background = background;
   const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.05, 50);
   camera.position.set(0.55, 1.2, 2.75); // seated interviewer's eyes, slightly to the side
   scene.add(new THREE.HemisphereLight("#ffffff", "#b9c2cf", 1.6));
@@ -37,17 +38,30 @@ export function buildScene(container) {
   sun.castShadow = true;
   scene.add(sun);
 
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 64), new THREE.MeshStandardMaterial({ color: "#dfe4eb" }));
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 64),
+    new THREE.MeshStandardMaterial({ color: "#dfe4eb", transparent: true }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  window.addEventListener("resize", () => {
-    camera.aspect = container.clientWidth / container.clientHeight;
+  let shifted = false; // with the map: the child moves to the right third, the map keeps the left
+  function frame() {
+    const w = container.clientWidth, h = container.clientHeight;
+    camera.aspect = w / h;
+    if (shifted) camera.setViewOffset(w, h, -0.3 * w, 0, w, h);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-  });
-  return { renderer, scene, camera };
+    renderer.setSize(w, h);
+  }
+  window.addEventListener("resize", frame);
+  // With the system map behind: transparent background, almost invisible floor.
+  function setBackdrop(on) {
+    scene.background = on ? null : background;
+    floor.material.opacity = on ? 0.12 : 1;
+    shifted = on;
+    frame();
+  }
+  return { renderer, scene, camera, setBackdrop };
 }
 
 export function buildChild(scene) {
