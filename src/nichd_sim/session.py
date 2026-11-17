@@ -88,8 +88,9 @@ class TurnRecord(BaseModel):
         return self.attempts[-1].prompt if self.attempts else None
 
 
-LOG_FORMAT = 2
-"""2: decisions carry a delivery (ADR 0002). Format-1 logs still replay (new fields ignored)."""
+LOG_FORMAT = 3
+"""2: decisions carry a delivery (ADR 0002). 3: arousal and demeanor (ADR 0003); the delivery now
+depends on arousal. Older logs still replay: decisions are compared, newer fields ignored."""
 
 
 class SessionLog(BaseModel):
@@ -192,7 +193,7 @@ class Session:
         before = self.state
         n_violations = len(self.phases.violations)
         asked_in = self.phases.observe(classification)
-        decision = self.engine.decide(classification)
+        decision = self.engine.decide(classification, phase_violation=len(self.phases.violations) > n_violations)
         phase = self.phases.after_decision(
             revealed_target=any(
                 not u.contaminated and self.scenario.is_target_unit(u.id) for u in decision.allowed_units

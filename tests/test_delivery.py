@@ -47,14 +47,14 @@ def test_mvp_logs_replay_identically(path, monkeypatch):
     assert report.identical, report.mismatches
 
 
-def test_format_2_log_round_trips_through_replay(tmp_path, monkeypatch):
+def test_current_format_log_round_trips_through_replay(tmp_path, monkeypatch):
     monkeypatch.chdir(ROOT)
     s, clf, _ = make_session(load_scenario(S02), seed=3)
     for i, c in enumerate([C("support"), C("invitation"), C("invitation"), C("directive", "b_dimanche"), C("other")]):
         ask(s, clf, f"u{i}", c)
     log = SessionLog.model_validate_json(s.end().model_dump_json())
-    assert log.log_format == LOG_FORMAT == 2
-    assert all(t.decision.delivery is not None for t in log.turns)
+    assert log.log_format == LOG_FORMAT == 3
+    assert all(t.decision.delivery is not None and t.decision.demeanor is not None for t in log.turns)
     assert replay(log, find_scenario(log)).identical
 
 
@@ -119,8 +119,11 @@ def test_rapport_chitchat_carries_no_hesitation_load():
     s, clf, _ = make_session()
     d = ask(s, clf, "Tu aimes quoi ?", C("invitation", phase_hints=["rapport"])).decision
     assert d.speech_act == SpeechAct.SMALL_TALK
-    assert d.delivery.loads == {} and d.delivery.hesitation == 0
-    assert d.delivery.pauses_ms == [] and d.delivery.fillers == 0
+    # Only the child's background arousal (ADR 0003) weighs: no memory, emotion-of-topic or lie load.
+    arousal = s.state.arousal
+    assert set(d.delivery.loads) <= {R.AFFECT}
+    assert d.delivery.loads.get(R.AFFECT, 0) == pytest.approx(s.params["arousal_affect_weight"] * arousal, abs=1e-3)
+    assert d.delivery.hesitation < 0.15
 
 
 def test_out_of_scenario_dont_know_is_a_memory_search():

@@ -107,13 +107,17 @@ def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
     return report
 
 
-_LEGACY_EXCLUDE = {"decision": {"delivery"}}
-"""Fields that did not exist in format-1 logs and are therefore not compared."""
+_LEGACY_EXCLUDE = {
+    "decision": {"delivery", "demeanor"},
+    "state_after": {"arousal", "arousal_baseline"},
+}
+"""Fields that did not exist before format 3, or that format 3 computes differently (the delivery
+depends on arousal): not compared for older logs. Decisions themselves must still match."""
 
 
 def _same(new, original, name: str, log_format: int) -> bool:
-    """Equality; for format-1 logs, ignore what format 2 added (delivery, new fields at their default)."""
-    if log_format >= 2 or not isinstance(new, BaseModel):
+    """Equality; for older logs, ignore what later formats added (new fields at their default too)."""
+    if log_format >= LOG_FORMAT or not isinstance(new, BaseModel):
         return new == original
     exclude = _LEGACY_EXCLUDE.get(name, set())
     return new.model_dump(exclude=exclude, exclude_defaults=True) == original.model_dump(

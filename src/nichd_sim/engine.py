@@ -14,9 +14,10 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 from nichd_sim.classification import OUT_OF_SCENARIO, Classification, QuestionType
-from nichd_sim.delivery import Delivery, HesitationCause, make_delivery
+from nichd_sim.delivery import Delivery, HesitationCause, express, make_delivery
+from nichd_sim.demeanor import Demeanor, make_demeanor
 from nichd_sim.parameters import Parameters
-from nichd_sim.scenario import Centrality, EventKind, InfoUnit, LieUnit, Scenario
+from nichd_sim.scenario import Centrality, EventKind, ExpressionStyle, InfoUnit, LieUnit, Scenario
 from nichd_sim.text import mentions, normalize
 
 
@@ -103,6 +104,8 @@ class Decision(BaseModel):
     """Protected units deliberately left out of this turn's narrative (omission)."""
     retraction: LieRecord | None = None
     """The lie taken back at this turn (speech act `retract`)."""
+    demeanor: Demeanor | None = None
+    """What the child's body shows (ADR 0003). None in logs older than format 3."""
 
 
 class ContaminatedUnit(BaseModel):
@@ -133,6 +136,10 @@ class EngineState(BaseModel):
     concealment: float = 0.0
     """Probability of hiding or disguising a protected fact (0 when the scenario has no deception)."""
     lies: list[LieRecord] = []
+    arousal: float = 0.0
+    """Emotional arousal (0–1, ADR 0003), with inertia. Drives delivery and demeanor, not decisions."""
+    arousal_baseline: float = 0.0
+    """Level the arousal returns to, turn after turn."""
 
 
 def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
@@ -154,6 +161,7 @@ class BehaviorEngine:
         # Separate streams (ADR 0002): new features never shift the decisions of the MVP stream.
         self.delivery_rng = random.Random(f"{seed}:delivery")
         self.deception_rng = random.Random(f"{seed}:deception")
+        self.demeanor_rng = random.Random(f"{seed}:demeanor")
         protected = scenario.deception.protected if scenario.deception else []
         draws = sorted((self.deception_rng.random() for _ in protected), reverse=True)
         self._thresholds = dict(zip(protected, draws))
@@ -163,12 +171,17 @@ class BehaviorEngine:
         self._hidden: dict[str, bool] = {}
         """Per-turn concealment draws, so that a unit is hidden or not consistently within a turn."""
         profile = scenario.child_profile
+        self.style = profile.expression_style or ExpressionStyle(params["expression_style_default"])
+        baseline = round(min(1.0, params["arousal_base"] + params["arousal_reluctance_weight"] * profile.reluctance), 6)
         self.state = EngineState(
             reluctance=profile.reluctance,
             verbosity=profile.verbal_skills,
             acquiescence=profile.suggestibility,
             concealment=scenario.deception.strength if scenario.deception else 0.0,
+            arousal=baseline,
+            arousal_baseline=baseline,
         )
+        self._phase_violation = False
         self._orders: dict[EventKind, list[InfoUnit]] = {
             EventKind.TARGET: [u for _, u in scenario.target_units()],
             EventKind.NEUTRAL: [u for _, u in scenario.neutral_units()],
@@ -176,8 +189,10 @@ class BehaviorEngine:
 
     # -- public -------------------------------------------------------------
 
-    def decide(self, c: Classification) -> Decision:
+    def decide(self, c: Classification, *, phase_violation: bool = False) -> Decision:
+        """`phase_violation`: the phase tracker flagged this prompt (it raises the child's arousal)."""
         self.state.turn += 1
+        self._phase_violation = phase_violation
         self._hidden = {}
         self._withheld: list[str] = []
         effective = c.type
@@ -648,9 +663,56 @@ class BehaviorEngine:
     # -- delivery (ADR 0002) ---------------------------------------------------
 
     def _with_delivery(self, d: Decision, c: Classification, about_target: bool) -> Decision:
+        """Delivery (ADR 0002) and demeanor (ADR 0003): how the child says it and what its body shows."""
+        self._update_arousal(d, c, about_target)
+        speaks = d.speech_act != SpeechAct.SILENCE
         loads = self._hesitation_loads(d, c, about_target)
-        delivery = make_delivery(loads, self.params, self.delivery_rng, speaks=d.speech_act != SpeechAct.SILENCE)
-        return d.model_copy(update={"delivery": delivery})
+        delivery = make_delivery(loads, self.params, self.delivery_rng, speaks=speaks)
+        motor = self.params["expression_gains"][str(self.style)]["motor"]
+        delivery = express(delivery, self.state.arousal, motor, self.params, self.demeanor_rng, speaks=speaks)
+        demeanor = make_demeanor(
+            self.state.arousal, delivery.loads, self.style, self.params, self.demeanor_rng,
+            sociable=d.speech_act in (SpeechAct.SMALL_TALK, SpeechAct.ACKNOWLEDGE),
+        )
+        return d.model_copy(update={"delivery": delivery, "demeanor": demeanor})
+
+    def _update_arousal(self, d: Decision, c: Classification, about_target: bool) -> None:
+        """Arousal: back toward the baseline, then up with the target event and pressure, down with
+        support. A hidden fact (lie, omission) weighs like the truth it hides; the lie itself adds
+        only a weak rise, so that the body does not give it away (ADR 0003)."""
+        st, p = self.state, self.params
+        rise, drop = p["arousal_rise"], p["arousal_drop"]
+        a = st.arousal_baseline + (st.arousal - st.arousal_baseline) * (1.0 - p["arousal_decay"])
+        t = d.effective_type or c.type
+        hint = c.phase_hints[0] if c.phase_hints else None
+        ups: list[float] = []
+        if t == QuestionType.SUPPORT:
+            a -= drop["support"]
+        elif t == QuestionType.INVITATION and hint == "rapport":
+            a -= drop["rapport"]
+        elif t in (QuestionType.INVITATION, QuestionType.CUED_INVITATION) and hint == "narrative_practice":
+            a -= drop["narrative_practice"]
+        elif t in (QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING):
+            ups.append(rise["pressure_target"] if about_target else rise["pressure"])
+        if self._phase_violation:
+            ups.append(rise["phase_violation"])
+        ids = [au.id for au in d.allowed_units if not au.contaminated and not au.lie] + list(d.withheld)
+        if d.lie is not None:
+            ids.append(d.lie.protected)
+        units = [u for i in ids if (u := self.scenario.unit(i)) is not None and self.scenario.is_target_unit(i)]
+        if any(u.centrality == Centrality.CENTRAL for u in units):
+            ups.append(rise["target_central"])
+        elif units or (
+            about_target
+            and d.speech_act in (SpeechAct.DENY, SpeechAct.DONT_KNOW, SpeechAct.ACQUIESCE, SpeechAct.RELUCTANT)
+        ):
+            ups.append(rise["target_other"])
+        if d.lie is not None or d.withheld:
+            ups.append(rise["lie"])
+        a = max(0.0, min(1.0, a))
+        for up in ups:
+            a += up * (1.0 - a)
+        st.arousal = round(min(1.0, max(0.0, a)), 6)
 
     def _hesitation_loads(self, d: Decision, c: Classification, about_target: bool) -> dict[HesitationCause, float]:
         p, st = self.params, self.state
@@ -691,6 +753,8 @@ class BehaviorEngine:
         else:
             weight = 0.0
         affect = weight * (p["affect_base"] + (1 - p["affect_base"]) * st.reluctance)
+        # Arousal (ADR 0003) adds to the emotional load, even on neutral topics.
+        affect = 1.0 - (1.0 - affect) * (1.0 - p["arousal_affect_weight"] * st.arousal)
         # Confusion: hard-to-parse questions.
         conf = p["confusion_load"]
         confusion = 0.0

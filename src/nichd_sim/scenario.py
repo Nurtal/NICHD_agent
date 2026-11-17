@@ -82,12 +82,25 @@ class Segment(_Strict):
     units: list[InfoUnit] = Field(min_length=1)
 
 
+class ExpressionStyle(StrEnum):
+    """How the child shows emotion in its body (ADR 0003)."""
+
+    AGITATED = "agitated"
+    """Moves a lot: fidgeting, tension, fast breathing."""
+    FROZEN = "frozen"
+    """Shows little: still, blank gaze, flat voice — even when aroused."""
+    MIXED = "mixed"
+
+
 class ChildProfile(_Strict):
     name: str = Field(min_length=1)
     age: int = Field(ge=4, le=12)
     reluctance: float = Field(ge=0, le=1)
     verbal_skills: float = Field(ge=0, le=1)
     suggestibility: float = Field(ge=0, le=1)
+    expression_style: ExpressionStyle | None = Field(
+        default=None, description="Style d'expression (ADR 0003) ; défaut selon la bande d'âge."
+    )
 
     @property
     def age_band(self) -> AgeBand:

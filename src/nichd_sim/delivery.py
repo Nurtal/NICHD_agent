@@ -53,12 +53,16 @@ class Delivery(BaseModel):
     fillers: int = 0
     """Number of « euh » inserted (the first one opens the reply)."""
     rate: float = 1.0
-    """Relative speech rate (1.0 = normal, lower = slower)."""
+    """Relative speech rate (1.0 = normal, lower = slower, higher = rushed under arousal)."""
     volume: Volume = Volume.NORMAL
     loads: dict[HesitationCause, float] = {}
     """Load (0–1) of each hesitation cause: why the child hesitated."""
     hesitation: float = 0.0
     """Combined hesitation (0–1) the delivery was derived from."""
+    false_starts: int = 0
+    """Restarted openings (« il… il m'a »): stammering (ADR 0003)."""
+    tremor: float = 0.0
+    """Shaking voice (0–1), from emotion only (ADR 0003)."""
 
     @property
     def dominant_cause(self) -> HesitationCause | None:
@@ -74,6 +78,12 @@ class Delivery(BaseModel):
             parts.append(f"{self.fillers} « euh »")
         if self.rate < 0.9:
             parts.append("débit lent")
+        elif self.rate > 1.1:
+            parts.append("débit précipité")
+        if self.false_starts:
+            parts.append(f"{self.false_starts} faux départ(s)")
+        if self.tremor >= TREMOR_AUDIBLE:
+            parts.append("voix tremblante")
         if self.volume != Volume.NORMAL:
             parts.append("voix basse" if self.volume == Volume.LOW else "chuchote")
         causes = sorted(((v, c) for c, v in self.loads.items() if v > 0), reverse=True)
@@ -123,6 +133,36 @@ def make_delivery(loads: Mapping[HesitationCause, float], params, rng: random.Ra
     )
 
 
+TREMOR_AUDIBLE = 0.3
+"""Voice tremor from which it is described (and audible)."""
+
+
+def express(delivery: Delivery, arousal: float, motor: float, params, rng: random.Random, *, speaks: bool = True) -> Delivery:
+    """Add what arousal does to the voice (ADR 0003): rushed rate, false starts, tremor.
+
+    `motor`: how much the child's expression style lets arousal show (low for a frozen child,
+    whose voice stays flat). Draws from the caller's demeanor stream, never the delivery
+    stream, so that the ADR 0002 draws stay aligned. Fixed number of draws per call."""
+    p = params
+    thr = p["delivery_fast_arousal"]
+    rate = delivery.rate
+    if arousal > thr:
+        rate *= 1.0 + p["delivery_rate_rise"] * motor * (arousal - thr) / (1.0 - thr)
+    loads = dict(delivery.loads)
+    stammer = combine(loads, p["false_start_weights"]) * (0.5 + 0.5 * motor)
+    draw = _stochastic_round(stammer * p["delivery_max_false_starts"], rng)
+    lo = p["tremor_affect_threshold"]
+    affect = loads.get(HesitationCause.AFFECT, 0.0)
+    tremor = max(0.0, (affect - lo) / (1.0 - lo)) * (0.4 + 0.6 * motor) if affect > lo else 0.0
+    return delivery.model_copy(
+        update={
+            "rate": round(rate, 3),
+            "false_starts": draw if speaks else 0,
+            "tremor": round(min(1.0, tremor), 3),
+        }
+    )
+
+
 # -- speech plan --------------------------------------------------------------
 
 
@@ -141,6 +181,8 @@ class SpeechChunk(BaseModel):
 
 FILLER = "euh…"
 FILLER_GAP_MS = 250
+FALSE_START_GAP_MS = 200
+"""Short break after a restarted opening (« il… [0,2 s] il m'a »)."""
 """Short gap after a filler, so that it does not run into the next word."""
 WORDS_PER_PAUSE = 4
 """At most one internal pause per this many words: « je [1 s] sais pas » does not sound like a child."""
@@ -190,6 +232,7 @@ def plan_speech(text: str, delivery: Delivery | None) -> list[SpeechChunk]:
     if not text or not any(ch.isalnum() for ch in text):  # silence act ("…")
         return plan
     fillers = delivery.fillers
+    false_starts = delivery.false_starts
     if fillers:
         plan += [SpeechChunk(kind=ChunkKind.SPEECH, text=FILLER), SpeechChunk(kind=ChunkKind.SILENCE, ms=FILLER_GAP_MS)]
         fillers -= 1
@@ -201,8 +244,19 @@ def plan_speech(text: str, delivery: Delivery | None) -> list[SpeechChunk]:
             if fillers:
                 plan += [SpeechChunk(kind=ChunkKind.SPEECH, text=FILLER), SpeechChunk(kind=ChunkKind.SILENCE, ms=FILLER_GAP_MS)]
                 fillers -= 1
+        if false_starts and len(piece.split()) >= 2:
+            plan += _false_start(piece)
+            false_starts -= 1
         plan.append(SpeechChunk(kind=ChunkKind.SPEECH, text=piece))
     return plan
+
+
+def _false_start(piece: str) -> list[SpeechChunk]:
+    """The opening word said, broken off, then the piece starts again: « il… [0,2 s] il m'a »."""
+    first = re.sub(r"[,;:.…!?]+$", "", piece.split()[0])
+    if not any(ch.isalnum() for ch in first):
+        return []
+    return [SpeechChunk(kind=ChunkKind.SPEECH, text=f"{first}…"), SpeechChunk(kind=ChunkKind.SILENCE, ms=FALSE_START_GAP_MS)]
 
 
 def render_plan(plan: list[SpeechChunk]) -> str:
