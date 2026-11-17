@@ -269,3 +269,64 @@ def test_describe_mentions_the_new_voice_features():
     d = Delivery(onset_ms=500, rate=1.2, false_starts=1, tremor=0.5)
     text = d.describe()
     assert "débit précipité" in text and "faux départ" in text and "voix tremblante" in text
+
+
+# -- stage direction (PR 3) -------------------------------------------------------
+
+from nichd_sim.demeanor import Demeanor, ShownCue, stage_direction  # noqa: E402
+from nichd_sim.delivery import Volume  # noqa: E402
+from nichd_sim.feedback import render_text  # noqa: E402
+
+
+def test_stage_direction_reads_body_then_voice():
+    d = Demeanor(cues=[ShownCue(cue=Cue.GAZE_DOWN, intensity=Intensity.CLEAR),
+                       ShownCue(cue=Cue.FIDGET_LEGS, intensity=Intensity.CLEAR)])
+    voice = Delivery(onset_ms=3000, volume=Volume.LOW, fillers=1)
+    assert stage_direction(d, voice) == (
+        "Les yeux baissés et les jambes qui s'agitent — après un long silence, à voix basse, en hésitant"
+    )
+
+
+def test_stage_direction_for_a_silence_and_for_old_logs():
+    d = Demeanor(cues=[ShownCue(cue=Cue.GAZE_BLANK, intensity=Intensity.STRONG)])
+    assert stage_direction(d, Delivery(onset_ms=4000), silent=True) == "Le regard vide, perdu au loin — sans un mot"
+    assert stage_direction(None, Delivery(onset_ms=4000)) == ""
+
+
+def test_stage_direction_never_names_a_cause_or_a_lie():
+    """The learner reads the body, not the engine's reasons."""
+    for lie, truth in lie_truth_pairs(seeds=range(3)):
+        for d in (lie, truth):
+            text = stage_direction(d.demeanor, d.delivery).lower()
+            assert not any(w in text for w in ("mens", "mémoire", "émotion", "confusion", "activation"))
+
+
+def test_every_cue_has_three_gender_neutral_phrasings():
+    from nichd_sim.demeanor import _PHRASES
+    assert set(_PHRASES) == set(Cue)
+    for phrases in _PHRASES.values():
+        assert len(phrases) == 3 and all(p and p == p.strip() for p in phrases)
+        # no masculine-only participles agreeing with the child
+        assert not any(w in p.split() for p in phrases for w in ("figé", "absent", "replié", "recroquevillé", "silencieux"))
+
+
+def test_feedback_transcript_carries_the_stage_direction():
+    s, clf, _ = make_session(load_scenario(S02), seed=1)
+    for i, c in enumerate(SCRIPT[:6]):
+        ask(s, clf, f"u{i}", c)
+    fb = s.end().feedback
+    assert all(line.stage_direction for line in fb.transcript)
+    assert f"({fb.transcript[0].stage_direction})" in render_text(fb)
+
+
+def test_one_word_reply_is_not_said_stammering():
+    d = Demeanor(cues=[ShownCue(cue=Cue.GAZE_DOWN, intensity=Intensity.SLIGHT)])
+    voice = Delivery(onset_ms=500, false_starts=1)
+    assert "bafouillant" not in stage_direction(d, voice, text="D'accord.")
+    assert "bafouillant" in stage_direction(d, voice, text="il m'a attrapé")
+
+
+def test_low_shaking_voice_is_said_once():
+    d = Demeanor(cues=[ShownCue(cue=Cue.GAZE_DOWN, intensity=Intensity.SLIGHT)])
+    text = stage_direction(d, Delivery(onset_ms=500, volume=Volume.LOW, tremor=0.6))
+    assert "d'une voix basse et tremblante" in text and "à voix basse" not in text

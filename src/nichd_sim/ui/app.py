@@ -13,6 +13,8 @@ import streamlit as st
 
 from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
+from nichd_sim.demeanor import stage_direction
+from nichd_sim.engine import SpeechAct
 from nichd_sim.evaluation import load_scenarios
 from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS, LLMRephraser, LLMSummaryMatcher
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
@@ -177,7 +179,8 @@ def show_feedback(fb):
         st.markdown(
             f"{chip(TYPE_LABELS[line.question_type], TYPE_COLORS[line.question_type])} "
             f"<small>{PHASE_LABELS[line.phase]}</small> **{line.turn}.** {line.interviewer} {flags}<br>"
-            f"&nbsp;&nbsp;&nbsp;↳ <i>{line.child}</i>",
+            f"&nbsp;&nbsp;&nbsp;↳ {'<small>(' + line.stage_direction + ')</small> ' if line.stage_direction else ''}"
+            f"<i>{line.child}</i>",
             unsafe_allow_html=True,
         )
 
@@ -217,6 +220,8 @@ with chat_col:
         with st.chat_message("user"):
             st.write(t["interviewer"])
         with st.chat_message("assistant", avatar="🧒"):
+            if t.get("stage"):
+                st.caption(f"*{t['stage']}*")
             st.write(t["child"])
         for n in t["notices"]:
             st.info(n)
@@ -234,6 +239,10 @@ with chat_col:
                 {
                     "interviewer": result.classification.clean_text or prompt,
                     "child": result.response,
+                    "stage": stage_direction(
+                        result.decision.demeanor, result.decision.delivery,
+                        silent=result.decision.speech_act == SpeechAct.SILENCE, text=result.response,
+                    ),
                     "notices": result.notices,
                 }
             )
@@ -255,6 +264,7 @@ if trainer_col is not None:
         st.progress(min(1.0, state.reluctance), text=f"Réticence {state.reluctance:.2f}")
         st.progress(min(1.0, state.verbosity), text=f"Verbosité {state.verbosity:.2f}")
         st.progress(min(1.0, state.acquiescence), text=f"Acquiescement {state.acquiescence:.2f}")
+        st.progress(min(1.0, state.arousal), text=f"Activation {state.arousal:.2f} (base {state.arousal_baseline:.2f})")
         if not state.disclosed:
             st.caption(f"Pas encore de dévoilement — pression {state.disclosure_pressure:.1f}")
         if session.log.turns:
@@ -270,6 +280,10 @@ if trainer_col is not None:
             if c.suggested_proposition:
                 st.caption(f"Proposition suggérée : {c.suggested_proposition}")
             st.caption(f"Décision : {d.speech_act} — {d.reason}")
+            if d.delivery is not None:
+                st.caption(f"Diction : {d.delivery.describe()}")
+            if d.demeanor is not None:
+                st.caption(f"Corps : {d.demeanor.describe()}")
             if last.fallback_used:
                 st.caption("Filtre de sortie : réponse de repli utilisée.")
             st.caption(f"Latence : {last.latency_s.get('total', 0):.1f} s")

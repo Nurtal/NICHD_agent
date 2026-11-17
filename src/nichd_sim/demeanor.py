@@ -16,7 +16,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from nichd_sim.delivery import HesitationCause
+from nichd_sim.delivery import TREMOR_AUDIBLE, Delivery, HesitationCause, Volume
 from nichd_sim.scenario import ExpressionStyle
 
 
@@ -223,3 +223,84 @@ def make_demeanor(
     cues = [ShownCue(cue=gaze, intensity=_intensity(gaze_level, bounds))]
     cues += [sc for _, sc in shown[: p["demeanor_max_cues"]]]
     return Demeanor(cues=cues, arousal=round(a, 3), style=style)
+
+
+# -- stage direction ------------------------------------------------------------
+# Gender-neutral French (the profile has no gender): noun phrases, present participles and
+# epicene adjectives only. One phrasing per cue and intensity: (slight, clear, strong).
+
+_PHRASES: dict[Cue, tuple[str, str, str]] = {
+    Cue.GAZE_STEADY: ("jetant un œil vers vous", "le regard posé sur vous", "vous regardant bien en face"),
+    Cue.GAZE_BLANK: ("le regard un peu fixe", "le regard fixe, dans le vide", "le regard vide, perdu au loin"),
+    Cue.GAZE_AVERTED: ("le regard qui s'échappe", "le regard fuyant", "évitant votre regard"),
+    Cue.GAZE_DOWN: ("les yeux un peu baissés", "les yeux baissés", "le regard rivé au sol"),
+    Cue.FIDGET_LEGS: ("un pied qui bouge", "les jambes qui s'agitent", "les jambes qui s'agitent sans arrêt"),
+    Cue.FIDGET_HANDS: ("les doigts qui remuent", "les mains qui s'agitent", "les mains qui ne tiennent pas en place"),
+    Cue.FIDGET_OBJECT: ("touchant sa manche", "tripotant sa manche", "tirant sans arrêt sur sa manche"),
+    Cue.TENSION_SHOULDERS: ("les épaules un peu raides", "les épaules crispées", "les épaules remontées, crispées"),
+    Cue.TENSION_FISTS: ("les mains serrées", "les poings serrés", "les poings serrés très fort"),
+    Cue.TENSION_JAW: ("la mâchoire un peu serrée", "la mâchoire serrée", "les dents serrées"),
+    Cue.BREATHING_FAST: ("la respiration un peu courte", "la respiration rapide", "la respiration rapide et saccadée"),
+    Cue.BREATHING_HELD: ("retenant un peu son souffle", "retenant son souffle", "le souffle bloqué"),
+    Cue.TREMOR_HANDS: ("les mains qui tremblent un peu", "les mains qui tremblent", "les mains tremblantes"),
+    Cue.TREMOR_CHIN: ("le menton qui tremble un peu", "le menton qui tremble", "le menton tremblant"),
+    Cue.WITHDRAWAL_CURLED: ("le dos voûté", "les genoux ramenés contre soi", "les genoux serrés contre la poitrine"),
+    Cue.WITHDRAWAL_ARMS: ("les bras croisés", "les bras serrés contre soi", "les bras serrés autour du corps"),
+    Cue.FREEZE_STILL: ("presque immobile", "immobile", "immobile, sans un geste"),
+    Cue.FREEZE_ABSENT: ("l'air ailleurs", "le visage sans expression", "le visage vide, comme ailleurs"),
+    Cue.TEARS_WET_EYES: ("les yeux qui brillent", "les yeux humides", "les yeux pleins de larmes"),
+    Cue.TEARS_CRYING: ("une larme qui coule", "en larmes", "en pleurs, le visage dans les mains"),
+    Cue.EASE_RELAXED: ("l'air tranquille", "l'air détendu", "très à l'aise"),
+    Cue.EASE_SMILE: ("un petit sourire", "en souriant", "avec un grand sourire"),
+}
+
+
+def _voice(delivery: Delivery, text: str | None) -> list[str]:
+    """What the learner hears, in words (no causes). `text`: the reply, when known — a one-word
+    reply has no false start (see `plan_speech`)."""
+    out = []
+    if delivery.onset_ms >= 2500:
+        out.append("après un long silence")
+    elif delivery.onset_ms >= 1500:
+        out.append("après un silence")
+    shaking = delivery.tremor >= TREMOR_AUDIBLE
+    if delivery.volume == Volume.WHISPER:
+        out.append("en chuchotant")
+    if delivery.volume == Volume.LOW:
+        out.append("d'une voix basse et tremblante" if shaking else "à voix basse")
+    elif shaking:
+        out.append("d'une voix tremblante")
+    if delivery.rate > 1.1:
+        out.append("très vite")
+    elif delivery.rate < 0.85:
+        out.append("lentement")
+    stammers = delivery.false_starts and (text is None or len(text.split()) >= 2)
+    if stammers:
+        out.append("en bafouillant")
+    elif delivery.fillers or len(delivery.pauses_ms) >= 2:
+        out.append("en hésitant")
+    return out
+
+
+def _join(parts: list[str]) -> str:
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " et " + parts[-1]
+
+
+def stage_direction(
+    demeanor: Demeanor | None, delivery: Delivery | None = None, *, silent: bool = False, text: str | None = None
+) -> str:
+    """The stage direction the learner reads before the child's words, e.g.
+    « Les yeux baissés, les jambes qui s'agitent — après un long silence, à voix basse ».
+
+    A rendering of the engine's decision, never generated (ADR 0003). Empty for logs older than
+    format 3."""
+    if demeanor is None:
+        return ""
+    body = [_PHRASES[c.cue][INTENSITY_ORDER[c.intensity]] for c in demeanor.cues]
+    voice = [] if delivery is None or silent else _voice(delivery, text)
+    if silent:
+        voice = ["sans un mot"]
+    text = _join(body) if body else ""
+    if voice:
+        text = f"{text} — {', '.join(voice)}" if text else ", ".join(voice)
+    return text[:1].upper() + text[1:]

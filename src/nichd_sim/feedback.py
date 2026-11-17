@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Protocol
 from pydantic import BaseModel
 
 from nichd_sim.classification import QuestionType
+from nichd_sim.demeanor import stage_direction
+from nichd_sim.engine import SpeechAct
 from nichd_sim.llm import ChatClient, LLMError
 from nichd_sim.metrics import Metrics, compute_metrics
 from nichd_sim.phases import VIOLATION_LABELS, Phase, PhaseViolation
@@ -152,6 +154,8 @@ class TranscriptLine(BaseModel):
     interviewer: str
     child: str
     flags: list[str] = []
+    stage_direction: str = ""
+    """Tone and posture before the child's words (ADR 0003)."""
 
 
 class FlaggedTurn(BaseModel):
@@ -232,7 +236,12 @@ def build_feedback(
             if suggestion:
                 rephrasings.append(Rephrasing(turn=t.index, question=heard, question_type=qtype, suggestion=suggestion))
         transcript.append(
-            TranscriptLine(turn=t.index, phase=t.asked_in, question_type=qtype, interviewer=heard, child=t.response, flags=flags)
+            TranscriptLine(
+                turn=t.index, phase=t.asked_in, question_type=qtype, interviewer=heard, child=t.response, flags=flags,
+                stage_direction=stage_direction(
+                    t.decision.demeanor, t.decision.delivery, silent=t.decision.speech_act == SpeechAct.SILENCE, text=t.response
+                ),
+            )
         )
         child_said.append(t.response)
     visited: list[Phase] = []
@@ -309,5 +318,6 @@ def render_text(report: FeedbackReport) -> str:
     for line in report.transcript:
         flags = f"  [{', '.join(line.flags)}]" if line.flags else ""
         out.append(f"  {line.turn:>2}. ({TYPE_LABELS[line.question_type]}) {line.interviewer}{flags}")
-        out.append(f"      ↳ {line.child}")
+        stage = f"({line.stage_direction}) " if line.stage_direction else ""
+        out.append(f"      ↳ {stage}{line.child}")
     return "\n".join(out)

@@ -9,6 +9,8 @@ from pathlib import Path
 from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
 from nichd_sim.delivery import render_plan
+from nichd_sim.demeanor import stage_direction
+from nichd_sim.engine import SpeechAct
 from nichd_sim.feedback import LLMRephraser, LLMSummaryMatcher, render_text
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
@@ -112,6 +114,8 @@ def play(args: argparse.Namespace) -> int:
             )
             if d.delivery is not None:
                 print(f"  [formateur] diction : {d.delivery.describe()}")
+            if d.demeanor is not None:
+                print(f"  [formateur] corps : {d.demeanor.describe()}")
             if d.lie is not None:
                 print(f"  [formateur] mensonge {d.lie.id} ({d.lie.kind}) sur {d.lie.protected} : {d.lie.value!r}")
             if d.withheld:
@@ -131,7 +135,10 @@ def play(args: argparse.Namespace) -> int:
                     print(f"  [filtre] essai {i + 1} rejeté : {a.forbidden_terms + a.leaked_units + ['manque:' + m for m in a.missing_units] + (['vide'] if a.empty else []) + (['trop long'] if a.too_long else []) + (['contredit la décision'] if a.contradicts else []) + (['emoji'] if a.emoji else [])} — {a.text!r}")
             if turn.fallback_used:
                 print("  [filtre] réponse de repli utilisée")
-        print(f"{child} > {render_plan(result.speech_plan) if args.trainer else result.response}")
+        d = result.decision
+        stage = stage_direction(d.demeanor, d.delivery, silent=d.speech_act == SpeechAct.SILENCE, text=result.response)
+        stage = f"({stage}) " if stage else ""
+        print(f"{child} > {stage}{render_plan(result.speech_plan) if args.trainer else result.response}")
         if speaker is not None:
             from nichd_sim.voice import render_speech
 
