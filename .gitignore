@@ -7,6 +7,7 @@ sessions/
 # vidéos de démo (trop lourdes pour le dépôt, gardées en local)
 *.mp4
 audio/
+avatar_sessions/
 experiments/voices/.envs/
 experiments/voices/results/audio/
 experiments/voices/results/replies/audio/

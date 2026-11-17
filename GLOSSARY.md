@@ -144,6 +144,16 @@ D'après Lamb et al.
 | Style d'expression | `expression_style` | Trait de profil : `agitated` (agité), `frozen` (figé : peu de signes visibles malgré une activation haute), `mixed` (mixte). Défaut selon la bande d'âge. |
 | Didascalie | `stage_direction` | Phrase qui décrit le ton et la posture de l'enfant avant sa réponse. Rendue par gabarit à partir du comportement non verbal et de la diction ; jamais écrite par le LLM. |
 
+## Avatar (ADR 0004)
+
+| Français | Identifiant | Définition |
+|---|---|---|
+| Prestation | `performance` | Ce que l'enfant fait à un tour, pour un corps qui le joue : mots, chronologie, voix, signes du corps. Sans causes ni éléments internes du moteur. |
+| Contrat de prestation | `performance contract` | Format JSON versionné de la prestation (`PERFORMANCE_FORMAT`), seule interface entre le moteur et un corps (avatar web, VR). |
+| Chronologie | `timeline` | Segments parlés et silences d'une réponse, en millisecondes : mesurés sur l'audio (`audio`) ou estimés (`estimated`). |
+| Corps | `body` | Ce qui joue la prestation : aujourd'hui l'avatar three.js (`avatar/`), demain un avatar VR. |
+| Marqueur | `placeholder cue` | Rendu provisoire d'un signe par une couleur ou un mouvement simple (halo, membre teinté), accompagné d'une légende. |
+
 ## LLM et contrôle du contenu
 
 | Français | Identifiant | Définition |

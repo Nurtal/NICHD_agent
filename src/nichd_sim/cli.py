@@ -200,6 +200,71 @@ def render_audio_cmd(args: argparse.Namespace) -> int:
     return 0
 
 
+def export_avatar_cmd(args: argparse.Namespace) -> int:
+    """Session log → performance.json (+ one WAV per reply with --voice), for the avatar (ADR 0004)."""
+    from nichd_sim.performance import build_session, write_session
+
+    try:
+        log = load_log(args.log)
+    except (ReplayError, OSError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    try:
+        profile = find_scenario(log, args.scenarios_dir).child_profile
+        name, age = profile.name, profile.age
+    except ReplayError as e:
+        print(f"{e} — prénom et âge inconnus", file=sys.stderr)
+        name, age = "Enfant", 0
+    out = Path(args.output or Path("avatar_sessions") / log.session_id)
+    speaker = None
+    if args.voice:
+        from nichd_sim.voice import make_speaker
+
+        try:
+            speaker = make_speaker(args.speaker)
+        except (ValueError, RuntimeError) as e:
+            print(f"voix indisponible ({e}) : chronologie estimée", file=sys.stderr)
+    perf = build_session(log, name, age, speaker=speaker, out_dir=out)
+    path = write_session(perf, out)
+    voiced = f", {len(perf.turns)} fichier(s) audio" if speaker is not None else " (chronologie estimée, sans audio)"
+    print(f"{path}{voiced}")
+    print(f"Lancer l'avatar : nichd-sim avatar {out}")
+    return 0
+
+
+AVATAR_DIR = Path(__file__).resolve().parents[2] / "avatar"
+
+
+def avatar_cmd(args: argparse.Namespace) -> int:
+    """Serve the avatar (avatar/) and an exported session (/session/) on localhost."""
+    import functools
+    import http.server
+
+    session_dir = Path(args.session).resolve()
+    if not (session_dir / "performance.json").exists():
+        print(f"pas de performance.json dans {session_dir} (voir nichd-sim export-avatar)", file=sys.stderr)
+        return 2
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def translate_path(self, path):
+            clean = path.split("?", 1)[0].split("#", 1)[0]
+            if clean.startswith("/session/"):
+                return str(session_dir / clean[len("/session/"):])
+            return super().translate_path(path)
+
+        def log_message(self, *a):
+            pass
+
+    handler = functools.partial(Handler, directory=str(AVATAR_DIR))
+    with http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler) as httpd:
+        print(f"Avatar : http://127.0.0.1:{args.port}/  (Ctrl+C pour arrêter)")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass
+    return 0
+
+
 def transcribe_cmd(args: argparse.Namespace) -> int:
     from nichd_sim.voice import Audio, VoiceError
     from nichd_sim.voice.listener import WhisperListener
@@ -379,6 +444,19 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--speaker", default=None,
                    help="voix : kokoro (enfant), kokoro-adulte, tone (sans modèle) ; défaut : kokoro si installé")
     a.set_defaults(func=render_audio_cmd)
+
+    x = sub.add_parser("export-avatar", help="exporter un journal pour l'avatar : performance.json (+ audio)")
+    x.add_argument("log", help="journal JSON de session")
+    x.add_argument("-o", "--output", help="dossier de sortie (défaut : avatar_sessions/<session>)")
+    x.add_argument("--voice", action="store_true", help="rendre aussi l'audio de chaque réponse")
+    x.add_argument("--speaker", default=None, help="voix : kokoro (défaut si installé), tone…")
+    x.add_argument("--scenarios-dir", default="scenarios")
+    x.set_defaults(func=export_avatar_cmd)
+
+    av = sub.add_parser("avatar", help="servir l'avatar 3D pour une session exportée")
+    av.add_argument("session", help="dossier produit par export-avatar")
+    av.add_argument("--port", type=int, default=8600)
+    av.set_defaults(func=avatar_cmd)
 
     r = sub.add_parser("replay", help="rejouer une session depuis son journal, sans LLM")
     r.add_argument("log", help="journal JSON de session")
