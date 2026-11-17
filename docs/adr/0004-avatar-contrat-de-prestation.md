@@ -46,6 +46,15 @@ Le choix du moteur de rendu VR (WebXR, Unity, Unreal) est lointain et le restera
    - On séparera le jour où un moteur VR natif sera choisi : le contrat sera alors la seule interface.
    - Le client n'interprète que le contrat.
 
+## Ajout : carte du système en arrière-plan (canal de débogage)
+
+Pour les démonstrations et le débogage, `export-avatar --debug-map` produit à côté du contrat (`debug/`) la
+carte du système de chaque tour, en 3 étapes : classification, décision, fin. L'avatar peut l'afficher derrière
+l'enfant (bouton « Carte », `?map=1`).
+
+Ces fichiers montrent les rouages du moteur, mensonges compris. Ils **ne font pas partie du contrat** : le
+`performance.json` est identique avec ou sans cette option, et un corps de formation ne les reçoit pas.
+
 ## Jalons suivants
 
 1. **Direct** : un serveur WebSocket autour de `Session.turn(on_step=…)` ; l'avatar répond pendant qu'on lui

@@ -18,10 +18,9 @@ from html import escape
 from nichd_sim.classification import QuestionType
 from nichd_sim.demeanor import CUE_LABELS, stage_direction
 from nichd_sim.engine import Decision, EngineState, SpeechAct
-from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS
+from nichd_sim.feedback import PHASE_LABELS, SPEECH_ACT_LABELS, TYPE_LABELS
 from nichd_sim.phases import Phase
 from nichd_sim.session import TurnRecord
-from nichd_sim.ui.engine_view import SPEECH_ACT_LABELS
 
 LEVELS = {"idle": 0, "classify": 1, "classified": 2, "decided": 3, "realize": 4, "filtered": 5, "fallback": 6, "done": 7}
 
@@ -425,3 +424,43 @@ def render_svg(s: FlowState, fresh: set[str] | None = None) -> str:
         out.append(f"<text class='s' x='856' y='{186 + 66}'>{escape(_cut(d.reason, 52))}</text>")
     out.append("</svg>")
     return "".join(out)
+
+
+# -- export (avatar background, ADR 0004 debug channel) -----------------------------
+
+STAGES = ("classification", "decision", "fin")
+
+
+def turn_stages(turn: TurnRecord, violations: list, deception: bool) -> list[tuple[FlowState, set[str]]]:
+    """Three snapshots of a logged turn — classified, decided, done — each with the nodes that
+    light up at that step (animated when the image is shown)."""
+    full = FlowState.from_record(turn, violations, deception)
+    classified = FlowState(level=LEVELS["classified"], utterance=full.utterance,
+                           classification=full.classification, deception=deception)
+    decided = FlowState(level=LEVELS["decided"], utterance=full.utterance, classification=full.classification,
+                        decision=full.decision, phase=full.phase, violations=full.violations,
+                        state_before=full.state_before, state_after=full.state_after, deception=deception)
+    out, shown = [], set()
+    for s in (classified, decided, full):
+        lit = set(lit_nodes(s))
+        out.append((s, lit - shown))
+        shown |= lit
+    return out
+
+
+def write_session_maps(log, deception: bool, out_dir) -> dict[str, list[str]]:
+    """`out_dir/map_NNN_K.svg` for every turn and step; returns {turn: [file names]}, which the
+    caller writes as maps.json. Engine internals: a debug channel, never part of the contract."""
+    from pathlib import Path
+
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    index: dict[str, list[str]] = {}
+    for t in log.turns:
+        names = []
+        for k, (state, fresh) in enumerate(turn_stages(t, log.phase_violations, deception), 1):
+            name = f"map_{t.index:03d}_{k}.svg"
+            (out / name).write_text(render_svg(state, fresh), encoding="utf-8")
+            names.append(name)
+        index[str(t.index)] = names
+    return index
