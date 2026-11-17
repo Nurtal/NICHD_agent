@@ -107,3 +107,19 @@ def test_profile_adjustments_apply_to_the_next_interview(app):
     assert not at.exception, at.exception
     profile = at.session_state["session"].scenario.child_profile
     assert profile.reluctance == 0.95 and profile.expression_style == "frozen"
+
+
+def test_system_map_lights_the_path_of_the_turn(app):
+    at = app
+    button(at, "Nouvel entretien").click().run()
+    at.segmented_control(key="view").set_value("Graphe du système").run()
+    assert not at.exception, at.exception
+    at.chat_input(key="graph_input").set_value("[sug@faits:hors=il avait un couteau] Il avait un couteau ?").run()
+    assert not at.exception, at.exception
+    assert at.segmented_control(key="view").value == "Graphe du système"
+    import base64
+    import re
+    bodies = " ".join(h.proto.body for h in at.get("html"))
+    svg = " ".join(base64.b64decode(m).decode() for m in re.findall(r"base64,([A-Za-z0-9+/=]+)", bodies))
+    assert "MOTEUR DE COMPORTEMENT" in svg and "Réalisateur (LLM)" in svg
+    assert "class='n chip on" in svg  # the suggestive rule lit up
