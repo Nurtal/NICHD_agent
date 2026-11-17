@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voix de l'enfant — écoute à l'aveugle</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1d1d1b; --muted:#6b6a65; --line:#dcd9d0; --accent:#2f5d8a; --card:#ffffff; --pick:#e6eef8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#171716; --fg:#ecebe6; --muted:#a3a19a; --line:#3a3936; --accent:#8fb6dd; --card:#201f1d; --pick:#22303f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 80px; }
+  h1 { font-size:1.35rem; margin:0 0 4px; }
+  .muted { color:var(--muted); font-size:.92rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:16px; }
+  .text { font-size:1.15rem; margin:4px 0 12px; }
+  .clips { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:10px; }
+  .clip { border:1px solid var(--line); border-radius:8px; padding:10px; }
+  .clip.pick { background:var(--pick); border-color:var(--accent); }
+  .clip h3 { margin:0; font-size:.95rem; display:flex; justify-content:space-between; align-items:center; }
+  audio { width:100%; margin:6px 0; }
+  .row { display:flex; align-items:center; gap:4px; margin:3px 0; font-size:.88rem; flex-wrap:wrap; }
+  .row span.l { width:62px; color:var(--muted); }
+  .row label { border:1px solid var(--line); border-radius:5px; padding:1px 5px; cursor:pointer; }
+  .row input { margin:0 3px 0 0; }
+  select, input[type=text] { font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }
+  button { background:var(--accent); color:var(--bg); border:0; border-radius:6px; padding:9px 16px; font-size:1rem; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:default; }
+  .bar { position:sticky; top:0; background:var(--bg); padding:10px 0; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:center; flex-wrap:wrap; z-index:2; }
+  progress { flex:1; min-width:120px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Voix de l'enfant — écoute à l'aveugle</h1>
+  <p class="muted">Pour chaque réponse, plusieurs voix disent le même texte dans un ordre aléatoire, sans nom de modèle.
+    Notez chaque voix (1 = très mauvais, 5 = excellent) et choisissez votre préférée. Écoutez au casque si possible.</p>
+  <div class="card">
+    <div class="row"><span class="l">Votre nom</span><input id="who" type="text" placeholder="facultatif"></div>
+    <p class="muted">Naturel : est-ce qu'on croirait une vraie voix ? · Fluidité : le débit coule-t-il, sans coupure ni à-coup ?
+      · Âge perçu : quel âge donneriez-vous à cette voix ?</p>
+  </div>
+  <div class="bar"><progress id="prog" value="0" max="1"></progress><span id="count" class="muted"></span>
+    <button id="save">Enregistrer mes notes</button><span id="status" class="muted"></span></div>
+  <div id="groups"></div>
+</main>
+<script>
+const AGES = ["moins de 6 ans", "6–8 ans", "9–12 ans", "adolescent", "adulte"];
+const KEY = "nichd-voix-v2";
+let tasks, state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { state = {}; }
+
+function shuffle(a, seed) {
+  let s = seed;
+  const r = () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} progress(); }
+function progress() {
+  const total = tasks.groups.reduce((n, g) => n + g.clips.length, 0);
+  const done = Object.values(state.ratings || {}).filter((r) => r.naturel && r.fluidite && r.age).length;
+  document.getElementById("prog").max = total;
+  document.getElementById("prog").value = done;
+  document.getElementById("count").textContent = `${done} / ${total} voix notées`;
+}
+function scale(name, clip) {
+  const cur = (state.ratings?.[clip] || {})[name];
+  return [1, 2, 3, 4, 5].map((v) =>
+    `<label><input type="radio" name="${name}-${clip}" value="${v}" ${cur == v ? "checked" : ""}>${v}</label>`).join("");
+}
+function render() {
+  state.seed ??= Math.floor(Math.random() * 1e9);
+  state.ratings ??= {};
+  state.picks ??= {};
+  const root = document.getElementById("groups");
+  root.innerHTML = "";
+  tasks.groups.forEach((g, gi) => {
+    const order = shuffle(g.clips.slice(), state.seed + gi);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<div class="muted">Réponse ${gi + 1} / ${tasks.groups.length}</div><div class="text">« ${g.text} »</div>
+      <div class="clips">${order.map((c, k) => `
+        <div class="clip ${state.picks[g.id] === c ? "pick" : ""}" data-clip="${c}">
+          <h3>Voix ${String.fromCharCode(65 + k)} <label><input type="radio" name="pick-${g.id}" value="${c}"
+            ${state.picks[g.id] === c ? "checked" : ""}> préférée</label></h3>
+          <audio controls preload="none" src="clips/${c}.wav"></audio>
+          <div class="row"><span class="l">Naturel</span>${scale("naturel", c)}</div>
+          <div class="row"><span class="l">Fluidité</span>${scale("fluidite", c)}</div>
+          <div class="row"><span class="l">Âge</span><select name="age-${c}"><option value="">—</option>
+            ${AGES.map((a) => `<option ${(state.ratings[c] || {}).age === a ? "selected" : ""}>${a}</option>`).join("")}</select></div>
+        </div>`).join("")}</div>`;
+    root.appendChild(card);
+  });
+  root.addEventListener("change", (e) => {
+    const t = e.target;
+    const [kind, ...rest] = t.name.split("-");
+    const id = rest.join("-");
+    if (kind === "pick") {
+      state.picks[id] = t.value;
+      t.closest(".clips").querySelectorAll(".clip").forEach((el) => el.classList.toggle("pick", el.dataset.clip === t.value));
+    } else {
+      state.ratings[id] = { ...(state.ratings[id] || {}), [kind]: kind === "age" ? t.value : Number(t.value) };
+    }
+    persist();
+  });
+  document.getElementById("who").value = state.listener || "";
+  document.getElementById("who").oninput = (e) => { state.listener = e.target.value; persist(); };
+  progress();
+}
+document.getElementById("save").onclick = async () => {
+  const status = document.getElementById("status");
+  try {
+    const r = await fetch("save", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...state, saved_at: new Date().toISOString(), version: tasks.version }) });
+    const j = await r.json();
+    status.textContent = `Enregistré (${j.saved})`;
+  } catch (e) {
+    status.textContent = "Échec de l'enregistrement : vos notes restent dans ce navigateur.";
+  }
+};
+fetch("tasks.json").then((r) => r.json()).then((t) => { tasks = t; render(); });
+</script>
+</body>
+</html>

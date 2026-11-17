@@ -1,6 +1,7 @@
 # Évaluations
 
 - [Ablation : enfant hybride vs enfant 100 % LLM](ablation-hybride-vs-llm.md) : 8 modèles locaux de 6 familles, 504 entretiens scriptés identiques. L'hybride ne laisse sortir aucun fait central trop tôt, quel que soit le modèle. Le LLM seul en laisse sortir dans 10 % à 100 % des entretiens selon le modèle (55 % en moyenne). Seul `gemma4:31b` approche l'hybride, mais il est mal calibré sur les suggestions et instable selon la consigne. L'hybride suit le profil de l'enfant (réticence ρ = +0,94, suggestibilité ρ = +0,94) avec un comportement identique d'un modèle à l'autre.
+- [Voix de l'enfant v2](voix-v2.md) : 7 moteurs de synthèse, clonage sur références ouvertes ou synthétiques, assemblage plus naturel. Qwen3-TTS, Fish S2 Pro et Higgs sont les plus propres. Les voix d'enfant conçues avec Qwen donnent une hauteur d'enfant sans décalage artificiel. L'écoute à l'aveugle reste à faire.
 
 ## Classifieur
 

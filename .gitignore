@@ -14,3 +14,13 @@ experiments/voices/results/replies/audio/
 experiments/voice_eval/results/audio/
 experiments/voice_eval/listening/pack/clips/
 experiments/voice_eval/listening/ratings/
+experiments/voices/v2/references/
+experiments/voices/v2/.cache/
+experiments/voices/v2/results/audio/
+experiments/voices/v2/listening/clips/
+experiments/voices/v2/*.log
+experiments/voices/v2/__pycache__/
+experiments/voices/v2/listening/__pycache__/
+experiments/voices/v2/listening/design.json
+experiments/voices/v2/listening/tasks.json
+experiments/voices/v2/listening/ratings/
