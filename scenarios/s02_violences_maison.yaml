@@ -15,6 +15,7 @@ intake_context: >
 child_profile:
   name: Emma
   age: 8
+  voice: fille
   reluctance: 0.65
   verbal_skills: 0.6
   suggestibility: 0.4

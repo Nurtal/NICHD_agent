@@ -21,6 +21,7 @@ experiments/voices/v2/listening/clips/
 experiments/voices/v2/*.log
 experiments/voices/v2/__pycache__/
 experiments/voices/v2/listening/__pycache__/
-experiments/voices/v2/listening/design.json
+experiments/voices/v2/listening/design*.json
 experiments/voices/v2/listening/tasks.json
 experiments/voices/v2/listening/ratings/
+experiments/voices/v2/results/bank/*/

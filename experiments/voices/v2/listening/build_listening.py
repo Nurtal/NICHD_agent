@@ -18,11 +18,11 @@ from pathlib import Path
 HERE = Path(__file__).parent
 V2 = HERE.parent
 sys.path.insert(0, str(V2))
-from common import AUDIO, REPLIES, RES  # noqa: E402
+from common import AUDIO, REPLIES, RES
 
-from nichd_sim.delivery import ChunkKind, SpeechChunk  # noqa: E402
-from nichd_sim.voice import Audio, make_speaker, render_speech  # noqa: E402
-from nichd_sim.voice.render import NATURAL_STYLE  # noqa: E402
+from nichd_sim.delivery import ChunkKind, SpeechChunk
+from nichd_sim.voice import Audio, make_speaker, render_speech
+from nichd_sim.voice.render import NATURAL_STYLE
 
 GROUPS = ["r03", "r05", "r07", "r08", "r09", "r11"]
 CHILD_REFS = ("synth_qwen_girl8", "synth_qwen_boy6", "synth_kokoro_child")

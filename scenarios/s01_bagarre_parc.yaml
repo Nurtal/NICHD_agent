@@ -13,6 +13,7 @@ intake_context: >
 child_profile:
   name: Léo
   age: 5
+  voice: garcon
   reluctance: 0.2
   verbal_skills: 0.4
   suggestibility: 0.8

@@ -16,9 +16,8 @@ import zlib
 import numpy as np
 import soundfile as sf
 import torch
-from qwen_tts import Qwen3TTSModel
-
 from common import AUDIO, REF, REPLIES, add_reference, items, references, write_rows
+from qwen_tts import Qwen3TTSModel
 
 DTYPE = torch.float16  # Turing (TITAN RTX): no native bf16
 DESIGNS = {

@@ -17,6 +17,8 @@ def main() -> None:
     latest = {}  # one listening session (same seed) saved several times: keep its last save
     for f in sorted((HERE / "ratings").glob("*.json")):
         data = json.loads(f.read_text(encoding="utf-8"))
+        if data.get("version") != design.get("version", "v2-1"):
+            continue  # ratings of another listening pack
         key = data.get("seed", f.name)
         if key not in latest or data.get("saved_at", "") >= latest[key][1].get("saved_at", ""):
             latest[key] = (f, data)
@@ -26,6 +28,8 @@ def main() -> None:
     by_reply = collections.defaultdict(dict)
     for f, data in latest.values():
         for clip, r in data.get("ratings", {}).items():
+            if clip not in clip_variant:
+                continue
             v = per[clip_variant[clip]]
             for k in ("naturel", "fluidite"):
                 if r.get(k):
@@ -54,7 +58,7 @@ def main() -> None:
         cells = [("{}/{}".format(*by_reply[g][variant]) if variant in by_reply[g] else "—") for g in replies]
         lines.append(f"| {variant} | " + " | ".join(cells) + " |")
     text = "\n".join(lines)
-    (HERE / "results.md").write_text(text + "\n", encoding="utf-8")
+    (HERE / f"results_{design.get('version', 'v2-1')}.md").write_text(text + "\n", encoding="utf-8")
     print(text)
 
 

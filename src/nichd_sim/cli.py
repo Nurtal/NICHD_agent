@@ -7,15 +7,25 @@ import sys
 from pathlib import Path
 
 from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
-from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
+from nichd_sim.classifiers.manual import (
+    HELP,
+    ManualClassificationError,
+    ManualClassifier,
+)
 from nichd_sim.delivery import render_plan
 from nichd_sim.demeanor import stage_direction
 from nichd_sim.engine import SpeechAct
 from nichd_sim.feedback import LLMRephraser, LLMSummaryMatcher, render_text
-from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
+from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
-from nichd_sim.replay import ReplayError, export_for_coders, find_scenario, load_log, replay
+from nichd_sim.replay import (
+    ReplayError,
+    export_for_coders,
+    find_scenario,
+    load_log,
+    replay,
+)
 from nichd_sim.scenario import ScenarioError, load_scenario
 from nichd_sim.session import Session
 
@@ -66,11 +76,11 @@ def play(args: argparse.Namespace) -> int:
         from nichd_sim.voice import make_speaker
 
         try:
-            speaker = make_speaker(args.speaker)
+            speaker = make_speaker(args.speaker, scenario.child_profile)
         except (ValueError, RuntimeError) as e:
             print(e, file=sys.stderr)
             return 2
-        print(f"Voix : {args.speaker or type(speaker).__name__}")
+        print(f"Voix : {args.speaker or type(speaker).__name__}{' — ' + speaker.voice if hasattr(speaker, 'voice') else ''}")
     print(f"=== {scenario.title} ===\n{scenario.intake_context.strip()}\n")
     if args.classifier == "manual":
         print(HELP)
@@ -190,7 +200,11 @@ def render_audio_cmd(args: argparse.Namespace) -> int:
 
     try:
         log = load_log(args.log)
-        speaker = make_speaker(args.speaker)
+        try:
+            child = find_scenario(log, args.scenarios_dir).child_profile
+        except ReplayError:
+            child = None  # scenario not found: default child voice
+        speaker = make_speaker(args.speaker, child)
     except (ReplayError, ValueError, RuntimeError) as e:
         print(e, file=sys.stderr)
         return 2
@@ -209,6 +223,7 @@ def export_avatar_cmd(args: argparse.Namespace) -> int:
     except (ReplayError, OSError) as e:
         print(e, file=sys.stderr)
         return 2
+    profile = None
     try:
         profile = find_scenario(log, args.scenarios_dir).child_profile
         name, age = profile.name, profile.age
@@ -221,7 +236,7 @@ def export_avatar_cmd(args: argparse.Namespace) -> int:
         from nichd_sim.voice import make_speaker
 
         try:
-            speaker = make_speaker(args.speaker)
+            speaker = make_speaker(args.speaker, profile)
         except (ValueError, RuntimeError) as e:
             print(f"voix indisponible ({e}) : chronologie estimée", file=sys.stderr)
     perf = build_session(log, name, age, speaker=speaker, out_dir=out)
@@ -292,13 +307,26 @@ def transcribe_cmd(args: argparse.Namespace) -> int:
     return 0
 
 
+def _interviewer_voice(child_speaker):
+    """The adult voice of a scripted interviewer: Kokoro's adult voice when Kokoro is installed
+    (sharing the child's worker if the child speaks with Kokoro), else the model-free tone."""
+    from nichd_sim.voice import KokoroSpeaker, VoiceError, make_speaker
+
+    if isinstance(child_speaker, KokoroSpeaker):
+        return KokoroSpeaker(child=False, share_with=child_speaker)
+    try:
+        return make_speaker("kokoro-adulte")
+    except (VoiceError, ValueError):
+        return make_speaker("tone")
+
+
 def converse_cmd(args: argparse.Namespace) -> int:
     """Scripted voice conversation (YAML): interviewer turns as text (adult voice) or WAV."""
     import json
 
     import yaml
 
-    from nichd_sim.voice import Audio, KokoroSpeaker, VoiceError, make_speaker
+    from nichd_sim.voice import Audio, VoiceError, make_speaker
     from nichd_sim.voice.conversation import VoiceConversation
     from nichd_sim.voice.listener import WhisperListener
 
@@ -313,9 +341,8 @@ def converse_cmd(args: argparse.Namespace) -> int:
     session = Session(scenario, build_classifier(args), build_realizer(args), seed=spec.get("seed", 0),
                       rephraser=None, log_dir=out)
     try:
-        speaker = make_speaker(args.speaker)
-        interviewer = (KokoroSpeaker(child=False, share_with=speaker) if isinstance(speaker, KokoroSpeaker)
-                       else make_speaker("tone"))
+        speaker = make_speaker(args.speaker, scenario.child_profile)
+        interviewer = _interviewer_voice(speaker)
         listener = WhisperListener()
         conv = VoiceConversation(session, speaker, listener)
         child = scenario.child_profile.name
@@ -447,21 +474,24 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--summary", action="store_true", help="rédiger une synthèse en fin d'entretien, confrontée aux faits")
     p.add_argument("--voice", metavar="DOSSIER", help="écrire la réponse de l'enfant en audio (un WAV par tour)")
     p.add_argument("--speaker", default=None,
-                   help="voix : kokoro (enfant), kokoro-adulte, tone (sans modèle) ; défaut : kokoro si installé")
+                   help="voix : qwen (banque de voix d'enfant), kokoro (ancienne voix), kokoro-adulte, tone (sans modèle) ; "
+                        "défaut : qwen, sinon kokoro, si installé")
     p.set_defaults(func=play)
 
     a = sub.add_parser("render-audio", help="rendre en audio les réponses d'un journal de session (sans LLM)")
     a.add_argument("log", help="journal JSON de session")
     a.add_argument("-o", "--output", help="dossier de sortie (défaut : audio/<session>)")
     a.add_argument("--speaker", default=None,
-                   help="voix : kokoro (enfant), kokoro-adulte, tone (sans modèle) ; défaut : kokoro si installé")
+                   help="voix : qwen (banque de voix d'enfant), kokoro (ancienne voix), kokoro-adulte, tone (sans modèle) ; "
+                        "défaut : qwen, sinon kokoro, si installé")
+    a.add_argument("--scenarios-dir", default="scenarios", help="pour choisir la voix de l'enfant")
     a.set_defaults(func=render_audio_cmd)
 
     x = sub.add_parser("export-avatar", help="exporter un journal pour l'avatar : performance.json (+ audio)")
     x.add_argument("log", help="journal JSON de session")
     x.add_argument("-o", "--output", help="dossier de sortie (défaut : avatar_sessions/<session>)")
     x.add_argument("--voice", action="store_true", help="rendre aussi l'audio de chaque réponse")
-    x.add_argument("--speaker", default=None, help="voix : kokoro (défaut si installé), tone…")
+    x.add_argument("--speaker", default=None, help="voix : qwen (défaut si installé), kokoro, tone…")
     x.add_argument("--debug-map", action="store_true",
                    help="exporter aussi la carte du système de chaque tour (débogage, hors contrat)")
     x.add_argument("--scenarios-dir", default="scenarios")
@@ -487,7 +517,7 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--realizer", default="template", choices=["template", "llm"])
     c.add_argument("--model", default=DEFAULT_MODEL)
     c.add_argument("--ollama-url", default=DEFAULT_URL)
-    c.add_argument("--speaker", default=None, help="voix de l'enfant (défaut : kokoro si installé)")
+    c.add_argument("--speaker", default=None, help="voix de l'enfant (défaut : qwen, sinon kokoro, si installé)")
     c.add_argument("--seed", type=int, default=0, help="seed du réaliseur LLM")
     c.add_argument("--trainer", action="store_true")
     c.set_defaults(func=converse_cmd)

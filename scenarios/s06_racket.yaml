@@ -11,6 +11,7 @@ intake_context: 'Yasmine, 10 ans, est entendue après que sa mère a porté plai
 child_profile:
   name: Yasmine
   age: 10
+  voice: fille
   reluctance: 0.45
   verbal_skills: 0.6
   suggestibility: 0.25

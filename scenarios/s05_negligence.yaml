@@ -11,6 +11,7 @@ intake_context: Noah, 7 ans, est entendu après un signalement d'un voisin, qui 
 child_profile:
   name: Noah
   age: 7
+  voice: garcon
   reluctance: 0.4
   verbal_skills: 0.5
   suggestibility: 0.5
