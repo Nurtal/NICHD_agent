@@ -112,10 +112,10 @@ Limites :
   bruité.
 - **Rien ici ne mesure le naturel ni la fluidité.**
 
-## Écoute à l'aveugle (à faire)
+## Écoute à l'aveugle (2026-11-17)
 
-La page `experiments/voices/v2/listening/` présente 6 réponses et 12 voix par réponse, dans un ordre aléatoire et
-sans nom de modèle, toutes au même volume :
+**Protocole.** Les extraits étaient anonymes et appariés en volume, dans un ordre aléatoire. L'écoute porte sur
+6 réponses et 12 voix par réponse :
 
 - la voix actuelle, seule puis avec le nouveau fond sonore ;
 - pour chaque moteur, la variante « enfant » propre dont la hauteur est la plus proche de 300 Hz ;
@@ -123,5 +123,41 @@ sans nom de modèle, toutes au même volume :
 - la fille de 8 ans rendue par Qwen ;
 - Higgs « peur ».
 
-Chaque voix est notée sur trois critères : naturel (1–5), fluidité (1–5) et âge perçu. On choisit aussi une voix
-préférée par réponse. `analyze.py` dépouillera les notes. **L'intégration du gagnant (PR b) attend cette écoute.**
+Il y a eu **un seul auditeur** (l'utilisateur), qui a noté 71 extraits sur 72. Sa session avait été enregistrée
+deux fois ; seule la dernière sauvegarde est comptée.
+
+| Voix (moteur, référence) | Naturel | Fluidité | Âge le plus cité | Préférée |
+|---|---|---|---|---|
+| **Qwen3-TTS, fille de 8 ans conçue par Qwen** | **4,83** | **5,00** | 6–8 ans | **3 / 6** |
+| Fish S2 Pro, même fille | 4,83 | 4,83 | 6–8 ans | 1 / 6 |
+| Higgs, même fille + balise « peur » | 4,33 | 4,83 | 6–8 ans | 1 / 6 |
+| Kyutai, lectrice adulte | 3,33 | 3,67 | 6–8 ans | 1 / 6 |
+| XTTS, clone de la voix Kokoro enfant | 3,17 | 3,33 | 9–12 ans | 0 |
+| Chatterbox v3, garçon de 6 ans | 3,17 | 3,67 | 6–8 ans | 0 |
+| Qwen3-TTS, garçon de 6 ans | 3,00 | 3,67 | 9–12 ans | 0 |
+| Higgs, garçon de 6 ans | 3,00 | 4,00 | 9–12 ans | 0 |
+| Chatterbox v3, lectrice adulte | 2,83 | 2,67 | 9–12 ans | 0 |
+| F5, garçon de 6 ans | 2,67 | 3,17 | 9–12 ans | 0 |
+| Kokoro actuel + fond sonore | 1,00 | 1,00 | 9–12 ans | 0 |
+| **Kokoro actuel** | **1,00** | **1,33** | 9–12 ans | 0 |
+
+Détail par réponse : `experiments/voices/v2/listening/results.md` (`analyze.py`).
+
+**Lecture.**
+
+1. **La voix actuelle est jugée la pire partout**, à 1 sur 5 sur les 6 réponses. Le fond sonore et les fondus
+   seuls ne la sauvent pas : le problème est la voix elle-même, pas l'assemblage.
+2. **La référence compte plus que le moteur.** Les trois voix en tête utilisent toutes la même fille de 8 ans
+   conçue par Qwen. Le garçon de 6 ans plafonne à 3 sur 5, quel que soit le moteur, et paraît plus âgé
+   (9–12 ans).
+3. **Qwen3-TTS et Fish sont à égalité sur le naturel.** Qwen a toutes ses fluidités à 5 et 3 préférences sur 6.
+   Il est aussi le seul sous licence libre (Apache-2.0), et il est plus rapide et plus léger que Fish.
+4. **Higgs « peur » reste presque au niveau des meilleures** (4,33 / 4,83) : l'émotion par balises ne dégrade pas
+   la voix.
+
+**Limites.** L'écoute repose sur une seule personne. Le genre de la voix et la qualité de sa conception sont
+confondus : une seule voix de fille, une seule de garçon. On ne sait donc pas si le garçon déplaît parce que
+c'est un garçon ou parce que sa conception est moins réussie.
+
+**Recommandation.** Adopter **Qwen3-TTS avec une voix d'enfant conçue par description**, dite d'un bloc (mode
+natif).

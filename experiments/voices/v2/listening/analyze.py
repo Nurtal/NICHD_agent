@@ -14,16 +14,24 @@ HERE = Path(__file__).parent
 def main() -> None:
     design = json.loads((HERE / "design.json").read_text(encoding="utf-8"))
     clip_variant = {c: d["variant"] for c, d in design["clips"].items()}
-    files = sorted((HERE / "ratings").glob("*.json"))
+    latest = {}  # one listening session (same seed) saved several times: keep its last save
+    for f in sorted((HERE / "ratings").glob("*.json")):
+        data = json.loads(f.read_text(encoding="utf-8"))
+        key = data.get("seed", f.name)
+        if key not in latest or data.get("saved_at", "") >= latest[key][1].get("saved_at", ""):
+            latest[key] = (f, data)
+    files = [f for f, _ in latest.values()]
     per = collections.defaultdict(lambda: {"naturel": [], "fluidite": [], "age": collections.Counter(), "picks": 0})
     groups = 0
-    for f in files:
-        data = json.loads(f.read_text(encoding="utf-8"))
+    by_reply = collections.defaultdict(dict)
+    for f, data in latest.values():
         for clip, r in data.get("ratings", {}).items():
             v = per[clip_variant[clip]]
             for k in ("naturel", "fluidite"):
                 if r.get(k):
                     v[k].append(r[k])
+            if r.get("naturel"):
+                by_reply[design["clips"][clip]["reply"]][clip_variant[clip]] = (r.get("naturel"), r.get("fluidite"))
             if r.get("age"):
                 v["age"][r["age"]] += 1
         for clip in data.get("picks", {}).values():
@@ -38,6 +46,13 @@ def main() -> None:
         flu = st.mean(v["fluidite"]) if v["fluidite"] else 0
         age = v["age"].most_common(1)[0][0] if v["age"] else "—"
         lines.append(f"| {variant} | {nat:.2f} | {flu:.2f} | {age} | {v['picks']} | {len(v['naturel'])} |")
+    order = [v for _, v, _ in sorted(rows, reverse=True)]
+    replies = sorted(by_reply)
+    lines += ["", "Détail par réponse (naturel / fluidité) :", "",
+              "| Variante | " + " | ".join(replies) + " |", "|---|" + "---|" * len(replies)]
+    for variant in order:
+        cells = [("{}/{}".format(*by_reply[g][variant]) if variant in by_reply[g] else "—") for g in replies]
+        lines.append(f"| {variant} | " + " | ".join(cells) + " |")
     text = "\n".join(lines)
     (HERE / "results.md").write_text(text + "\n", encoding="utf-8")
     print(text)
