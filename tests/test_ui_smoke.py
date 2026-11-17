@@ -79,3 +79,31 @@ def test_ui_command_listens_on_localhost_by_default(monkeypatch):
     assert cmd[cmd.index("--server.address") + 1] == "127.0.0.1"
     cli.main(["ui", "--host", "0.0.0.0"])
     assert calls[1][calls[1].index("--server.address") + 1] == "0.0.0.0"
+
+
+def test_live_engine_view_shows_every_step(app):
+    at = app
+    button(at, "Nouvel entretien").click().run()
+    at.segmented_control(key="view").set_value("Moteur en direct").run()
+    assert not at.exception, at.exception
+    for text in ["[soutien@rapport] Bonjour Léo.", "[inv@transition] Dis-moi pourquoi tu es là.",
+                 "[sug@faits:hors=il avait un couteau] Il avait un couteau, hein ?"]:
+        at.chat_input(key="engine_input").set_value(text).run()
+        assert not at.exception, at.exception
+    assert at.segmented_control(key="view").value == "Moteur en direct"  # the view survives reruns
+    text = " ".join(m.value for m in at.markdown)
+    for step in ("1 · Classification", "2 · Suivi des phases", "3 · Règle du moteur", "4 · Unités autorisées",
+                 "5 · Diction", "6 · Corps", "7 · Réalisation", "Faits de l'événement cible"):
+        assert step in text, step
+    assert {m.label for m in at.metric} >= {"Activation", "Réticence", "Acquiescement", "Verbosité"}
+
+
+def test_profile_adjustments_apply_to_the_next_interview(app):
+    at = app
+    chosen = at.selectbox(key="scenario_id").value
+    at.slider(key=f"{chosen}:reluctance").set_value(0.95).run()
+    at.selectbox(key=f"{chosen}:style").set_value("frozen").run()
+    button(at, "Nouvel entretien").click().run()
+    assert not at.exception, at.exception
+    profile = at.session_state["session"].scenario.child_profile
+    assert profile.reluctance == 0.95 and profile.expression_style == "frozen"
