@@ -1,7 +1,7 @@
 """Record the avatar replaying an exported session, with its voice (Playwright + ffmpeg).
 
     nichd-sim avatar SESSION_DIR --port 8602 &
-    uv run --no-project --with playwright==1.55.0 python avatar/record_demo.py SESSION_DIR OUT.mp4 [--port 8602] [--speed 1]
+    uv run --no-project --with playwright==1.55.0 python avatar/record_demo.py SESSION_DIR OUT.mp4 [--port 8602] [--speed 1] [--map]
 
 Playwright videos have no sound: the page logs when each reply starts, and the replies' WAVs are laid
 on the video at those times with ffmpeg. Needs Chrome and ffmpeg (and `playwright install ffmpeg` once).
@@ -46,10 +46,12 @@ def main() -> int:
     ap.add_argument("output", help="vidéo .mp4")
     ap.add_argument("--port", type=int, default=8602)
     ap.add_argument("--speed", type=float, default=1.0, help="accélération de la vidéo finale (son compris)")
+    ap.add_argument("--map", action="store_true", help="carte du système en arrière-plan (session exportée avec --debug-map)")
     args = ap.parse_args()
     session = Path(args.session)
     with tempfile.TemporaryDirectory() as tmp:
-        webm, replies, offset = record(f"http://127.0.0.1:{args.port}/?start=1", Path(tmp))
+        url = f"http://127.0.0.1:{args.port}/?start=1" + ("&map=1" if args.map else "")
+        webm, replies, offset = record(url, Path(tmp))
         inputs, filters, labels = ["-i", str(webm)], [], []
         for k, r in enumerate(r for r in replies if r.get("audio")):
             delay = max(0, round(offset + r["at"]))
