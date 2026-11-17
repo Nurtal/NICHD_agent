@@ -396,3 +396,155 @@ rehearsed_lie_factor:
   value: 0.5
   source: "Choix de modélisation (Vrij, 2008 : un récit préparé réduit la charge cognitive)."
   estimated: true
+
+# --- Activation et comportement non verbal (ADR 0003) ------------------------
+# Aucun signe non verbal n'est un indice fiable du mensonge (DePaulo et al., 2003 ;
+# Bond & DePaulo, 2006, Accuracy of deception judgments, Personality and Social
+# Psychology Review 10(3)). Le corps suit donc l'activation, l'effort de mémoire et
+# le style d'expression ; le mensonge n'agit que par une faible hausse d'activation.
+# L'activation est observable seulement : elle ne modifie pas les actes de langage.
+
+arousal_base:
+  description: >
+    Activation de base (0–1) d'un enfant non réticent, selon l'âge : les plus
+    jeunes sont plus facilement activés par la situation d'audition.
+  values: {"4_6": 0.2, "7_9": 0.15, "10_12": 0.1}
+  source: Choix de modélisation.
+  estimated: true
+
+arousal_reluctance_weight:
+  description: Part de la réticence ajoutée à l'activation de base (base = arousal_base + poids × réticence).
+  value: 0.3
+  source: Choix de modélisation (réticence et anxiété vont souvent ensemble, Lamb et al., 2008).
+  estimated: true
+
+arousal_decay:
+  description: Part de l'écart à la base résorbée à chaque tour (inertie de l'activation).
+  value: 0.15
+  source: Choix de modélisation.
+  estimated: true
+
+arousal_rise:
+  description: >
+    Hausses d'activation, appliquées en saturation (a += hausse × (1 − a)) :
+    parler d'un fait central de l'événement cible ou d'un autre fait de l'événement
+    (y compris un fait caché par un mensonge ou une omission : même charge que la
+    vérité), question suggestive ou à choix (davantage sur l'événement cible),
+    violation de phase, mensonge. Le mensonge vaut 0 par défaut : sa cause faible
+    est déjà portée par la charge `deception` de la diction ; une hausse
+    d'activation la doublerait et se verrait dans le corps et la charge
+    émotionnelle (paires contrôlées mensonge/vérité, ADR 0002).
+  value: {target_central: 0.12, target_other: 0.06, pressure: 0.04, pressure_target: 0.08, phase_violation: 0.08, lie: 0.0}
+  source: >
+    Choix de modélisation ; Hershkowitz, Lamb & Katz (2014), voir
+    support_reluctance_drop — la pression accroît la détresse des enfants
+    réticents ; mensonge nul pour ne pas créer de faux indice (voir l'en-tête).
+  estimated: true
+
+arousal_drop:
+  description: Baisses d'activation après un énoncé de soutien, une invitation de rapport, une invitation de pratique narrative.
+  value: {support: 0.1, rapport: 0.06, narrative_practice: 0.03}
+  source: >
+    Hershkowitz, Lamb & Katz (2014), voir support_reluctance_drop — le soutien non
+    suggestif apaise l'enfant ; valeurs choisies.
+  estimated: true
+
+arousal_affect_weight:
+  description: >
+    Part de l'activation qui s'ajoute (OU probabiliste) à la charge émotionnelle de
+    la diction : un enfant activé hésite aussi sur les sujets neutres.
+  value: 0.5
+  source: Choix de modélisation.
+  estimated: true
+
+delivery_fast_arousal:
+  description: Activation au-delà de laquelle le débit s'accélère (enfant non figé).
+  value: 0.6
+  source: Choix de modélisation.
+  estimated: true
+
+delivery_rate_rise:
+  description: Hausse relative maximale du débit (activation 1, style agité).
+  value: 0.25
+  source: Choix de modélisation.
+  estimated: true
+
+false_start_weights:
+  description: >
+    Poids des causes dans le bafouillement (faux départs). Le mensonge y pèse
+    faiblement, comme dans l'hésitation.
+  value: {retrieval: 0.2, affect: 0.6, deception: 0.15, confusion: 0.5}
+  source: Choix de modélisation ; Sporer & Schwandt (2006), voir hesitation_weights.
+  estimated: true
+
+delivery_max_false_starts:
+  description: Nombre de faux départs quand le bafouillement vaut 1 (arrondi stochastique).
+  value: 1
+  source: >
+    Choix de modélisation (à 2, un faux départ apparaissait sur presque chaque
+    tour chargé d'émotion : bafouillement caricatural).
+  estimated: true
+
+tremor_affect_threshold:
+  description: Charge émotionnelle à partir de laquelle la voix tremble.
+  value: 0.6
+  source: Choix de modélisation.
+  estimated: true
+
+expression_style_default:
+  description: >
+    Style d'expression par défaut quand la fiche n'en fixe pas : les plus jeunes
+    montrent davantage leur état par le corps.
+  values: {"4_6": agitated, "7_9": mixed, "10_12": mixed}
+  source: Choix de modélisation.
+  estimated: true
+
+expression_gains:
+  description: >
+    Selon le style : part de l'activation qui se voit dans le mouvement (motor) et
+    propension au figement (freeze). Un enfant figé montre peu malgré une forte
+    activation : un enfant calme n'est pas un enfant à qui rien n'est arrivé.
+  value:
+    agitated: {motor: 1.0, freeze: 0.1}
+    mixed: {motor: 0.6, freeze: 0.5}
+    frozen: {motor: 0.25, freeze: 1.0}
+  source: >
+    Choix de modélisation, à sourcer (observations cliniques d'absence d'émotion
+    visible chez des enfants maltraités).
+  estimated: true
+
+demeanor_fidget_base:
+  description: Agitation de fond, sans activation (les jeunes enfants bougent).
+  values: {"4_6": 0.35, "7_9": 0.2, "10_12": 0.1}
+  source: Choix de modélisation.
+  estimated: true
+
+demeanor_presence_gain:
+  description: Multiplicateur du niveau d'une famille de signes pour la probabilité de la montrer.
+  value: 1.2
+  source: Choix de modélisation.
+  estimated: true
+
+demeanor_intensity_bounds:
+  description: Niveaux [net, fort] d'un signe ; en dessous, il est léger.
+  value: [0.4, 0.7]
+  source: Choix de modélisation.
+  estimated: true
+
+demeanor_tears_arousal:
+  description: Activation à partir de laquelle des pleurs peuvent apparaître.
+  value: 0.7
+  source: Choix de modélisation.
+  estimated: true
+
+demeanor_ease_arousal:
+  description: Activation en dessous de laquelle l'enfant peut paraître détendu.
+  value: 0.25
+  source: Choix de modélisation.
+  estimated: true
+
+demeanor_max_cues:
+  description: Nombre maximal de signes montrés en plus du regard (lisibilité de la didascalie).
+  value: 3
+  source: Choix de modélisation.
+  estimated: true
