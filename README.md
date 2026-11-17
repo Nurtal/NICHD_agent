@@ -55,7 +55,8 @@ L'état texte « chatbot » est figé au tag `v0.1-mvp` (branche `release/mvp`).
   (mémoire, émotion, mensonge, confusion), visible en mode formateur ;
 - un scénario peut faire **cacher ou maquiller** des faits par l'enfant (bloc `deception`, exemple
   `scenarios/s08_violences_maison_secret.yaml`) ;
-- la réponse peut être rendue en **audio**, l'hésitation étant inscrite dans le fichier (silences exacts) :
+- la réponse peut être rendue en **audio** (optionnel : sans `--voice`, tout reste en texte, et sans l'environnement voix
+  le projet et ses tests fonctionnent, les tests audio sont ignorés), l'hésitation étant inscrite dans le fichier (silences exacts) :
 
 ```bash
 uv run nichd-sim play scenarios/s08_violences_maison_secret.yaml --trainer --voice audio/
