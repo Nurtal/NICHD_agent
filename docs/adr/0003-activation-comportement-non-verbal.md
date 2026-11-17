@@ -46,7 +46,10 @@ l'agitation signale la détresse apprendrait qu'un enfant calme n'a rien vécu.
   - l'enfant parle de l'événement cible, davantage pour ses faits centraux ;
   - l'interviewer pose des questions suggestives ou à choix ;
   - il y a une violation de phase (aborder l'événement avant le rapport, par exemple) ;
-  - l'enfant ment (cause **faible**).
+  - l'enfant ment (cause **faible**). Le paramètre existe, mais vaut 0 par défaut : la cause faible du mensonge
+    est déjà portée par la charge `deception` de la diction. Une hausse d'activation la compterait deux fois, et
+    elle se verrait dans le corps et dans la charge émotionnelle, ce que les paires contrôlées mensonge/vérité de
+    l'ADR 0002 interdisent.
 - **Elle baisse** avec le soutien, le rapport et la pratique narrative, et revient lentement vers sa base à
   chaque tour.
 - Tous les paramètres sont dans `parameters.yaml`, avec leur source ou la mention `estimated`.
