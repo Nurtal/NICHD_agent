@@ -13,7 +13,7 @@ import streamlit as st
 
 from nichd_sim.classifiers.llm import DEFAULT_CLASSIFIER_THINK, LLMClassifier
 from nichd_sim.classifiers.manual import HELP, ManualClassificationError, ManualClassifier
-from nichd_sim.demeanor import stage_direction
+from nichd_sim.demeanor import STYLE_LABELS, stage_direction
 from nichd_sim.engine import SpeechAct
 from nichd_sim.evaluation import load_scenarios
 from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS, LLMRephraser, LLMSummaryMatcher
@@ -21,7 +21,9 @@ from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.phases import ORDER as PHASE_ORDER
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
+from nichd_sim.scenario import ExpressionStyle
 from nichd_sim.session import Session
+from nichd_sim.ui import engine_view
 
 SCENARIOS_DIR = Path(os.environ.get("NICHD_SCENARIOS", Path(__file__).resolve().parents[3] / "scenarios"))
 LOG_DIR = os.environ.get("NICHD_LOG_DIR", "sessions")
@@ -89,13 +91,34 @@ with st.sidebar:
     st.info(scenario.intake_context.strip())
     if scenario.status == "draft":
         st.caption("Scénario en attente de validation par un formateur NICHD.")
+    with st.expander("Profil de l'enfant"):
+        st.caption("Ajustements appliqués au prochain entretien.")
+        reluctance = st.slider("Réticence", 0.0, 1.0, profile.reluctance, 0.05, key=f"{chosen}:reluctance")
+        verbal = st.slider("Compétences verbales", 0.0, 1.0, profile.verbal_skills, 0.05, key=f"{chosen}:verbal")
+        suggest = st.slider("Suggestibilité", 0.0, 1.0, profile.suggestibility, 0.05, key=f"{chosen}:suggest")
+        styles = ["auto", *ExpressionStyle]
+        style = st.selectbox(
+            "Style d'expression", styles, key=f"{chosen}:style",
+            index=styles.index(profile.expression_style) if profile.expression_style else 0,
+            format_func=lambda v: "selon l'âge" if v == "auto" else STYLE_LABELS[v],
+        )
+        strength = None
+        if scenario.deception is not None:
+            strength = st.slider("Force de la dissimulation", 0.0, 1.0, scenario.deception.strength, 0.05,
+                                 key=f"{chosen}:strength")
+    adjusted = scenario.model_copy(update={"child_profile": profile.model_copy(update={
+        "reluctance": reluctance, "verbal_skills": verbal, "suggestibility": suggest,
+        "expression_style": None if style == "auto" else ExpressionStyle(style),
+    })})
+    if strength is not None:
+        adjusted = adjusted.model_copy(update={"deception": scenario.deception.model_copy(update={"strength": strength})})
     seed = st.number_input("Graine (reproductibilité)", min_value=0, value=0, step=1, key="seed")
     offline = st.toggle("Mode hors ligne (sans LLM)", value=OFFLINE, key="offline",
                         help="Voix gabarit et classification manuelle par préfixes.")
     trainer = st.toggle("Mode formateur", value=False, key="trainer")
     if st.button("Nouvel entretien", type="primary", use_container_width=True):
         reset()
-        st.session_state.session = new_session(scenario, int(seed), offline)
+        st.session_state.session = new_session(adjusted, int(seed), offline)
         st.session_state.turns = []
         st.rerun()
     if "session" in st.session_state and "feedback" not in st.session_state:
@@ -209,10 +232,32 @@ if st.session_state.get("ending"):
 
 # -- interview ---------------------------------------------------------------------
 
-chat_col, trainer_col = st.columns([3, 2]) if trainer else (st.container(), None)
 
-with chat_col:
-    st.subheader(f"Entretien avec {profile.name}")
+def submit(prompt: str) -> None:
+    """One interviewer utterance, from either view."""
+    try:
+        with st.spinner(f"{session.scenario.child_profile.name} réfléchit…"):
+            result = session.turn(prompt)
+    except ManualClassificationError as e:
+        st.error(str(e))
+    except LLMError as e:
+        st.error(f"Modèle de langue injoignable : {e}")
+    else:
+        st.session_state.turns.append(
+            {
+                "interviewer": result.classification.clean_text or prompt,
+                "child": result.response,
+                "stage": stage_direction(
+                    result.decision.demeanor, result.decision.delivery,
+                    silent=result.decision.speech_act == SpeechAct.SILENCE, text=result.response,
+                ),
+                "notices": result.notices,
+            }
+        )
+        st.rerun()
+
+
+def conversation(key: str) -> None:
     if isinstance(session.classifier, ManualClassifier):
         with st.expander("Classification manuelle : syntaxe"):
             st.code(HELP)
@@ -225,28 +270,30 @@ with chat_col:
             st.write(t["child"])
         for n in t["notices"]:
             st.info(n)
-    prompt = st.chat_input("Votre énoncé…")
+    prompt = st.chat_input("Votre énoncé…", key=key)
     if prompt:
-        try:
-            with st.spinner(f"{profile.name} réfléchit…"):
-                result = session.turn(prompt)
-        except ManualClassificationError as e:
-            st.error(str(e))
-        except LLMError as e:
-            st.error(f"Modèle de langue injoignable : {e}")
-        else:
-            st.session_state.turns.append(
-                {
-                    "interviewer": result.classification.clean_text or prompt,
-                    "child": result.response,
-                    "stage": stage_direction(
-                        result.decision.demeanor, result.decision.delivery,
-                        silent=result.decision.speech_act == SpeechAct.SILENCE, text=result.response,
-                    ),
-                    "notices": result.notices,
-                }
-            )
-            st.rerun()
+        submit(prompt)
+
+
+view = st.segmented_control(
+    "Vue", ["Entretien", "Moteur en direct"], default="Entretien", key="view", label_visibility="collapsed"
+)
+
+if view == "Moteur en direct":
+    st.caption("Vue de démonstration et de débogage : ce que le moteur de comportement décide à chaque tour.")
+    chat, engine = st.columns([2, 5])
+    with chat, st.container(height=900, border=False):
+        st.subheader(f"Entretien avec {session.scenario.child_profile.name}")
+        conversation("engine_input")
+    with engine:
+        engine_view.render(session, TYPE_COLORS)
+    st.stop()
+
+chat_col, trainer_col = st.columns([3, 2]) if trainer else (st.container(), None)
+
+with chat_col:
+    st.subheader(f"Entretien avec {session.scenario.child_profile.name}")
+    conversation("chat_input")
 
 # Keep the trainer panel in view while the conversation grows (sticky within its column).
 TRAINER_PANEL_CSS = (
