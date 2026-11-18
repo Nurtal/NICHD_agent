@@ -8,18 +8,24 @@ const UP = new THREE.Vector3(0, 1, 0);
 const FORWARD = new THREE.Vector3(0, 0, 1);
 const BLUE = new THREE.Color("#2a78d6");
 const RED = new THREE.Color("#e34948");
-const AXIS_LENGTH = 0.85;
-const FACE_CLEARANCE = 0.09; // the axes start in front of the face, which stays readable
+export const AXIS_LENGTH = 0.34;
+const FACE_CLEARANCE = 0.1; // the axes start in front of the face, which stays readable
 const PART_WEIGHT = { head: 0.5 }; // the whole face turning red would hide the expression
 const DEG = 180 / Math.PI;
+
+function restore(mt) {
+  mt.color.copy(mt.userData.base);
+  mt.emissive.copy(mt.userData.glow.color);
+  mt.emissiveIntensity = mt.userData.glow.intensity;
+}
 
 function makeArrow(color) {
   const material = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true });
   const group = new THREE.Group();
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, AXIS_LENGTH - 0.05, 8), material);
-  shaft.position.y = (AXIS_LENGTH - 0.05) / 2;
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.017, 0.05, 14), material);
-  tip.position.y = AXIS_LENGTH - 0.025;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, AXIS_LENGTH - 0.035, 8), material);
+  shaft.position.y = (AXIS_LENGTH - 0.035) / 2;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.035, 14), material);
+  tip.position.y = AXIS_LENGTH - 0.0175;
   group.add(shaft, tip);
   group.renderOrder = 10;
   shaft.renderOrder = tip.renderOrder = 10;
@@ -34,14 +40,17 @@ export class DevOverlay {
     this.gaze = makeArrow(FAMILY_COLOR.gaze);
     const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, AXIS_LENGTH, 0)]);
     this.reference = new THREE.Line(geometry,
-      new THREE.LineDashedMaterial({ color: "#5b6475", dashSize: 0.035, gapSize: 0.025, depthTest: false, transparent: true }));
+      new THREE.LineDashedMaterial({ color: "#5b6475", dashSize: 0.018, gapSize: 0.013, depthTest: false, transparent: true }));
     this.reference.computeLineDistances();
     this.reference.renderOrder = 9;
     this.group.add(this.gaze, this.reference);
     this.levels = {}; // part → {color, target, value}
     for (const [name, mats] of Object.entries(fig.parts)) {
       this.levels[name] = { color: new THREE.Color("#000"), target: 0, value: 0 };
-      for (const mt of mats) mt.userData.base = mt.color.clone();
+      for (const mt of mats) {
+        mt.userData.base = mt.color.clone();
+        mt.userData.glow = { color: mt.emissive.clone(), intensity: mt.emissiveIntensity };
+      }
     }
     this.visible = true;
   }
@@ -52,7 +61,7 @@ export class DevOverlay {
     this.fig.halo.visible = on;
     if (!on) {
       for (const mats of Object.values(this.fig.parts)) {
-        for (const mt of mats) { mt.emissiveIntensity = 0; mt.color.copy(mt.userData.base); }
+        for (const mt of mats) restore(mt);
       }
     }
   }
@@ -81,6 +90,7 @@ export class DevOverlay {
       level.value += (level.target - level.value) * Math.min(1, dt * 5);
       const shown = Math.min(1, 0.45 + 0.55 * level.value) * Math.min(1, level.value * 6); // even a slight cue reads
       for (const mt of f.parts[name]) {
+        if (shown < 0.01) { restore(mt); continue; }
         mt.color.copy(mt.userData.base).lerp(level.color, 0.75 * shown);
         mt.emissive.copy(level.color);
         mt.emissiveIntensity = 0.5 * shown * pulse;

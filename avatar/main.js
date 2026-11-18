@@ -23,6 +23,7 @@ const child = buildChild(scene);
 const room = buildRoom(scene);
 const animator = new Animator(child);
 const overlay = new DevOverlay(scene, child);
+const viewDebug = { camera, overlay };
 
 async function optionalJson(url) {
   try {
@@ -48,8 +49,9 @@ const state = {
   map: params.get("map") !== "0",
   replies: [], // {turn, at}: when each reply started (performance.now), for recordings
   done: false,
+  view: viewDebug,
 };
-window.__avatar = state; // for automated screenshots
+window.__avatar = state; // for automated screenshots and layout checks
 
 function turn() { return perf.turns[state.index]; }
 function mapStep() { return state.phase === "question" ? 0 : state.phase === "reply" ? 1 : 2; }
@@ -72,7 +74,7 @@ function applyView() {
   overlay.setVisible(dev);
   $("mapbtn").classList.toggle("on", on);
   $("modebtn").textContent = dev ? "User" : "Dev";
-  setView(state.mode, on, controls);
+  setView(state.mode, controls);
   showMap(mapStep());
 }
 if (maps == null) {

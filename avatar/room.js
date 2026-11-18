@@ -166,19 +166,6 @@ function lamp(room) {
   room.add(light);
 }
 
-function recordingCamera(room) {
-  // interviews with minors are filmed: a small, discreet camera on the wall
-  const dark = std("#3b4250", 0.45), white = std("#eceae5", 0.6);
-  const x = 1.72, y = 1.52, z = WALL_Z + 0.09;
-  place(room, box(0.06, 0.08, 0.01, white), x, y + 0.04, WALL_Z + 0.008, { cast: false, receive: false });
-  place(room, cylinder(0.01, 0.01, 0.09, white, 10), x, y + 0.035, WALL_Z + 0.05, { cast: false, receive: false }).rotation.x = Math.PI / 2;
-  const body = place(room, soft(0.065, 0.058, 0.13, 0.014, white), x, y, z, { cast: false, receive: false });
-  body.rotation.set(0.28, -0.42, 0);
-  const lens = place(room, cylinder(0.021, 0.024, 0.025, dark, 18), x - 0.03, y - 0.018, z + 0.057, { cast: false, receive: false });
-  lens.rotation.set(Math.PI / 2 + 0.28, 0, 0.42);
-  place(room, ball(0.0055, new THREE.MeshBasicMaterial({ color: "#e0524a" })), x + 0.012, y + 0.008, z + 0.06, { cast: false, receive: false });
-}
-
 export function buildRoom(scene) {
   const room = new THREE.Group();
 
@@ -216,7 +203,6 @@ export function buildRoom(scene) {
   sideTable(room);
   plant(room);
   lamp(room);
-  recordingCamera(room);
 
   const warm = new THREE.PointLight("#fff0dc", 0.9, 6, 1.4);
   warm.position.set(0.2, 2.25, 0.9);

@@ -1,5 +1,6 @@
 // Cue → motion. The engine decides the cues (ADR 0003); this file only plays them.
 // The motions are the same in both views. Colours and highlights belong to the dev view: see debug.js.
+import { BROW_Y, LIP_Y } from "./figure.js";
 
 export const INTENSITY = { slight: 0.35, clear: 0.65, strong: 1.0 };
 
@@ -149,18 +150,20 @@ export class Animator {
     f.head.rotation.y = 0.75 * yaw;
     f.head.rotation.x = 0.75 * c.gazePitch + 0.14 * c.absent;
     f.head.rotation.z = 0.04 * c.tremorChin * wave(11) + 0.01 * c.voiceTremor * wave(9) * (speaking ? 1 : 0);
-    const blink = (time % (4.3 + 2 * c.blank)) < 0.12 && c.freeze < 0.5 ? 0.08 : 1;
     for (const eye of f.eyes) {
       eye.rotation.y = 0.5 * yaw + saccade * wave(0.9);
       eye.rotation.x = 0.4 * c.gazePitch;
-      eye.scale.y = blink;
     }
+    // eyelids: follow a lowered gaze, close on a blink
+    const blink = (time % (4.3 + 2 * c.blank)) < 0.13 && c.freeze < 0.5;
+    for (const lid of f.lids) lid.rotation.x = blink ? 1.25 : -0.34 + 0.55 * c.gazePitch + 0.12 * c.low;
+    f.materials.blush.opacity = 0.26 + 0.34 * c.arousal + 0.12 * c.tears;
 
     // eyebrows: raised in the middle when worried, lowered when tense
     const worry = Math.min(1, Math.max(0, c.arousal - 0.3) * 1.2 + 0.7 * c.tears);
     for (const [i, brow] of f.brows.entries()) {
       brow.rotation.z = (i === 0 ? -1 : 1) * 0.32 * worry;
-      brow.position.y = 0.149 + 0.004 * worry - 0.005 * c.tensionJaw;
+      brow.position.y = BROW_Y + 0.004 * worry - 0.005 * c.tensionJaw;
     }
 
     // tears: a drop at the eye when wet, running down when crying
@@ -188,7 +191,8 @@ export class Animator {
     this.mouthOpen += (target - this.mouthOpen) * Math.min(1, dt * 18);
     f.mouth.scale.set(1 - 0.3 * c.tensionJaw - 0.15 * this.mouthOpen, 1 + 3.2 * this.mouthOpen, 1);
     f.mouth.position.x = 0.002 * c.voiceTremor * wave(17) * (speaking ? 1 : 0);
+    f.lip.position.y = LIP_Y - 0.0085 * this.mouthOpen;
     f.smile.visible = c.smile > 0.3 && !speaking;
-    f.mouth.visible = !f.smile.visible;
+    f.mouth.visible = f.lip.visible = !f.smile.visible;
   }
 }

@@ -18,10 +18,8 @@
     font:15px/1.4 "Source Sans 3","Segoe UI",system-ui,sans-serif; overflow:hidden; }
   body.mode-user { background:#f3e9dc; }
   #scene { position:fixed; inset:0; }
-  #map { position:fixed; left:16px; top:96px; width:64%; height:calc(100% - 224px);
-    object-fit:contain; object-position:left center; opacity:.75; display:none; }
-  body.with-map #map { display:block; }
-  body.with-map { background:#ffffff; }
+  #scene canvas { display:block; }
+  #map { display:none; }
   button.on { background:#e6eef8; border-color:var(--accent); }
   .panel { position:fixed; background:var(--panel); border:1px solid var(--line); border-radius:12px;
     box-shadow:0 2px 10px rgba(0,0,0,.06); padding:10px 14px; }
@@ -58,6 +56,31 @@
   body.with-coach #qtag { display:block; }
   body.with-coach #qalerts:not(:empty) { display:grid; }
   body.mode-user #legend, body.mode-user #mapbtn { display:none; }
+
+  /* dev view: one zone per thing, nothing on top of anything else
+     question  | full width
+     map       | avatar stage, then its details
+     subtitles | controls */
+  body.mode-dev { --gap:12px; --edge:16px; --top-h:76px; --bottom-h:104px; --col:clamp(360px,37%,560px); --info-h:clamp(150px,27%,210px);
+    --body-top:calc(var(--edge) + var(--top-h) + var(--gap)); --body-bottom:calc(var(--edge) + var(--bottom-h) + var(--gap)); }
+  body.mode-dev:not(.with-map) { --col:calc(100% - 2 * var(--edge)); }
+  body.mode-dev #top { left:var(--edge); right:var(--edge); top:var(--edge); height:var(--top-h); overflow:auto; }
+  body.mode-dev #question { font-size:17px; }
+  body.mode-dev #bottom { left:var(--edge); right:calc(var(--edge) + 308px + var(--gap)); bottom:var(--edge); height:var(--bottom-h); overflow:auto; padding:8px 14px; }
+  body.mode-dev #stage { font-size:13px; min-height:0; }
+  body.mode-dev #subtitle { font-size:18px; min-height:0; margin-top:2px; line-height:1.3; }
+  body.mode-dev #controls { right:var(--edge); bottom:var(--edge); height:var(--bottom-h); gap:4px; padding:10px; }
+  body.mode-dev #controls button { padding:6px 8px; }
+  body.with-map #map { display:block; position:fixed; left:var(--edge); top:var(--body-top); bottom:var(--body-bottom);
+    width:calc(100% - 2 * var(--edge) - var(--col) - var(--gap)); height:calc(100% - var(--body-top) - var(--body-bottom));
+    object-fit:contain; background:#fff; border:1px solid var(--line); border-radius:12px; padding:8px; }
+  body.mode-dev #scene { inset:auto; right:var(--edge); top:var(--body-top); width:var(--col);
+    height:calc(100% - var(--body-top) - var(--body-bottom) - var(--info-h) - var(--gap));
+    border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  body.mode-dev #legend { top:auto; right:var(--edge); bottom:var(--body-bottom); width:var(--col); height:var(--info-h); max-height:none;
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  body.mode-dev #legend .note { margin-top:6px; }
+  body.mode-dev #legend .meta:first-child { margin-top:0; }
 
   /* protocol follow-up */
   #coach { right:16px; top:16px; width:308px; bottom:76px; flex-direction:column; gap:10px; }
@@ -113,12 +136,16 @@
   <div id="qalerts"></div>
 </div>
 <div id="legend" class="panel">
-  <h2>Ce que montre le corps</h2>
-  <div id="cues"></div>
-  <div class="meta" id="gaze"></div>
-  <div class="meta">Activation <span id="arousalv"></span><div class="bar"><div id="arousal"></div></div></div>
-  <div class="meta" id="style"></div>
-  <div class="note">Flèche rose : regard réel. Pointillés : direction de l'interviewer. Les membres éclairés sont ceux que les signes mettent en jeu.</div>
+  <div>
+    <h2>Ce que montre le corps</h2>
+    <div id="cues"></div>
+  </div>
+  <div>
+    <div class="meta" id="gaze"></div>
+    <div class="meta">Activation <span id="arousalv"></span><div class="bar"><div id="arousal"></div></div></div>
+    <div class="meta" id="style"></div>
+    <div class="note">Flèche rose : regard. Pointillés : interviewer.</div>
+  </div>
 </div>
 <div id="coach" class="panel">
   <div>

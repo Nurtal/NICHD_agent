@@ -47,6 +47,9 @@ Le barème des niveaux est une proposition, à valider par un formateur NICHD.
 
 ## Vue dev : ce que fait le corps
 
+Chaque élément a sa zone, sans superposition : la question en haut, la carte à gauche, l'avatar puis ses détails à
+droite, le texte de l'enfant et les contrôles en bas.
+
 - **Axe du regard** : la flèche rose suit l'orientation réelle de la tête et des yeux. Les pointillés montrent la
   direction de l'interviewer. La légende donne les angles.
 - **Surbrillance** : les parties du corps mises en jeu par les signes s'éclairent, à la couleur de la famille.
