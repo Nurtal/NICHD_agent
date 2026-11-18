@@ -60,3 +60,36 @@ le journal de session.
 
 Limite constatée : Whisper transcrit mal les énoncés très courts de la voix de synthèse (« Et après ? » → « Il
 apprêt. »). À vérifier sur de vraies voix.
+
+## Criblage v2 : clonage sur références ouvertes, nouveaux modèles (`v2/`)
+
+Rapport : [`docs/evaluations/voix-v2.md`](../../docs/evaluations/voix-v2.md). Un environnement par moteur sous
+`.envs/<moteur>` (versions de torch incompatibles entre elles). Pilote 575 : torch cu126 ou cu129, jamais cu130.
+Les cartes Turing n'ont pas de bf16 : float16 ou float32.
+
+1. `v2/fetch_references.py` puis `v2/transcribe_references.py` : clips de référence de 10–20 s, 24 kHz, dans
+   `v2/references/` (non versionné), décrits dans `references.json` (source, licence, raison du choix) :
+   - lectrices adultes de **MLS French** (CC BY 4.0) ;
+   - actrices adultes de **CaFE** (CC BY-NC-SA 4.0), neutre, peur et tristesse ;
+   - voix d'enfant **entièrement synthétiques** : conçues par Qwen3-TTS VoiceDesign (fille de 8 ans, garçon de
+     6 ans), et l'ancienne voix Kokoro enfant.
+
+   Jamais la voix d'un enfant réel (ADR 0002).
+2. `v2/synth_<moteur>.py`, un par moteur et lancé avec le Python de son environnement. Chaque moteur dit
+   - les segments du criblage v1 ;
+   - 12 réponses entières, synthétisées d'un bloc avec leurs pauses « … » et leurs « euh ».
+
+   Il produit une variante par référence. Moteurs : `synth_qwen.py`, `synth_kyutai.py`,
+   `synth_clone_engines.py xtts|chatterbox`, `synth_higgs.py`, `synth_f5.py`, `synth_fish.py`.
+3. `v2/evaluate_v2.py` (env kokoro) mesure WER/CER Whisper, hallucinations, F0, pauses rendues et RTF, et écrit
+   `v2/results/screening_v2.md`. Un cache par fichier permet de relancer seulement ce qui a changé.
+4. Écoute à l'aveugle :
+   - `uv run python v2/listening/build_listening.py` prépare les extraits, appariés en volume et renommés au
+     hasard ;
+   - `python3 v2/listening/serve.py --port 8600` sert la page ; il ne sert jamais `design.json`, la clé des
+     extraits ;
+   - `v2/listening/analyze.py` dépouille les notes enregistrées dans `ratings/`.
+
+Assemblage : `nichd_sim.voice.render.RenderStyle` ajoute un fond sonore à la place du silence numérique, des fondus
+plus longs et un mode « natif » (réponse d'un bloc, chronologie mesurée). Il est facultatif ; le rendu par défaut
+est inchangé.
