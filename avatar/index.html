@@ -11,10 +11,12 @@
 } }
 </script>
 <style>
-  :root { --ink:#1c2230; --muted:#5b6475; --panel:rgba(255,255,255,.92); --line:#dfe3ea; --accent:#1f4e8c; }
+  :root { --ink:#1c2230; --muted:#5b6475; --panel:rgba(255,255,255,.93); --line:#dfe3ea; --accent:#1f4e8c;
+    --ok:#1b7a52; --ok-bg:#e3f4ec; --watch:#9a5b00; --watch-bg:#fdf0d9; --alert:#b92b28; --alert-bg:#fde7e6; }
   * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:#eef1f5; color:var(--ink);
     font:15px/1.4 "Source Sans 3","Segoe UI",system-ui,sans-serif; overflow:hidden; }
+  body.mode-user { background:#f3e9dc; }
   #scene { position:fixed; inset:0; }
   #map { position:fixed; left:16px; top:96px; width:64%; height:calc(100% - 224px);
     object-fit:contain; object-position:left center; opacity:.75; display:none; }
@@ -25,11 +27,15 @@
     box-shadow:0 2px 10px rgba(0,0,0,.06); padding:10px 14px; }
   #top { left:16px; right:340px; top:16px; }
   #top .who { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:700; }
-  #question { font-size:18px; margin-top:2px; }
+  #qline { display:flex; gap:10px; align-items:flex-start; justify-content:space-between; margin-top:2px; }
+  #question { font-size:18px; }
+  #qtag { flex:none; padding-top:2px; }
+  #qalerts { margin-top:8px; gap:6px; }
   #legend { right:16px; top:16px; width:308px; max-height:calc(100% - 140px); overflow:auto; }
-  #legend h2 { font-size:13px; margin:0 0 6px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-  #legend .row { display:flex; align-items:center; gap:8px; margin:4px 0; }
-  #legend .sw { width:14px; height:14px; border-radius:4px; flex:none; border:1px solid rgba(0,0,0,.15); }
+  #legend h2, #coach h2 { font-size:13px; margin:0 0 6px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  #legend .row { display:flex; align-items:flex-start; gap:8px; margin:4px 0; }
+  #legend .row small { color:var(--muted); font-size:12px; }
+  #legend .sw { width:14px; height:14px; margin-top:3px; border-radius:4px; flex:none; border:1px solid rgba(0,0,0,.15); }
   #legend .meta { color:var(--muted); font-size:13px; margin-top:8px; }
   .bar { height:8px; background:#e4e8ef; border-radius:4px; overflow:hidden; margin-top:3px; }
   .bar > div { height:100%; background:linear-gradient(90deg,#2a78d6,#e34948); width:0; transition:width .4s; }
@@ -37,33 +43,117 @@
   #stage { color:var(--muted); font-style:italic; min-height:1.4em; }
   #subtitle { font-size:22px; min-height:1.6em; margin-top:4px; }
   #subtitle .said { color:var(--ink); } #subtitle .todo { color:#b5bcc8; }
-  #controls { right:16px; bottom:16px; width:308px; display:flex; gap:8px; align-items:center; }
-  button { font:inherit; border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  #controls { right:16px; bottom:16px; width:308px; display:flex; gap:6px; align-items:center; }
+  button { font:inherit; border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; white-space:nowrap; }
+  button:disabled { opacity:.5; cursor:default; }
   button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-  #turnlabel { margin-left:auto; color:var(--muted); font-size:13px; }
+  #turnlabel { margin-left:auto; color:var(--muted); font-size:13px; white-space:nowrap; }
   #start { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(238,241,245,.85); }
   #start button { font-size:20px; padding:12px 26px; }
   .note { font-size:12px; color:var(--muted); margin-top:6px; }
+
+  /* view switches */
+  #coach, #qtag, #qalerts { display:none; }
+  body.with-coach #coach { display:flex; }
+  body.with-coach #qtag { display:block; }
+  body.with-coach #qalerts:not(:empty) { display:grid; }
+  body.mode-user #legend, body.mode-user #mapbtn { display:none; }
+
+  /* protocol follow-up */
+  #coach { right:16px; top:16px; width:308px; bottom:76px; flex-direction:column; gap:10px; }
+  #facts { display:flex; align-items:baseline; gap:6px; }
+  #facts .big { font-size:34px; font-weight:700; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums; }
+  #facts .of { font-size:20px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  #factsnote { margin-left:auto; color:var(--muted); font-size:13px; }
+  #coach .bar > div { background:var(--accent); }
+  #factsfound.bump { animation:bump .6s ease-out; display:inline-block; }
+  @keyframes bump { 0% { transform:scale(1); } 35% { transform:scale(1.3); } 100% { transform:scale(1); } }
+  #phases { display:flex; gap:4px; margin-top:2px; }
+  .step { flex:1; height:7px; border-radius:4px; background:#e4e8ef; }
+  .step.done { background:#9db8d8; } .step.now { background:var(--accent); }
+  .step.skipped { background:repeating-linear-gradient(135deg,var(--watch) 0 3px,var(--watch-bg) 3px 6px); }
+  #phasename { font-size:13px; color:var(--muted); margin-top:4px; }
+  #journal { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:8px; padding-right:2px;
+    border-top:1px solid var(--line); padding-top:10px; }
+  .entry { font-size:13px; color:var(--muted); }
+  .entry.current { color:var(--ink); }
+  .entry .head { display:flex; align-items:center; gap:6px; margin-bottom:2px; }
+  .entry .num { font-size:12px; font-weight:700; color:var(--muted); }
+  .entry .notice { margin-top:4px; }
+  .chip { display:inline-block; font-size:12px; font-weight:600; border-radius:999px; padding:1px 9px; white-space:nowrap; }
+  .chip.ok { color:var(--ok); background:var(--ok-bg); }
+  .chip.watch { color:var(--watch); background:var(--watch-bg); }
+  .chip.alert { color:var(--alert); background:var(--alert-bg); }
+  .notice { font-size:13px; border-radius:8px; padding:5px 9px; border-left:3px solid; }
+  .notice b { display:block; } .notice span { color:var(--ink); }
+  .notice.watch { color:var(--watch); background:var(--watch-bg); }
+  .notice.alert { color:var(--alert); background:var(--alert-bg); }
+
+  /* debrief */
+  #debrief { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(40,36,30,.32); }
+  #debrief.open { display:flex; }
+  #debrief .card { background:#fff; border-radius:14px; padding:22px 26px; width:min(520px,calc(100% - 32px));
+    max-height:calc(100% - 32px); overflow:auto; box-shadow:0 10px 40px rgba(0,0,0,.2); }
+  #debrief h2 { margin:0 0 14px; font-size:21px; }
+  #debrief .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  #debrief .stat { background:#f5f7fa; border-radius:10px; padding:10px 12px; }
+  #debrief .stat strong { display:block; font-size:24px; font-variant-numeric:tabular-nums; }
+  #debrief .stat span { font-size:13px; color:var(--muted); }
+  #debrief h3 { font-size:14px; margin:16px 0 4px; }
+  #debrief ul { margin:0; padding-left:18px; }
+  #debrief .actions { text-align:right; margin-top:16px; }
 </style>
 </head>
-<body>
+<body class="mode-user">
 <img id="map" alt="Carte du système (débogage)">
 <div id="scene"></div>
-<div id="top" class="panel"><div class="who">Interviewer</div><div id="question">—</div></div>
+<div id="top" class="panel">
+  <div class="who">Interviewer</div>
+  <div id="qline"><div id="question">—</div><div id="qtag"></div></div>
+  <div id="qalerts"></div>
+</div>
 <div id="legend" class="panel">
   <h2>Ce que montre le corps</h2>
   <div id="cues"></div>
+  <div class="meta" id="gaze"></div>
   <div class="meta">Activation <span id="arousalv"></span><div class="bar"><div id="arousal"></div></div></div>
   <div class="meta" id="style"></div>
-  <div class="note">Marqueurs provisoires : couleurs et mouvements simples à la place des comportements fins (ADR 0004).</div>
+  <div class="note">Flèche rose : regard réel. Pointillés : direction de l'interviewer. Les membres éclairés sont ceux que les signes mettent en jeu.</div>
+</div>
+<div id="coach" class="panel">
+  <div>
+    <h2>Faits</h2>
+    <div id="facts"><span class="big" id="factsfound">—</span><span class="of">/ <span id="factstotal"></span></span><span id="factsnote"></span></div>
+    <div class="bar"><div id="factsbar"></div></div>
+  </div>
+  <div>
+    <h2>Phase du protocole</h2>
+    <div id="phases"></div>
+    <div id="phasename"></div>
+  </div>
+  <div id="journal"></div>
 </div>
 <div id="bottom" class="panel"><div id="stage"></div><div id="subtitle"></div></div>
 <div id="controls" class="panel">
   <button id="prev" title="Tour précédent">◀</button>
   <button id="play" class="primary" title="Lecture / pause">⏯</button>
   <button id="next" title="Tour suivant">▶</button>
-  <button id="mapbtn" title="Carte du système en arrière-plan (débogage : exporter avec --debug-map)">Carte</button>
+  <button id="mapbtn" title="Carte du système en arrière-plan (exporter avec --debug-map)">Carte</button>
+  <button id="modebtn" title="Basculer entre la vue user et la vue dev">Dev</button>
   <span id="turnlabel"></span>
+</div>
+<div id="debrief">
+  <div class="card">
+    <h2>Bilan de l'entretien</h2>
+    <div class="grid">
+      <div class="stat"><strong id="dfacts"></strong><span>faits recueillis</span></div>
+      <div class="stat"><strong id="dcentral"></strong><span>faits centraux</span></div>
+      <div class="stat"><strong id="dopen"></strong><span id="dopendetail"></span></div>
+      <div class="stat"><strong id="dfalse"></strong><span>faux détails introduits</span></div>
+    </div>
+    <div id="dissuesbox"><h3>Écarts à revoir</h3><ul id="dissues"></ul></div>
+    <div class="actions"><button id="closedebrief">Fermer</button></div>
+  </div>
 </div>
 <div id="start"><button class="primary" id="startbtn">▶ Lancer le rejeu</button></div>
 <script type="module" src="main.js"></script>

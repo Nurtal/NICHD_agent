@@ -118,12 +118,13 @@ def test_avatar_server_refuses_a_folder_without_a_performance(tmp_path, capsys):
 def test_avatar_client_files_are_present_and_parse():
     import shutil
     import subprocess
-    files = ["index.html", "main.js", "figure.js", "cues.js"]
+    scripts = ["main.js", "figure.js", "cues.js", "room.js", "debug.js", "coaching.js"]
+    files = ["index.html", *scripts]
     assert all((ROOT / "avatar" / f).exists() for f in files)
     node = shutil.which("node")
     if node is None:
         pytest.skip("node absent : syntaxe JS non vérifiée")
-    for f in ("main.js", "figure.js", "cues.js"):
+    for f in scripts:
         src = (ROOT / "avatar" / f).read_text(encoding="utf-8")
         r = subprocess.run([node, "--input-type=module", "--check"], input=src, text=True, capture_output=True)
         assert r.returncode == 0, (f, r.stderr)
