@@ -223,12 +223,13 @@ def export_avatar_cmd(args: argparse.Namespace) -> int:
     except (ReplayError, OSError) as e:
         print(e, file=sys.stderr)
         return 2
-    profile = None
+    scenario, profile = None, None
     try:
-        profile = find_scenario(log, args.scenarios_dir).child_profile
+        scenario = find_scenario(log, args.scenarios_dir)
+        profile = scenario.child_profile
         name, age = profile.name, profile.age
     except ReplayError as e:
-        print(f"{e} — prénom et âge inconnus", file=sys.stderr)
+        print(f"{e} — prénom et âge inconnus, pas de suivi du protocole", file=sys.stderr)
         name, age = "Enfant", 0
     out = Path(args.output or Path("avatar_sessions") / log.session_id)
     speaker = None
@@ -241,14 +242,18 @@ def export_avatar_cmd(args: argparse.Namespace) -> int:
             print(f"voix indisponible ({e}) : chronologie estimée", file=sys.stderr)
     perf = build_session(log, name, age, speaker=speaker, out_dir=out)
     path = write_session(perf, out)
+    if scenario is not None:
+        from nichd_sim.coaching import build_coaching, write_coaching
+
+        write_coaching(build_coaching(log, scenario), out)
     if args.debug_map:
         import json
 
         from nichd_sim.ui.flow_view import write_session_maps
 
-        try:
-            deception = find_scenario(log, args.scenarios_dir).deception is not None
-        except ReplayError:
+        if scenario is not None:
+            deception = scenario.deception is not None
+        else:
             deception = any(t.state_after.concealment > 0 for t in log.turns)
         index = write_session_maps(log, deception, out / "debug")
         (out / "debug" / "maps.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
