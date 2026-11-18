@@ -22,7 +22,7 @@ from faster_whisper import WhisperModel
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
-from common import AUDIO, RES, items  # noqa: E402
+from common import AUDIO, RES, items
 
 V1 = HERE.parent / "results"
 BASELINES = ["kokoro-siwis-child", "chatterbox-clone-kchild"]

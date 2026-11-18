@@ -17,7 +17,6 @@ import numpy as np
 import ormsgpack
 import requests
 import soundfile as sf
-
 from common import AUDIO, REF, REPLIES, items, references, write_rows
 
 SRC = Path(__file__).resolve().parent.parent / ".envs" / "fish-src"

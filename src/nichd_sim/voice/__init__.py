@@ -4,45 +4,60 @@ TTS backends run in their own environment (experiments/voices/README.md); the te
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from nichd_sim.voice.audio import Audio
 from nichd_sim.voice.kokoro_speaker import KokoroSpeaker, SpeakerError
+from nichd_sim.voice.qwen_speaker import QwenSpeaker, voice_bank, voice_for
 from nichd_sim.voice.render import RenderedSpeech, Span, render_log, render_speech
 from nichd_sim.voice.speaker import Speaker, ToneSpeaker
 from nichd_sim.voice.worker import VoiceError
 
+if TYPE_CHECKING:
+    from nichd_sim.scenario import ChildProfile
+
 SPEAKERS = {
-    "tone": ToneSpeaker,
-    "kokoro": lambda: KokoroSpeaker(child=True),
-    "kokoro-adulte": lambda: KokoroSpeaker(child=False),
+    "tone": lambda child=None: ToneSpeaker(),
+    "qwen": lambda child=None: QwenSpeaker(voice_for(child)),
+    "kokoro": lambda child=None: KokoroSpeaker(child=True),
+    "kokoro-adulte": lambda child=None: KokoroSpeaker(child=False),
 }
-"""Available speakers by name (`kokoro` = child voice; needs Kokoro's venv, see experiments/voices)."""
+"""Available speakers by name, each built for a child profile (or None).
+
+`qwen` = the child's voice from the bank (gender × age band, voice v2), needs Qwen's venv;
+`kokoro` = the former child voice, needs Kokoro's venv (experiments/voices/README.md)."""
 
 
 def default_speaker_name() -> str:
-    """`kokoro` (child voice) when its environment is installed, else the model-free `tone`."""
-    from nichd_sim.voice.kokoro_speaker import ENV_VAR
+    """`qwen` when its environment is installed, else `kokoro`, else the model-free `tone`."""
+    from nichd_sim.voice import kokoro_speaker, qwen_speaker
     from nichd_sim.voice.worker import find_python
 
-    try:
-        find_python(ENV_VAR)
-        return "kokoro"
-    except VoiceError:
-        return "tone"
+    for name, env_var, env_dir in (("qwen", qwen_speaker.ENV_VAR, qwen_speaker.ENV_DIR),
+                                   ("kokoro", kokoro_speaker.ENV_VAR, None)):
+        try:
+            find_python(env_var, env_dir) if env_dir else find_python(env_var)
+            return name
+        except VoiceError:
+            continue
+    return "tone"
 
 
-def make_speaker(name: str | None = None) -> Speaker:
+def make_speaker(name: str | None = None, child: ChildProfile | None = None) -> Speaker:
+    """The named speaker (default: the best installed) for this child (`qwen` picks its voice)."""
     name = name or default_speaker_name()
     try:
         factory = SPEAKERS[name]
     except KeyError:
         raise ValueError(f"voix inconnue {name!r} (disponibles : {', '.join(sorted(SPEAKERS))})") from None
-    return factory()
+    return factory(child)
 
 
 __all__ = [
     "SPEAKERS",
     "Audio",
     "KokoroSpeaker",
+    "QwenSpeaker",
     "RenderedSpeech",
     "Span",
     "Speaker",
@@ -53,4 +68,6 @@ __all__ = [
     "make_speaker",
     "render_log",
     "render_speech",
+    "voice_bank",
+    "voice_for",
 ]

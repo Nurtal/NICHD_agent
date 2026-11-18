@@ -11,6 +11,7 @@ intake_context: 'Lucas, 12 ans, est entendu comme témoin d''un accident de la c
 child_profile:
   name: Lucas
   age: 12
+  voice: garcon
   reluctance: 0.05
   verbal_skills: 0.9
   suggestibility: 0.15

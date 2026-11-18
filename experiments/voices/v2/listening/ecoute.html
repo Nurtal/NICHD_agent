@@ -46,9 +46,8 @@
 </main>
 <script>
 const AGES = ["moins de 6 ans", "6–8 ans", "9–12 ans", "adolescent", "adulte"];
-const KEY = "nichd-voix-v2";
+let KEY = "nichd-voix-v2";  // one saved state per pack version (set once tasks.json is loaded)
 let tasks, state = {};
-try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { state = {}; }
 
 function shuffle(a, seed) {
   let s = seed;
@@ -79,7 +78,9 @@ function render() {
     const order = shuffle(g.clips.slice(), state.seed + gi);
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `<div class="muted">Réponse ${gi + 1} / ${tasks.groups.length}</div><div class="text">« ${g.text} »</div>
+    card.innerHTML = (g.title
+      ? `<div class="muted">Groupe ${gi + 1} / ${tasks.groups.length}</div><div class="text"><strong>${g.title}</strong> : quelle voix lui convient le mieux ?</div><div class="muted">« ${g.text} »</div>`
+      : `<div class="muted">Réponse ${gi + 1} / ${tasks.groups.length}</div><div class="text">« ${g.text} »</div>`) + `
       <div class="clips">${order.map((c, k) => `
         <div class="clip ${state.picks[g.id] === c ? "pick" : ""}" data-clip="${c}">
           <h3>Voix ${String.fromCharCode(65 + k)} <label><input type="radio" name="pick-${g.id}" value="${c}"
@@ -119,7 +120,12 @@ document.getElementById("save").onclick = async () => {
     status.textContent = "Échec de l'enregistrement : vos notes restent dans ce navigateur.";
   }
 };
-fetch("tasks.json").then((r) => r.json()).then((t) => { tasks = t; render(); });
+fetch("tasks.json").then((r) => r.json()).then((t) => {
+  tasks = t;
+  KEY = `nichd-voix-${t.version}`;
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { state = {}; }
+  render();
+});
 </script>
 </body>
 </html>

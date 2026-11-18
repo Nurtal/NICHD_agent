@@ -1,0 +1,402 @@
+[
+ {
+  "id": "fille_5_7_a1",
+  "gender": "fille",
+  "band": "5_7",
+  "instruct": "Une petite fille de six ans, voix d'enfant très aiguë, claire et douce. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 1659452344,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 375.12956989999907,
+  "s_per_char": 0.07983878615457562,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_5_7_a2",
+  "gender": "fille",
+  "band": "5_7",
+  "instruct": "Une petite fille de six ans, voix d'enfant très aiguë, claire et douce. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 4225788418,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 320.95899399289317,
+  "s_per_char": 0.06477087778568041,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_5_7_b1",
+  "gender": "fille",
+  "band": "5_7",
+  "instruct": "Une fillette de cinq ans et demi, petite voix fluette et un peu hésitante. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 1237608571,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 212.34782119543428,
+  "s_per_char": 0.06515970515970516,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_5_7_b2",
+  "gender": "fille",
+  "band": "5_7",
+  "instruct": "Une fillette de cinq ans et demi, petite voix fluette et un peu hésitante. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 3503110593,
+  "wer": 0.0,
+  "worst_wer": 0.0,
+  "f0": 328.0193864401092,
+  "s_per_char": 0.08000948316737791,
+  "hyps": [
+   "il il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_11_12_a1",
+  "gender": "fille",
+  "band": "11_12",
+  "instruct": "Une fille de onze ans, voix d'enfant encore aiguë mais plus posée, un peu réservée. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 4150385761,
+  "wer": 0.07670454545454546,
+  "worst_wer": 0.18181818181818182,
+  "f0": 234.72210854364693,
+  "s_per_char": 0.07697486960644856,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait autrefois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_11_12_a2",
+  "gender": "fille",
+  "band": "11_12",
+  "instruct": "Une fille de onze ans, voix d'enfant encore aiguë mais plus posée, un peu réservée. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 1852345819,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 211.17762036862155,
+  "s_per_char": 0.06995732574679943,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_11_12_b1",
+  "gender": "fille",
+  "band": "11_12",
+  "instruct": "Une préadolescente de douze ans, voix claire et jeune, légèrement timide. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 3696005026,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 218.14064703702763,
+  "s_per_char": 0.06102492102492102,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_11_12_b2",
+  "gender": "fille",
+  "band": "11_12",
+  "instruct": "Une préadolescente de douze ans, voix claire et jeune, légèrement timide. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 1162206744,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 230.26394066549764,
+  "s_per_char": 0.0741678520625889,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_5_7_a1",
+  "gender": "garcon",
+  "band": "5_7",
+  "instruct": "Un petit garçon de six ans, voix d'enfant aiguë et claire, un peu timide. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 158053965,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 400.85930756059145,
+  "s_per_char": 0.07366093366093365,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_5_7_a2",
+  "gender": "garcon",
+  "band": "5_7",
+  "instruct": "Un petit garçon de six ans, voix d'enfant aiguë et claire, un peu timide. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 2422401015,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 311.4833253144992,
+  "s_per_char": 0.07789515913940256,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_5_7_b1",
+  "gender": "garcon",
+  "band": "5_7",
+  "instruct": "Un garçon de cinq ans, petite voix d'enfant très jeune, douce et spontanée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 575071630,
+  "wer": 0.027777777777777776,
+  "worst_wer": 0.1111111111111111,
+  "f0": 294.79325497739194,
+  "s_per_char": 0.07065908013276434,
+  "hyps": [
+   "il il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "carrie m'a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_5_7_b2",
+  "gender": "garcon",
+  "band": "5_7",
+  "instruct": "Un garçon de cinq ans, petite voix d'enfant très jeune, douce et spontanée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "seed": 3142562868,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 298.1406473241385,
+  "s_per_char": 0.06687529634898057,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_8_10_a1",
+  "gender": "garcon",
+  "band": "8_10",
+  "instruct": "Un garçon de neuf ans, voix d'enfant aiguë qui n'a pas mué, un peu réservée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "seed": 2451857367,
+  "wer": 0.0,
+  "worst_wer": 0.0,
+  "f0": 348.98576083305625,
+  "s_per_char": 0.07416840030820293,
+  "hyps": [
+   "il il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_8_10_a2",
+  "gender": "garcon",
+  "band": "8_10",
+  "instruct": "Un garçon de neuf ans, voix d'enfant aiguë qui n'a pas mué, un peu réservée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "seed": 187502189,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 314.0497411255999,
+  "s_per_char": 0.07738153738153739,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_8_10_b1",
+  "gender": "garcon",
+  "band": "8_10",
+  "instruct": "Un écolier de huit ans, voix d'enfant claire et vive, encore très jeune. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "seed": 3104377876,
+  "wer": 0.0,
+  "worst_wer": 0.0,
+  "f0": 369.2113012403312,
+  "s_per_char": 0.08454243717401612,
+  "hyps": [
+   "il il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_8_10_b2",
+  "gender": "garcon",
+  "band": "8_10",
+  "instruct": "Un écolier de huit ans, voix d'enfant claire et vive, encore très jeune. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "seed": 536894894,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 284.3614479302976,
+  "s_per_char": 0.07752489331436699,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_11_12_a1",
+  "gender": "garcon",
+  "band": "11_12",
+  "instruct": "Un garçon de onze ans dont la voix n'a pas encore mué, voix d'enfant claire, un peu timide. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 228810118,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 307.93383648905694,
+  "s_per_char": 0.0741678520625889,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_11_12_a2",
+  "gender": "garcon",
+  "band": "11_12",
+  "instruct": "Un garçon de onze ans dont la voix n'a pas encore mué, voix d'enfant claire, un peu timide. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 2494172220,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 248.33222724827476,
+  "s_per_char": 0.07802737802737802,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_11_12_b1",
+  "gender": "garcon",
+  "band": "11_12",
+  "instruct": "Un garçon de douze ans, voix d'enfant encore aiguë, sans mue, posée et réservée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 646843973,
+  "wer": 0.0,
+  "worst_wer": 0.0,
+  "f0": 362.83821536150106,
+  "s_per_char": 0.07902464132151632,
+  "hyps": [
+   "il il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "garcon_11_12_b2",
+  "gender": "garcon",
+  "band": "11_12",
+  "instruct": "Un garçon de douze ans, voix d'enfant encore aiguë, sans mue, posée et réservée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "seed": 3213320191,
+  "wer": 0.03125,
+  "worst_wer": 0.125,
+  "f0": 317.24334959983145,
+  "s_per_char": 0.07584415584415584,
+  "hyps": [
+   "il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ },
+ {
+  "id": "fille_8_10_v",
+  "gender": "fille",
+  "band": "8_10",
+  "instruct": "Une petite fille de huit ans, voix d'enfant aiguë et douce, un peu timide, qui parle simplement, naturellement, sans exagérer.",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "seed": null,
+  "validated": "synth_qwen_girl8",
+  "wer": 0.0,
+  "worst_wer": 0.0,
+  "f0": 333.25391781697124,
+  "s_per_char": 0.07119962067330488,
+  "hyps": [
+   "il il m'a attrapé le bras très fort",
+   "après je suis allée dans ma chambre et j'avais un bleu sur le bras",
+   "karim a crié très fort sur moi et puis il m'a tapé dans le dos avec sa main",
+   "il l'a déjà fait d'autres fois quand maman n'est pas là"
+  ],
+  "ok": true
+ }
+]

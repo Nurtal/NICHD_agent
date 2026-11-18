@@ -92,6 +92,14 @@ class ExpressionStyle(StrEnum):
     MIXED = "mixed"
 
 
+class ChildVoice(StrEnum):
+    """Timbre of the child's synthetic voice (voice v2). Only the voice uses it: the stage direction
+    stays gender-neutral (ADR 0003)."""
+
+    GIRL = "fille"
+    BOY = "garcon"
+
+
 class ChildProfile(_Strict):
     name: str = Field(min_length=1)
     age: int = Field(ge=4, le=12)
@@ -100,6 +108,9 @@ class ChildProfile(_Strict):
     suggestibility: float = Field(ge=0, le=1)
     expression_style: ExpressionStyle | None = Field(
         default=None, description="Style d'expression (ADR 0003) ; défaut selon la bande d'âge."
+    )
+    voice: ChildVoice | None = Field(
+        default=None, description="Timbre de la voix de synthèse (fille, garcon) ; défaut : fille."
     )
 
     @property

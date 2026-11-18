@@ -18,6 +18,21 @@ uv venv --python 3.11 $E/chatterbox
 VIRTUAL_ENV=$E/chatterbox uv pip install chatterbox-tts "setuptools<80"   # perth (filigrane) a besoin de pkg_resources
 ```
 
+Voix de l'enfant par défaut depuis la v2 : **Qwen3-TTS** (Apache-2.0), avec une voix d'enfant synthétique
+choisie dans une banque de 6 voix (fille ou garçon, par tranche d'âge du moteur), stockée dans
+`src/nichd_sim/data/voices/` :
+
+```bash
+uv venv --python 3.11 $E/qwen
+VIRTUAL_ENV=$E/qwen uv pip install "qwen-tts==0.1.1" soundfile librosa
+VIRTUAL_ENV=$E/qwen uv pip install --reinstall torch torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+
+Le modèle `Qwen/Qwen3-TTS-12Hz-1.7B-Base` (~4 Go) est téléchargé au premier lancement. Il occupe environ 5 Go
+de mémoire graphique en float16. Sur une TITAN RTX, une réponse courte prend 2 à 5 s et une longue
+(une dizaine de secondes de parole) environ 15 s. La variable `NICHD_QWEN_PYTHON` remplace le chemin de cet environnement. Sans
+cet environnement, on retombe sur Kokoro, puis sur `tone` ; le mode texte n'a besoin d'aucun des deux.
+
 Modèles téléchargés au premier lancement dans le cache Hugging Face : `hexgrad/Kokoro-82M` (~330 Mo),
 `ResembleAI/chatterbox` (~3 Go). Whisper large-v3 (`Systran/faster-whisper-large-v3`) sert de juge.
 

@@ -33,6 +33,7 @@ child_profile:
   verbal_skills: 0.5         # quantité de détails par invitation
   suggestibility: 0.5        # propension à acquiescer aux suggestions
   expression_style: mixed    # facultatif (ADR 0003) : agitated, frozen ou mixed ; défaut selon l'âge
+  voice: fille               # facultatif : fille ou garcon, timbre de la voix de synthèse ; défaut : fille
 target_event:                # l'événement objet de l'audition
   segments: [before, during, after]   # dans cet ordre, chacun présent au plus une fois
 neutral_event:               # événement neutre récent, pour la pratique narrative
@@ -77,6 +78,7 @@ Bonnes ancres : noms propres (`Bertin`, `Karim`), objets ou actions distinctifs 
 | `verbal_skills` 0.3 / 0.8 | 1–2 / 3–5 unités par invitation selon l'âge |
 | `suggestibility` 0.2 / 0.8 | acquiescement rare / fréquent aux suggestions fausses |
 | `expression_style` | `agitated` : l'activation se voit (agitation, crispation, débit précipité) ; `frozen` : l'enfant montre peu (immobile, regard dans le vide, voix plate) même très activé. Défaut : `agitated` pour les 4–6 ans, `mixed` ensuite. La réticence fixe aussi l'activation de départ. |
+| `voice` | Timbre de la voix de synthèse : `fille` ou `garcon`. Avec la tranche d'âge, il choisit la voix d'enfant dans la banque (`src/nichd_sim/data/voices/`, voix entièrement synthétiques). Seule la voix l'utilise : les didascalies restent neutres. Défaut : `fille`. |
 
 ## Un enfant qui cache des faits (facultatif)
 

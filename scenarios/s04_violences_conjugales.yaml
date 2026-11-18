@@ -12,6 +12,7 @@ intake_context: Lina, 6 ans, est entendue comme témoin après une intervention 
 child_profile:
   name: Lina
   age: 6
+  voice: fille
   reluctance: 0.55
   verbal_skills: 0.35
   suggestibility: 0.6

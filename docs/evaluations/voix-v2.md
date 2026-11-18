@@ -141,7 +141,7 @@ deux fois ; seule la dernière sauvegarde est comptée.
 | Kokoro actuel + fond sonore | 1,00 | 1,00 | 9–12 ans | 0 |
 | **Kokoro actuel** | **1,00** | **1,33** | 9–12 ans | 0 |
 
-Détail par réponse : `experiments/voices/v2/listening/results.md` (`analyze.py`).
+Détail par réponse : `experiments/voices/v2/listening/results_v2-1.md` (`analyze.py`).
 
 **Lecture.**
 
@@ -161,3 +161,59 @@ c'est un garçon ou parce que sa conception est moins réussie.
 
 **Recommandation.** Adopter **Qwen3-TTS avec une voix d'enfant conçue par description**, dite d'un bloc (mode
 natif).
+
+## Banque de voix (2026-11-17)
+
+Les scénarios mettent en scène des filles et des garçons de 5 à 12 ans. Une seule voix de fille de 8 ans ne
+convient donc pas à tous. Il y a une voix par **genre × tranche d'âge du moteur** (`AgeBand` : 4–6, 7–9 et
+10–12 ans).
+
+**Conception** (`voice_bank.py`). Pour chacune des 5 cases nouvelles, Qwen3-TTS VoiceDesign a produit 4 voix
+candidates : 2 descriptions × 2 graines. Toutes sont entièrement synthétiques. Chaque candidate a ensuite été
+clonée par Qwen3-TTS Base sur 4 réponses, comme le fera le moteur. La case fille 7–9 ans garde la voix validée
+par la première écoute.
+
+**Mesure automatique** (`bank_eval.py`). Les 20 candidates passent : WER moyen de 0 à 8 %, sans hallucination.
+Leur F0 va de 211 à 401 Hz.
+
+**Écoute à l'aveugle** (`build_bank_listening.py`). Pour chaque case, chaque voix dit deux réponses à la suite.
+L'auditeur note, choisit sa voix préférée par case, et le choix est sans ambiguïté :
+
+| Case | Voix retenue | Naturel / fluidité | Âge perçu | F0 |
+|---|---|---|---|---|
+| Fille 4–6 ans | `fille_5_7_a2` | 4 / 5 | moins de 6 ans | 321 Hz |
+| Fille 7–9 ans | fille de 8 ans (première écoute) | 4,8 / 5 | 6–8 ans | 333 Hz |
+| Fille 10–12 ans | `fille_11_12_b1` | 4 / 5 | 9–12 ans | 218 Hz |
+| Garçon 4–6 ans | `garcon_5_7_b2` | 5 / 5 | moins de 6 ans | 298 Hz |
+| Garçon 7–9 ans | `garcon_8_10_b2` | 5 / 5 | 6–8 ans | 284 Hz |
+| Garçon 10–12 ans | `garcon_11_12_a2` | 4 / 4 | 9–12 ans | 248 Hz |
+
+L'âge perçu correspond à la case pour chacune des voix retenues. Le garçon 10–12 ans reste la case la plus
+faible : les deux candidates « b » ont été perçues comme adolescentes ou trop jeunes. Le détail est dans
+`experiments/voices/v2/listening/results_bank-1.md`.
+
+## Intégration dans le moteur
+
+- **Banque** : `src/nichd_sim/data/voices/`, 6 clips de référence en FLAC (1,2 Mo) avec leur texte et leur
+  description, dans `voices.json`.
+- **Profil** : un nouveau champ facultatif `child_profile.voice` (`fille` | `garcon`), renseigné dans les 8
+  scénarios d'après l'accord de leur fiche (« est entendu » ou « est entendue »). Seule la voix l'utilise : la
+  didascalie reste neutre (ADR 0003). Sans ce champ, on prend la voix de fille de la tranche d'âge.
+- **Voix** : `QwenSpeaker` (`qwen_speaker.py` et `qwen_worker.py`, dans le venv `.envs/qwen`). Elle est
+  choisie par défaut quand ce venv est installé, sinon Kokoro, sinon `tone`. Le mode texte n'a besoin d'aucune
+  voix.
+- **Rendu natif aux pauses du moteur.**
+  - La réponse est dite d'un bloc, avec ses « … » et ses « euh… ». Chaque pause est ensuite **recalée sur la
+    durée prévue par le moteur**. C'est le moteur qui décide de l'hésitation (ADR 0002) ; la voix ne décide
+    que du son.
+  - La voix ne pause pas toujours là où le texte l'écrit : elle peut pauser aussi à une virgule, ou dire
+    « euh… non » d'un trait. Tout silence d'au moins 30 ms est donc candidat à la coupe, ainsi que les creux
+    d'énergie proches de l'endroit attendu (avec une pénalité). Chaque pause prévue prend le candidat le plus
+    proche de sa place dans le texte, par programmation dynamique.
+  - Sur la session de démonstration (Emma, 9 réponses), toutes les pauses sont recalées au plan. Whisper
+    retrouve le bon texte dans chaque morceau découpé : aucune coupe ne tombe au milieu d'un mot.
+- **Coût** : environ 5 Go de mémoire graphique (float16). Sur une TITAN RTX, une réponse prend 2 à 5 s si elle
+  est courte, environ 15 s si elle est longue. La latence n'est pas une priorité pour l'instant.
+- **Démo de l'avatar** régénérée avec la nouvelle voix :
+  - `avatar_sessions/emma-demo` ;
+  - vidéos locales `docs/presentation/demo-avatar-emma-voix-v2.mp4` et `…-voix-v2-carte.mp4`.

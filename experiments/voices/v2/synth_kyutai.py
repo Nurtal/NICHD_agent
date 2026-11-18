@@ -14,10 +14,9 @@ import zlib
 import numpy as np
 import soundfile as sf
 import torch
+from common import AUDIO, items, write_rows
 from moshi.models.loaders import CheckpointInfo
 from moshi.models.tts import DEFAULT_DSM_TTS_REPO, TTSModel
-
-from common import AUDIO, items, write_rows
 
 VOICES = {
     "kyutai-mls10179": "cml-tts/fr/10179_11051_000005-0001_enhanced.wav",

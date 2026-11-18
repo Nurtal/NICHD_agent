@@ -20,11 +20,11 @@ class VoiceError(RuntimeError):
     pass
 
 
-def find_python(env_var: str) -> Path:
-    """Python of the voice venv: $<env_var>, else experiments/voices/.envs/kokoro."""
+def find_python(env_var: str, env_dir: Path = VOICE_ENV) -> Path:
+    """Python of a voice venv: $<env_var>, else <env_dir> (default experiments/voices/.envs/kokoro)."""
     if os.environ.get(env_var):
         return Path(os.environ[env_var])
-    rel = VOICE_ENV / "bin" / "python"
+    rel = env_dir / "bin" / "python"
     for root in (Path.cwd(), Path(__file__).resolve().parents[3]):
         if (root / rel).exists():
             return root / rel

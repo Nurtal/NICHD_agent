@@ -1,0 +1,62 @@
+{
+ "fille_4_6": {
+  "file": "fille_4_6.flac",
+  "gender": "fille",
+  "band": "4_6",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "instruct": "Une petite fille de six ans, voix d'enfant très aiguë, claire et douce. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "source": "Qwen3-TTS VoiceDesign (Apache-2.0), voix entièrement synthétique (ADR 0002)",
+  "candidate": "fille_5_7_a2",
+  "seconds": 5.0
+ },
+ "fille_7_9": {
+  "file": "fille_7_9.flac",
+  "gender": "fille",
+  "band": "7_9",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "instruct": "Une petite fille de huit ans, voix d'enfant aiguë et douce, un peu timide, qui parle simplement, naturellement, sans exagérer.",
+  "source": "Qwen3-TTS VoiceDesign (Apache-2.0), voix entièrement synthétique (ADR 0002)",
+  "candidate": "fille_8_10_v",
+  "seconds": 6.8
+ },
+ "fille_10_12": {
+  "file": "fille_10_12.flac",
+  "gender": "fille",
+  "band": "10_12",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "instruct": "Une préadolescente de douze ans, voix claire et jeune, légèrement timide. Elle parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "source": "Qwen3-TTS VoiceDesign (Apache-2.0), voix entièrement synthétique (ADR 0002)",
+  "candidate": "fille_11_12_b1",
+  "seconds": 6.2
+ },
+ "garcon_4_6": {
+  "file": "garcon_4_6.flac",
+  "gender": "garcon",
+  "band": "4_6",
+  "ref_text": "Moi j'ai un chat, il s'appelle Pompon. Il dort sur mon lit et des fois il me griffe un petit peu.",
+  "instruct": "Un garçon de cinq ans, petite voix d'enfant très jeune, douce et spontanée. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "source": "Qwen3-TTS VoiceDesign (Apache-2.0), voix entièrement synthétique (ADR 0002)",
+  "candidate": "garcon_5_7_b2",
+  "seconds": 7.1
+ },
+ "garcon_7_9": {
+  "file": "garcon_7_9.flac",
+  "gender": "garcon",
+  "band": "7_9",
+  "ref_text": "Le week-end dernier, on est allés à la piscine avec la classe. J'ai fait le grand toboggan, et après on a mangé des gâteaux dans le car.",
+  "instruct": "Un écolier de huit ans, voix d'enfant claire et vive, encore très jeune. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "source": "Qwen3-TTS VoiceDesign (Apache-2.0), voix entièrement synthétique (ADR 0002)",
+  "candidate": "garcon_8_10_b2",
+  "seconds": 7.5
+ },
+ "garcon_10_12": {
+  "file": "garcon_10_12.flac",
+  "gender": "garcon",
+  "band": "10_12",
+  "ref_text": "Cette année je suis en sixième. Il y a beaucoup plus de devoirs qu'avant, mais j'aime bien les cours de sport et de musique.",
+  "instruct": "Un garçon de onze ans dont la voix n'a pas encore mué, voix d'enfant claire, un peu timide. Il parle naturellement, simplement, avec des phrases courtes, sans exagérer ni jouer la comédie, comme un enfant qui répond à un adulte qu'il ne connaît pas bien.",
+  "source": "Qwen3-TTS VoiceDesign (Apache-2.0), voix entièrement synthétique (ADR 0002)",
+  "candidate": "garcon_11_12_a2",
+  "seconds": 8.3
+ }
+}

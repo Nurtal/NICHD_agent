@@ -13,6 +13,7 @@ intake_context: >
 child_profile:
   name: Sami
   age: 11
+  voice: garcon
   reluctance: 0.1
   verbal_skills: 0.8
   suggestibility: 0.2

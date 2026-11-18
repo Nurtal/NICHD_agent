@@ -30,7 +30,7 @@ CACHE = HERE / ".cache"
 SR = 24000
 MLS = "https://huggingface.co/datasets/facebook/multilingual_librispeech/resolve/main/data/mls_french"
 CAFE = "https://zenodo.org/api/records/1478765/files/CaFE_48k.zip/content"
-CHILDREN = re.compile(r"conte|enfant|fée|fable|petit|poucet|alice|pinocchio|chaperon", re.I)
+CHILDREN = re.compile(r"conte|enfant|fée|fable|petit|poucet|alice|pinocchio|chaperon", re.IGNORECASE)
 N_MLS = 4
 SIBLINGS = [s["rfilename"] for s in json.load(urllib.request.urlopen(
     "https://huggingface.co/api/datasets/facebook/multilingual_librispeech"))["siblings"]]

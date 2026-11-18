@@ -14,9 +14,8 @@ import zlib
 import numpy as np
 import soundfile as sf
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
 from common import AUDIO, REF, REPLIES, items, references, write_rows
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 REPO = "multimodalart/higgs-audio-v3-tts-4b-transformers"
 DTYPE = torch.float16 if "--fp16" in sys.argv else torch.float32  # Turing: no bf16
