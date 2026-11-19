@@ -109,7 +109,7 @@ def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
 
 _ADDED_IN: dict[int, dict[str, set[str]]] = {
     3: {"decision": {"delivery", "demeanor"}, "state_after": {"arousal", "arousal_baseline"}},
-    4: {"state_after": {"last_act", "last_target", "closed_asked"}},
+    4: {"state_after": {"last_act", "last_target", "closed_asked", "last_key", "supports_given"}},
 }
 """Per log format, the fields it added or computes differently (format 3: the delivery depends on
 arousal; format 4: the engine remembers the previous turn and the closed questions asked). They are

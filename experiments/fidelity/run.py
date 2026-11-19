@@ -114,12 +114,13 @@ def probe_repetition(seeds: range) -> Result:
 
 
 def probe_dont_know_reaction(seeds: range) -> Result:
-    """A1 — Bücken et al. (2026): an accepted « je sais pas » → more productive answers than a rejected one."""
+    """A1 — Bücken et al. (2026): after a rejected « je sais pas » most children answer anyway (76–81 %,
+    at the risk of complying), and an accepted one leaves the child more forthcoming."""
     sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
-    plan = PLANS[sc.id]
-    q, s1 = plan.out_of_scenario[1], plan.false_suggestions[0][0]
-    out: dict[str, dict[str, list]] = {"accept": {"units": [], "acq": []}, "reject": {"units": [], "acq": []}}
-    for branch in out:
+    q = PLANS[sc.id].out_of_scenario[1]
+    units: dict[str, list[int]] = {"accept": [], "reject": []}
+    answered_rejection: list[bool] = []
+    for branch in units:
         for seed in seeds:
             child = Child(sc, seed)
             if not disclose(child, 1):
@@ -129,17 +130,16 @@ def probe_dont_know_reaction(seeds: range) -> Result:
             if branch == "accept":
                 child.ask("[soutien] D'accord, c'est bien de me dire quand tu ne sais pas.")
             else:
-                child.ask(f"[dir:hors] {q} Essaie de te souvenir.")
-            out[branch]["units"].append(true_units(child.ask("[inv] Raconte-moi encore ce qui s'est passé.")))
-            out[branch]["acq"].append(accepted_false(child.ask(f"[sug:hors={s1}] {s1}")))
-    mean = {b: statistics.mean(v["units"]) if v["units"] else 0.0 for b, v in out.items()}
-    acq = {b: rate(v["acq"]) for b, v in out.items()}
+                answered_rejection.append(child.ask(f"[dir:hors] {q}").speech_act != SpeechAct.DONT_KNOW)
+            units[branch].append(true_units(child.ask("[inv] Raconte-moi encore ce qui s'est passé.")))
+    mean = {b: statistics.mean(v) if v else 0.0 for b, v in units.items()}
+    answered = rate(answered_rejection)
     return Result(
-        "A1", "unités vraies à l'invitation suivante ; acquiescement à une suggestion fausse (accepté / rejeté)",
-        f"{mean['accept']:.2f} / {mean['reject']:.2f} unités ; {acq['accept']:.0%} / {acq['reject']:.0%}"
-        f" (n = {len(out['accept']['units'])} / {len(out['reject']['units'])})",
-        "accepté > rejeté en unités ; rejeté > accepté en acquiescement",
-        mean["accept"] > mean["reject"] and acq["reject"] > acq["accept"],
+        "A1", "unités vraies à l'invitation suivante (accepté / rejeté) ; réponse donnée au rejet",
+        f"{mean['accept']:.2f} / {mean['reject']:.2f} unités ; {answered:.0%} répondent au rejet"
+        f" (n = {len(units['accept'])} / {len(units['reject'])})",
+        "accepté > rejeté ; une majorité répond au rejet (76–81 %, souvent par complaisance)",
+        mean["accept"] > mean["reject"] and answered > 0.5,
     )
 
 

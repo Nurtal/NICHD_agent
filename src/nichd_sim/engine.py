@@ -146,6 +146,10 @@ class EngineState(BaseModel):
     """What the previous prompt targeted (info unit id, or OUT_OF_SCENARIO)."""
     closed_asked: dict[str, int] = {}
     """How many times each closed question was asked (key: see `closed_key`)."""
+    last_key: str | None = None
+    """Closed-question key of the previous prompt (None if it was open)."""
+    supports_given: int = 0
+    """Support statements counted for their effect on acquiescence (capped)."""
 
 
 _CLOSED = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE}
@@ -159,6 +163,16 @@ def closed_key(c: Classification, effective: QuestionType, utterance: str | None
     if c.target and c.target != OUT_OF_SCENARIO:
         return c.target
     return f"{OUT_OF_SCENARIO}:{normalize(utterance or c.suggested_proposition or '')}"
+
+
+REFUSAL_ACTS = {SpeechAct.DONT_KNOW, SpeechAct.RELUCTANT, SpeechAct.DENY}
+"""Avoidance and denial: « je sais pas », not ready to talk, « non ». How the interviewer reacts to
+them changes what the child says next (Bücken et al., 2026)."""
+
+
+def is_rejection(prev_act: SpeechAct | None, prev_key: str | None, key: str | None) -> bool:
+    """The interviewer asks the same closed question again after the child avoided or denied it."""
+    return prev_act in REFUSAL_ACTS and key is not None and key == prev_key
 
 
 def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
@@ -183,6 +197,12 @@ class BehaviorEngine:
         self.demeanor_rng = random.Random(f"{seed}:demeanor")
         self.dynamics_rng = random.Random(f"{seed}:dynamics")
         """Draws of the interaction dynamics (reaction to « je sais pas », repetitions — plan lot 1)."""
+        self.prev_act: SpeechAct | None = None
+        self.prev_target: str | None = None
+        self.asked_before = 0
+        self.rejection = False
+        self._acq_boost = 0.0
+        """Extra acquiescence for this turn only (after a rejected « je sais pas »)."""
         protected = scenario.deception.protected if scenario.deception else []
         draws = sorted((self.deception_rng.random() for _ in protected), reverse=True)
         self._thresholds = dict(zip(protected, draws))
@@ -219,11 +239,27 @@ class BehaviorEngine:
         self.prev_act, self.prev_target = st.last_act, st.last_target
         self.asked_before = st.closed_asked.get(key, 0) if key else 0
         """How many times this closed question was already asked (0: first time, or open prompt)."""
+        self.rejection = is_rejection(st.last_act, st.last_key, key)
+        self._acq_boost = 0.0
+        self._react_to_refusal()
         decision = self._decide(c, phase_violation)
         if key:
             st.closed_asked = {**st.closed_asked, key: self.asked_before + 1}
-        st.last_act, st.last_target = decision.speech_act, c.target
+        st.last_act, st.last_target, st.last_key = decision.speech_act, c.target, key
         return decision
+
+    def _react_to_refusal(self) -> None:
+        """After « je sais pas » or « non »: asking it again (rejection) makes the child more
+        reluctant and, for this turn, more compliant; moving on (acceptance) reassures."""
+        st, p = self.state, self.params
+        if self.prev_act not in REFUSAL_ACTS:
+            return
+        if self.rejection:
+            if p["rejection_reluctance_rise"]:
+                st.reluctance = round(min(1.0, st.reluctance + p["rejection_reluctance_rise"]), 6)
+            self._acq_boost = p["rejection_acquiescence_boost"]
+        elif p["acceptance_reluctance_drop"]:
+            st.reluctance = round(max(0.0, st.reluctance - p["acceptance_reluctance_drop"]), 6)
 
     def _decide(self, c: Classification, phase_violation: bool) -> Decision:
         self.state.turn += 1
@@ -238,6 +274,10 @@ class BehaviorEngine:
         about_target = self._about_target(c, effective)
         if not was_disclosed and about_target:
             gate = self._disclosure_gate(effective)
+            if effective in (QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING) and self.params["pressure_reluctance_rise"]:
+                # Pressure before disclosure: a reluctant child closes up (Hershkowitz et al., 2006).
+                st = self.state
+                st.reluctance = round(min(1.0, st.reluctance * (1 + self.params["pressure_reluctance_rise"])), 6)
             if gate is not None:
                 decision = gate.model_copy(update={"effective_type": effective})
                 self._commit(decision)
@@ -274,6 +314,9 @@ class BehaviorEngine:
         hint = c.phase_hints[0] if c.phase_hints else None
         if t == QuestionType.SUPPORT:
             st.reluctance = max(0.0, st.reluctance - p["support_reluctance_drop"])
+            if st.supports_given < p["max_effective_supports"] and p["support_acquiescence_drop"]:
+                st.supports_given += 1
+                st.acquiescence = round(max(0.0, st.acquiescence - p["support_acquiescence_drop"]), 6)
         elif t == QuestionType.INVITATION and hint == "rapport":
             st.reluctance = max(0.0, st.reluctance - p["rapport_reluctance_drop"])
         elif t == QuestionType.GROUND_RULE and st.ground_rules_given < p["max_effective_ground_rules"]:
@@ -337,7 +380,7 @@ class BehaviorEngine:
 
     def _suggestibility_factor(self) -> float:
         lo, hi = self.params["suggestibility_multiplier_range"]
-        return lo + (hi - lo) * self.state.acquiescence
+        return lo + (hi - lo) * min(1.0, self.state.acquiescence + self._acq_boost)
 
     def _p(self, name: str, modulated: bool = False) -> float:
         p = self.params[name] * (self._suggestibility_factor() if modulated else 1.0)
@@ -346,12 +389,23 @@ class BehaviorEngine:
     def _draw(self, p: float) -> bool:
         return self.rng.random() < p
 
+    def _dyn_draw(self, p: float) -> bool:
+        """A draw of the interaction dynamics, in its own stream; none at all when the rule is off."""
+        return p > 0 and self.dynamics_rng.random() < p
+
     # -- open questions -----------------------------------------------------
 
     def _invitation_size(self) -> int:
         base = self.params["units_per_invitation"]
         lo, hi = self.params["verbosity_multiplier_range"]
-        return max(1, int(base * (lo + (hi - lo) * self.state.verbosity) + 0.5))  # round half up
+        size = base * (lo + (hi - lo) * self.state.verbosity)
+        weight = self.params["reluctance_informativeness_weight"]
+        if not weight:
+            return max(1, int(size + 0.5))  # round half up
+        # A reluctant child tells less (Blasbalg et al., 2018); stochastic rounding keeps small effects.
+        size *= 1 - weight * self.state.reluctance
+        whole = int(size)
+        return max(1, whole + (1 if self.dynamics_rng.random() < size - whole else 0))
 
     def _unrevealed(self, pool: list[InfoUnit]) -> list[InfoUnit]:
         return [u for u in pool if u.id not in self.state.revealed]
@@ -475,7 +529,8 @@ class BehaviorEngine:
             return self._lie_to_focused(unit, LieKind.FEIGNED_IGNORANCE, "question directive")
         if unit is not None:
             return Decision(speech_act=SpeechAct.ANSWER, allowed_units=[self._allowed(unit)], reason=f"question directive → {unit.id}")
-        if self._draw(self._p("p_confabulation", modulated=True)):
+        gain = self.params["repeat_confabulation_gain"] ** self.asked_before  # Krähenbühl et al. (2009)
+        if self._draw(min(1.0, self._p("p_confabulation", modulated=True) * gain)):
             cu = self._contaminate("(réponse inventée)", c, t, integrated=False)
             return Decision(
                 speech_act=SpeechAct.CONFABULATE,
@@ -496,7 +551,8 @@ class BehaviorEngine:
         correct = next((o for o in options if unit is not None and proposition_matches(unit, o)), None)
         if correct is not None and self._lies_about(unit):
             return self._lie_to_focused(unit, LieKind.FEIGNED_IGNORANCE, "question à choix")
-        if correct is not None and self._draw(self.params["p_correct_option"]):
+        changed = correct is not None and self.asked_before > 0 and self._dyn_draw(self.params["p_change_on_repeat"])
+        if correct is not None and not changed and self._draw(self.params["p_correct_option"]):
             return Decision(
                 speech_act=SpeechAct.ANSWER,
                 allowed_units=[self._allowed(unit)],
@@ -525,6 +581,9 @@ class BehaviorEngine:
         if unit is not None and (prop is None or proposition_matches(unit, prop)) and self._lies_about(unit):
             return self._lie_to_focused(unit, LieKind.FALSE_DENY, "question oui/non vraie")
         if unit is not None and (prop is None or proposition_matches(unit, prop)):
+            if self.asked_before > 0 and self._dyn_draw(self.params["p_change_on_repeat"]):
+                # Asked again: the child takes it the first answer was wrong (Krähenbühl et al., 2009).
+                return Decision(speech_act=SpeechAct.DENY, reason="question oui/non vraie répétée → change de réponse")
             return Decision(
                 speech_act=SpeechAct.ANSWER,
                 allowed_units=[self._allowed(unit)],

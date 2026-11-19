@@ -105,7 +105,167 @@ def test_a_format_3_log_without_the_new_fields_still_replays(monkeypatch):
     data = s.end().model_dump(mode="json")
     data["log_format"] = 3
     for t in data["turns"]:
-        for name in ("last_act", "last_target", "closed_asked"):
+        for name in ("last_act", "last_target", "closed_asked", "last_key", "supports_given"):
             t["state_after"].pop(name, None)
     log = SessionLog.model_validate(data)
     assert replay(log, find_scenario(log)).identical
+
+
+# -- lot 1: reluctance dynamics ----------------------------------------------------------
+
+from doubles import with_profile  # noqa: E402
+
+from nichd_sim.coaching import build_coaching  # noqa: E402
+from nichd_sim.scenario import load_scenario  # noqa: E402
+
+S01 = ROOT / "scenarios" / "s01_bagarre_parc.yaml"
+
+
+def dyn(seed=0, **profile):
+    sc = load_scenario(S01)
+    if profile:
+        sc = with_profile(sc, **profile)
+    return make_session(sc, seed=seed, dynamics=True)
+
+
+def disclosed(s, clf):
+    ask(s, clf, "Raconte-moi tout.", C("invitation"))
+    assert s.state.disclosed
+
+
+def test_pressure_before_disclosure_makes_a_reluctant_child_more_reluctant():
+    s, clf, _ = dyn(reluctance=0.6)
+    before = s.state.reluctance
+    ask(s, clf, "Il t'a poussé, hein ?", C("suggestive", "d_pousse", suggested_proposition="il a poussé"))
+    assert s.state.reluctance > before
+
+
+def test_pressure_is_free_once_the_child_has_disclosed():
+    s, clf, _ = dyn(reluctance=0.2)
+    disclosed(s, clf)
+    before = s.state.reluctance
+    ask(s, clf, "Il avait un couteau, hein ?", C("suggestive", OUT_OF_SCENARIO, suggested_proposition="un couteau"))
+    assert s.state.reluctance == before
+
+
+def _dont_know(s, clf, q="Comment il s'appelait ?"):
+    """Ask an out-of-scenario question until the child says « je sais pas » (seeded)."""
+    r = ask(s, clf, q, C("directive", OUT_OF_SCENARIO))
+    return r.decision.speech_act == SpeechAct.DONT_KNOW
+
+
+def _first_seed_with_dont_know():
+    for seed in range(50):
+        s, clf, _ = dyn(seed=seed)
+        disclosed(s, clf)
+        if _dont_know(s, clf):
+            return seed
+    raise AssertionError("aucun « je sais pas » sur 50 seeds")
+
+
+def test_rejecting_a_dont_know_raises_reluctance_accepting_it_lowers_it():
+    seed = _first_seed_with_dont_know()
+    s, clf, _ = dyn(seed=seed)
+    disclosed(s, clf)
+    _dont_know(s, clf)
+    base = s.state.reluctance
+    ask(s, clf, "Comment il s'appelait ?", C("directive", OUT_OF_SCENARIO))  # the same question again
+    assert s.engine.rejection and s.state.reluctance > base
+
+    s, clf, _ = dyn(seed=seed)
+    disclosed(s, clf)
+    _dont_know(s, clf)
+    ask(s, clf, "D'accord, merci.", C("support"))
+    assert not s.engine.rejection and s.state.reluctance < base
+
+
+def test_a_rejection_makes_the_child_more_compliant_for_that_turn_only():
+    seed = _first_seed_with_dont_know()
+    s, clf, _ = dyn(seed=seed)
+    disclosed(s, clf)
+    _dont_know(s, clf)
+    plain = s.engine._suggestibility_factor()
+    ask(s, clf, "Comment il s'appelait ?", C("directive", OUT_OF_SCENARIO))
+    assert s.engine._acq_boost > 0
+    ask(s, clf, "D'accord.", C("support"))
+    assert s.engine._acq_boost == 0 and s.engine._suggestibility_factor() <= plain
+
+
+def test_support_lowers_acquiescence_up_to_a_cap():
+    s, clf, _ = dyn()
+    start = s.state.acquiescence
+    for i in range(5):
+        ask(s, clf, f"Tu fais de ton mieux {i}.", C("support"))
+    cap = s.params["max_effective_supports"]
+    assert s.state.supports_given == cap
+    assert abs(s.state.acquiescence - max(0.0, start - cap * s.params["support_acquiescence_drop"])) < 1e-6
+
+
+def test_repeating_an_unanswerable_question_makes_invention_more_likely():
+    """Over many seeds, the 3rd identical out-of-scenario question is answered by invention more often
+    than the 1st (Krähenbühl et al., 2009)."""
+    first = third = 0
+    for seed in range(60):
+        s, clf, _ = dyn(seed=seed)
+        disclosed(s, clf)
+        acts = [ask(s, clf, "De quelle couleur était la voiture ?", C("directive", OUT_OF_SCENARIO)).decision.speech_act
+                for _ in range(3)]
+        first += acts[0] == SpeechAct.CONFABULATE
+        third += acts[2] == SpeechAct.CONFABULATE
+    assert third > first
+
+
+def test_a_repeated_true_yes_no_question_can_flip_the_answer():
+    flips = 0
+    for seed in range(60):
+        s, clf, _ = dyn(seed=seed)
+        disclosed(s, clf)
+        q = C("option_posing", "d_pousse", suggested_proposition="il a poussé")
+        ask(s, clf, "Il a poussé ?", q)
+        flips += ask(s, clf, "Il a poussé, tu es sûr ?", q).decision.speech_act == SpeechAct.DENY
+    assert 0 < flips < 60
+
+
+def test_reluctance_lowers_how_much_an_invitation_tells():
+    calm = sum(len(ask(*dyn(seed=k, reluctance=0.0)[:2], "Raconte.", C("invitation")).decision.allowed_units)
+               for k in range(40))
+    tense = 0
+    for k in range(40):
+        s, clf, _ = dyn(seed=k, reluctance=0.3)
+        ask(s, clf, "Je suis là pour t'écouter.", C("support"))  # below the disclosure threshold either way
+        tense += len(ask(s, clf, "Raconte.", C("invitation")).decision.allowed_units)
+    assert tense < calm
+
+
+def test_new_rules_are_off_on_replay_of_a_log_without_them(monkeypatch):
+    """A log written before lot 1 does not list its parameters: they replay neutral."""
+    monkeypatch.chdir(ROOT)
+    s, clf, _ = dyn(seed=3)
+    disclosed(s, clf)
+    for _ in range(3):
+        ask(s, clf, "Comment il s'appelait ?", C("directive", OUT_OF_SCENARIO))
+    data = s.end().model_dump(mode="json")
+    neutral = Parameters.neutral_overrides()
+    assert replay(SessionLog.model_validate(data), find_scenario(SessionLog.model_validate(data))).identical
+    for name in neutral:
+        data["parameters"].pop(name)
+    params = Parameters.for_log(AgeBand.B4_6, data["parameters"])
+    assert all(params[name] == value for name, value in neutral.items())
+
+
+# -- coaching alerts --------------------------------------------------------------------------
+
+
+def test_coaching_flags_a_rejected_dont_know_and_a_repeated_question():
+    seed = _first_seed_with_dont_know()
+    s, clf, _ = dyn(seed=seed)
+    disclosed(s, clf)
+    _dont_know(s, clf)
+    ask(s, clf, "Comment il s'appelait ?", C("directive", OUT_OF_SCENARIO))  # rejection
+    ask(s, clf, "Qui a poussé ?", C("directive", "d_pousse"))
+    ask(s, clf, "Tu es sûr que c'est lui qui a poussé ?", C("directive", "d_pousse"))  # repetition
+    coaching = build_coaching(s.end(), load_scenario(S01))
+    kinds = [[a.kind for a in t.alerts] for t in coaching.turns]
+    assert "rejected_refusal" in kinds[2]
+    assert "repeated_question" in kinds[4]
+    assert not any(k in ("rejected_refusal", "repeated_question") for k in kinds[0] + kinds[1] + kinds[3])
