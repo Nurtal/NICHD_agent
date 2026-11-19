@@ -140,6 +140,25 @@ class EngineState(BaseModel):
     """Emotional arousal (0–1, ADR 0003), with inertia. Drives delivery and demeanor, not decisions."""
     arousal_baseline: float = 0.0
     """Level the arousal returns to, turn after turn."""
+    last_act: SpeechAct | None = None
+    """The child's speech act at the previous turn (how the interviewer reacts to it matters)."""
+    last_target: str | None = None
+    """What the previous prompt targeted (info unit id, or OUT_OF_SCENARIO)."""
+    closed_asked: dict[str, int] = {}
+    """How many times each closed question was asked (key: see `closed_key`)."""
+
+
+_CLOSED = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE}
+
+
+def closed_key(c: Classification, effective: QuestionType, utterance: str | None) -> str | None:
+    """Identity of a closed question, to count repetitions: the targeted unit, or, for a detail
+    absent from the scenario, the question's normalized wording. None for open prompts."""
+    if effective not in _CLOSED:
+        return None
+    if c.target and c.target != OUT_OF_SCENARIO:
+        return c.target
+    return f"{OUT_OF_SCENARIO}:{normalize(utterance or c.suggested_proposition or '')}"
 
 
 def proposition_matches(unit: InfoUnit, proposition: str) -> bool:
@@ -162,6 +181,8 @@ class BehaviorEngine:
         self.delivery_rng = random.Random(f"{seed}:delivery")
         self.deception_rng = random.Random(f"{seed}:deception")
         self.demeanor_rng = random.Random(f"{seed}:demeanor")
+        self.dynamics_rng = random.Random(f"{seed}:dynamics")
+        """Draws of the interaction dynamics (reaction to « je sais pas », repetitions — plan lot 1)."""
         protected = scenario.deception.protected if scenario.deception else []
         draws = sorted((self.deception_rng.random() for _ in protected), reverse=True)
         self._thresholds = dict(zip(protected, draws))
@@ -189,8 +210,22 @@ class BehaviorEngine:
 
     # -- public -------------------------------------------------------------
 
-    def decide(self, c: Classification, *, phase_violation: bool = False) -> Decision:
-        """`phase_violation`: the phase tracker flagged this prompt (it raises the child's arousal)."""
+    def decide(self, c: Classification, *, phase_violation: bool = False, utterance: str | None = None) -> Decision:
+        """`phase_violation`: the phase tracker flagged this prompt (it raises the child's arousal).
+        `utterance`: the prompt as the child heard it (identifies repeated questions)."""
+        effective = (c.inner_type or QuestionType.DIRECTIVE) if c.type == QuestionType.COMPOUND else c.type
+        key = closed_key(c, effective, utterance)
+        st = self.state
+        self.prev_act, self.prev_target = st.last_act, st.last_target
+        self.asked_before = st.closed_asked.get(key, 0) if key else 0
+        """How many times this closed question was already asked (0: first time, or open prompt)."""
+        decision = self._decide(c, phase_violation)
+        if key:
+            st.closed_asked = {**st.closed_asked, key: self.asked_before + 1}
+        st.last_act, st.last_target = decision.speech_act, c.target
+        return decision
+
+    def _decide(self, c: Classification, phase_violation: bool) -> Decision:
         self.state.turn += 1
         self._phase_violation = phase_violation
         self._hidden = {}
