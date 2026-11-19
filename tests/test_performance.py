@@ -118,7 +118,7 @@ def test_avatar_server_refuses_a_folder_without_a_performance(tmp_path, capsys):
 def test_avatar_client_files_are_present_and_parse():
     import shutil
     import subprocess
-    scripts = ["main.js", "figure.js", "cues.js", "room.js", "debug.js", "coaching.js"]
+    scripts = ["main.js", "figure.js", "body.js", "cues.js", "room.js", "debug.js", "coaching.js"]
     files = ["index.html", *scripts]
     assert all((ROOT / "avatar" / f).exists() for f in files)
     node = shutil.which("node")

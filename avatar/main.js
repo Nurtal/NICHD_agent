@@ -2,7 +2,8 @@
 //   user: the child in the hearing room, with the protocol follow-up (coaching.json);
 //   dev:  gaze axis, highlighted body parts, cue legend and system map (debug channel, --debug-map).
 // URL options: ?mode=user|dev, ?map=1 (implies dev), ?turn=N (start turn), ?autoplay=0,
-// ?at=ms (freeze the reply at that time: screenshots), ?start=1, ?debrief=1 (open the debrief).
+// ?at=ms (freeze the reply at that time: screenshots), ?start=1, ?debrief=1 (open the debrief),
+// ?clock=manual (frame-by-frame recording: no animation loop, no sound, window.__avatar.advance(ms) steps time).
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildChild, buildScene } from "./figure.js";
@@ -15,6 +16,9 @@ const QUESTION_MS = 1600; // the interviewer's question shown before the reply's
 const GAP_MS = 1400; // after the reply, before the next turn (autoplay)
 
 const params = new URLSearchParams(location.search);
+const manual = params.get("clock") === "manual";
+let virtualNow = 0; // ms, manual clock
+const clock = () => (manual ? virtualNow : performance.now());
 const $ = (id) => document.getElementById(id);
 
 const { renderer, scene, camera, setView } = buildScene($("scene"));
@@ -47,7 +51,7 @@ const state = {
   frozenAt: params.has("at") ? parseInt(params.get("at"), 10) : null,
   mode: params.get("map") === "1" || params.get("mode") === "dev" ? "dev" : "user",
   map: params.get("map") !== "0",
-  replies: [], // {turn, at}: when each reply started (performance.now), for recordings
+  replies: [], // {turn, at}: when each reply started (clock ms), for recordings
   done: false,
   view: viewDebug,
 };
@@ -113,7 +117,7 @@ function startTurn(i) {
   showLegend(t);
   coach?.startTurn(i);
   state.phase = "question";
-  state.phaseStart = performance.now();
+  state.phaseStart = clock();
   showMap(state.frozenAt != null ? 2 : 0);
 }
 
@@ -123,11 +127,11 @@ function startReply() {
   overlay.setCues(t.body.cues);
   $("stage").textContent = t.stage_direction ? `(${t.stage_direction})` : "";
   state.phase = "reply";
-  state.phaseStart = performance.now();
+  state.phaseStart = clock();
   if (state.frozenAt == null) showMap(1);
   else coach?.endReply(state.index);
   state.replies.push({ turn: t.turn, audio: t.audio, at: state.phaseStart });
-  if (t.audio && state.frozenAt == null) {
+  if (t.audio && state.frozenAt == null && !manual) {
     state.audio = new Audio(`/session/${t.audio}`);
     state.audio.play().catch(() => { state.audio = null; }); // no sound: the internal clock still runs
   }
@@ -154,7 +158,7 @@ function finish() {
   if (state.mode === "user") coach?.showDebrief();
 }
 
-let last = performance.now();
+let last = clock();
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
@@ -181,8 +185,19 @@ function frame(now) {
   child.torso.updateWorldMatrix(true, true);
   showGaze(overlay.update(now / 1000, dt, animator.cur.arousal));
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
+  if (!manual) requestAnimationFrame(frame);
 }
+
+/** Manual clock: moves time on by `ms`, CSS animations included, and renders one frame. */
+state.advance = (ms) => {
+  virtualNow += ms;
+  for (const a of document.getAnimations()) {
+    if (a.playState === "running") a.pause();
+    a.currentTime = (a.currentTime ?? 0) + ms;
+  }
+  frame(virtualNow);
+  return { now: virtualNow, done: state.done };
+};
 
 $("prev").onclick = () => { state.done = false; startTurn(Math.max(0, state.index - 1)); };
 $("next").onclick = () => { state.done = false; startTurn(Math.min(perf.turns.length - 1, state.index + 1)); };
@@ -204,4 +219,4 @@ $("modebtn").onclick = () => {
 };
 applyView();
 if (state.frozenAt != null || params.get("start") === "1") begin();
-requestAnimationFrame(frame);
+if (!manual) requestAnimationFrame(frame);

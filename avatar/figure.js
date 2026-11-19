@@ -1,6 +1,7 @@
 // The stage and a stylized seated child, facing the interviewer (+z). Every part the cues act on is
 // exposed: pivots to rotate, one material per body part to highlight. No behaviour here: see cues.js.
 import * as THREE from "three";
+import { inOwner, outerCorner, skinnedMesh, tubeGeometry } from "./body.js";
 
 export const BASE = {
   skin: new THREE.Color("#f0d3bd"),
@@ -166,6 +167,7 @@ export function buildChild(scene) {
     shade: mat(new THREE.Color("#c9a08c"), 0.8), freckle: mat(new THREE.Color("#c49478"), 0.8),
     lip: mat(new THREE.Color("#d58d84"), 0.5), stripe: mat(new THREE.Color("#e8dfcf"), 0.95),
     cuff: mat(new THREE.Color("#5b8890"), 0.95), sole: mat(new THREE.Color("#8c8780"), 0.8),
+    seat: mat(BASE.trousers, 0.9), lace: mat(new THREE.Color("#f7f4ee"), 0.8),
     blush: new THREE.MeshStandardMaterial({ color: "#ec8f86", transparent: true, opacity: 0.3, roughness: 0.9, depthWrite: false }),
     halo: new THREE.MeshBasicMaterial({ color: "#2a78d6", transparent: true, opacity: 0.55 }),
     tear: new THREE.MeshStandardMaterial({ color: "#8cc8ff", transparent: true, opacity: 0.85, roughness: 0.1 }),
@@ -196,35 +198,53 @@ export function buildChild(scene) {
   halo.position.y = 0.005;
   scene.add(halo);
 
-  const root = new THREE.Group(); // pelvis, on the seat
+  // skeleton: the pivots the cues turn are bones, so the sleeves, trousers and neck bend at the joints
+  const root = new THREE.Bone(); // pelvis, on the seat
   root.position.set(0, 0.47, -0.04);
   scene.add(root);
-
-  const torso = new THREE.Group(); // pivot at the pelvis: lean, curl
+  const torso = new THREE.Bone(); // pivot at the pelvis: lean, curl
   root.add(torso);
-  const chest = capsule(0.115, 0.19, m.chest);
-  chest.position.y = 0.175;
-  torso.add(chest);
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.016, 10, 28), m.chest);
-  collar.rotation.x = Math.PI / 2;
-  collar.position.y = 0.355;
-  torso.add(collar);
-  for (const y of [0.17, 0.215]) { // knitted stripes
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.1165, 0.1165, 0.017, 40, 1, true), m.stripe);
-    band.position.y = y;
-    chest.add(band);
-    band.position.y = y - chest.position.y;
-  }
-  const neckMesh = capsule(0.04, 0.05, m.neck);
-  neckMesh.position.y = 0.38;
-  torso.add(neckMesh);
-
-  const neck = new THREE.Group();
+  const neck = new THREE.Bone();
   neck.position.y = 0.4;
   torso.add(neck);
-  const head = new THREE.Group(); // pivot at the neck: gaze yaw/pitch, tremor
+  const head = new THREE.Bone(); // pivot at the neck: gaze yaw/pitch, tremor
   head.scale.setScalar(1.14); // a child's head is large for the body
   neck.add(head);
+
+  // sweater: oval sections, sloping shoulders rising to the neck, ribbed hem, two knitted stripes
+  const chest = new THREE.Mesh(new THREE.BufferGeometry(), [m.chest, m.stripe, m.cuff]);
+  chest.position.y = 0.175; // breathing scales the sweater from here
+  torso.add(chest);
+  const ring = (y, rx, rz) => ({ at: torso, p: [0, y, 0], r: [rx, rz] });
+  chest.geometry = tubeGeometry(chest, [
+    ring(-0.045, 0.104, 0.084), ring(0.02, 0.108, 0.088), ring(0.1, 0.112, 0.09), ring(0.19, 0.12, 0.094),
+    ring(0.26, 0.132, 0.091), ring(0.3, 0.142, 0.086), ring(0.328, 0.124, 0.075), ring(0.35, 0.085, 0.062),
+    ring(0.366, 0.056, 0.05),
+  ], {
+    rings: 72, sides: 40, skinned: false,
+    groupAt: (t, c) => {
+      const y = c.y + chest.position.y;
+      return (y > 0.161 && y < 0.179) || (y > 0.206 && y < 0.224) ? 1 : y < 0.022 ? 2 : 0;
+    },
+  });
+  chest.castShadow = true;
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.014, 10, 32), m.cuff);
+  collar.rotation.x = Math.PI / 2;
+  collar.position.y = 0.36;
+  torso.add(collar);
+  // trousers' seat: joins the thighs to the sweater
+  const trouserSeat = ball(1, m.seat, [0.13, 0.062, 0.118]);
+  trouserSeat.position.set(0, 0.004, 0.005);
+  root.add(trouserSeat);
+
+  // neck: from the sweater into the head, twisting with it
+  skinnedMesh(torso, tubeGeometry(torso, [
+    { at: torso, p: [0, 0.335, -0.004], r: [0.046, 0.043], w: { 0: 1 } },
+    { at: torso, p: [0, 0.372, -0.003], r: [0.04, 0.038], w: { 0: 0.8, 1: 0.2 } },
+    { at: head, p: [0, 0.01, -0.004], r: [0.036, 0.034], w: { 0: 0.3, 1: 0.7 } },
+    { at: head, p: [0, 0.045, -0.002], r: [0.036, 0.034], w: { 1: 1 } },
+  ], { rings: 16, sides: 24 }), m.neck, [torso, head]);
+
   const skull = new THREE.Mesh(faceGeometry(0.118), m.head);
   skull.position.y = 0.105;
   skull.castShadow = true;
@@ -375,18 +395,39 @@ export function buildChild(scene) {
 
   function arm(side) {
     const left = side < 0;
-    const shoulder = new THREE.Group();
+    const shoulder = new THREE.Bone();
     shoulder.position.set(0.145 * side, 0.3, 0);
     torso.add(shoulder);
-    const upper = capsule(0.037, 0.13, left ? m.upperL : m.upperR);
-    upper.position.y = -0.08;
-    shoulder.add(upper);
-    const elbow = new THREE.Group();
+    const elbow = new THREE.Bone();
     elbow.position.y = -0.17;
     shoulder.add(elbow);
-    const fore = capsule(0.033, 0.12, left ? m.foreL : m.foreR);
-    fore.position.y = -0.075;
-    elbow.add(fore);
+    // resting pose, also the sleeve's bind pose: forearm forward onto the lap, hand on the thigh
+    shoulder.rotation.set(0.15, 0, side * 0.02);
+    elbow.rotation.set(-1.25, 0, -side * 0.42);
+    // one sleeve from the shoulder (weighted on the sweater: a round shoulder) to the wrist
+    const S = (y, r, w) => ({ at: shoulder, p: [0, y, 0], r, w });
+    const E = (y, r, w) => ({ at: elbow, p: [0, y, 0], r, w });
+    const pts = [
+      S(-0.005, [0.044, 0.043], { 0: 0.6, 1: 0.4 }),
+      S(-0.04, [0.043, 0.042], { 0: 0.15, 1: 0.85 }),
+      S(-0.1, [0.038, 0.037], { 1: 1 }),
+      S(-0.148, [0.035, 0.034], { 1: 0.85, 2: 0.15 }),
+      E(0, [0.034, 0.034], { 1: 0.5, 2: 0.5 }),
+      E(-0.035, [0.033, 0.032], { 1: 0.1, 2: 0.9 }),
+      E(-0.09, [0.031, 0.029], { 2: 1 }),
+      E(-0.14, [0.027, 0.025], { 2: 1 }),
+    ];
+    const tElbow = 4 / (pts.length - 1);
+    const out = outerCorner(inOwner(torso, shoulder, [0, -0.148, 0]), inOwner(torso, elbow, [0, 0, 0]),
+      inOwner(torso, elbow, [0, -0.035, 0]));
+    const crook = out.clone().negate();
+    const bumps = [
+      { t: tElbow, dir: out, amp: 0.007, width: 0.03, spread: 0.2 }, // elbow point
+      ...[-0.05, 0, 0.05].map((dt, k) => ({ t: tElbow + dt, dir: crook, amp: k === 1 ? -0.004 : 0.003, width: 0.014, spread: 0.3 })),
+      { t: 0.08, dir: new THREE.Vector3(side, 0.25, 0).normalize(), amp: 0.004, width: 0.06, spread: 0.4 }, // deltoid
+    ];
+    skinnedMesh(torso, tubeGeometry(torso, pts, { rings: 44, sides: 24, bumps, groupAt: (t) => (t < tElbow ? 0 : 1) }),
+      [left ? m.upperL : m.upperR, left ? m.foreL : m.foreR], [torso, shoulder, elbow]);
     const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.0085, 8, 22), m.cuff);
     cuff.rotation.x = Math.PI / 2;
     cuff.position.y = -0.138;
@@ -404,34 +445,59 @@ export function buildChild(scene) {
     thumb.position.set(-side * 0.031, -0.008, 0.008);
     thumb.rotation.z = side * 0.75;
     hand.add(thumb);
-    // resting pose: forearm forward onto the lap
-    shoulder.rotation.x = 0.15;
-    elbow.rotation.x = -1.25;
     return { shoulder, elbow, hand };
   }
 
   function leg(side) {
     const left = side < 0;
     const material = left ? m.legL : m.legR;
-    const hip = new THREE.Group();
+    const hip = new THREE.Bone();
     hip.position.set(0.072 * side, 0, 0.02);
     root.add(hip);
-    const thigh = capsule(0.056, 0.22, material);
-    thigh.rotation.x = Math.PI / 2;
-    thigh.position.z = 0.15;
-    hip.add(thigh);
-    const knee = new THREE.Group();
+    const knee = new THREE.Bone();
     knee.position.z = 0.3;
     hip.add(knee);
-    const shin = capsule(0.044, 0.2, material);
-    shin.position.y = -0.15;
-    knee.add(shin);
+    // one trouser leg from the seat to the hem: thigh, kneecap, crease behind the knee, calf, folds
+    const H = (z, r, w) => ({ at: hip, p: [0, 0, z], r, w });
+    const K = (y, r, w) => ({ at: knee, p: [0, y, 0], r, w });
+    const pts = [
+      H(-0.035, [0.062, 0.056], { 0: 0.5, 1: 0.5 }),
+      H(0.04, [0.062, 0.055], { 1: 1 }),
+      H(0.15, [0.057, 0.051], { 1: 1 }),
+      H(0.24, [0.05, 0.047], { 1: 0.9, 2: 0.1 }),
+      K(0, [0.047, 0.047], { 1: 0.5, 2: 0.5 }),
+      K(-0.06, [0.044, 0.045], { 1: 0.05, 2: 0.95 }),
+      K(-0.13, [0.043, 0.045], { 2: 1 }),
+      K(-0.2, [0.039, 0.04], { 2: 1 }),
+      K(-0.245, [0.043, 0.043], { 2: 1 }),
+      K(-0.262, [0.045, 0.045], { 2: 1 }),
+    ];
+    const tKnee = 4 / (pts.length - 1);
+    const cap = outerCorner(inOwner(root, hip, [0, 0, 0.24]), inOwner(root, knee, [0, 0, 0]), inOwner(root, knee, [0, -0.06, 0]));
+    const back = new THREE.Vector3(0, 0, -1), front = new THREE.Vector3(0, 0, 1), up = new THREE.Vector3(0, 1, 0);
+    const bumps = [
+      { t: tKnee + 0.01, dir: cap, amp: 0.009, width: 0.025, spread: 0.15 }, // kneecap
+      { t: tKnee, dir: cap.clone().negate(), amp: -0.005, width: 0.02, spread: 0.2 }, // behind the knee
+      { t: 6 / 9, dir: back, amp: 0.007, width: 0.06, spread: 0.35 }, // calf
+      { t: 0.26, dir: up, amp: -0.0025, width: 0.012, spread: 0.3 }, // folds across the thigh
+      { t: 0.33, dir: up, amp: -0.002, width: 0.01, spread: 0.3 },
+      { t: 0.86, dir: front, amp: -0.003, width: 0.012, spread: 0.3 }, // folds above the hem
+      { t: 0.92, dir: front, amp: 0.002, width: 0.01, spread: 0.3 },
+    ];
+    skinnedMesh(root, tubeGeometry(root, pts, { rings: 56, sides: 26, bumps }), material, [root, hip, knee]);
     const foot = ball(0.05, left ? m.footL : m.footR, [0.95, 0.68, 1.65]);
     foot.position.set(0, -0.3, 0.035);
     knee.add(foot);
     const sole = ball(0.05, m.sole, [0.98, 0.16, 1.68]);
     sole.position.set(0, -0.331, 0.035);
     knee.add(sole);
+    for (const [k, dz] of [0.012, 0.03, 0.046].entries()) { // laces across the instep
+      const lace = capsule(0.0032, 0.032 - 0.006 * k, m.lace);
+      lace.castShadow = false;
+      lace.rotation.z = Math.PI / 2;
+      lace.position.set(0, -0.3 + 0.034 * Math.sqrt(1 - (dz / 0.0825) ** 2) + 0.0015, 0.035 + dz);
+      knee.add(lace);
+    }
     return { hip, knee };
   }
 

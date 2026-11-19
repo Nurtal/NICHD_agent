@@ -118,12 +118,13 @@ export class Animator {
     this.cur = { ...ZERO };
     this.target = { ...ZERO };
     this.mouthOpen = 0;
+    this.smileShown = 0; // 0 → mouth, 1 → smile: crossfaded, never switched
   }
 
   setTargets(t) { this.target = t; }
 
   update(time, dt, speaking) {
-    const c = this.cur, k = Math.min(1, dt * 3);
+    const c = this.cur, k = 1 - Math.exp(-dt * 3); // the same easing at any frame rate
     for (const key of Object.keys(c)) c[key] += (this.target[key] - c[key]) * k;
     const f = this.fig;
     const live = 1 - 0.9 * c.freeze; // a frozen child barely moves
@@ -136,8 +137,13 @@ export class Animator {
     f.chest.scale.set(1 + breath, 1 + breath * 0.5, 1 + breath);
     f.halo.scale.setScalar(1 + 0.6 * breath);
 
+    // idle life: a slow sway and shift of weight (incommensurate waves, no visible loop), none when frozen
+    const drift = (a, b, c3) => (Math.sin(time * a) + 0.6 * Math.sin(time * b + 1.3) + 0.35 * Math.sin(time * c3 + 2.1)) / 1.95;
+    const idle = live * (1 - 0.6 * c.absent);
+
     // posture: curl forward / lean back at ease
-    f.torso.rotation.x = 0.38 * c.curl - 0.08 * c.ease;
+    f.torso.rotation.x = 0.38 * c.curl - 0.08 * c.ease + 0.012 * idle * drift(0.31, 0.53, 0.97);
+    f.torso.rotation.z = 0.014 * idle * drift(0.23, 0.41, 0.71);
     for (const [i, leg] of f.legs.entries()) {
       leg.hip.rotation.x = -0.45 * c.curl;
       const side = i === 0 ? 0 : Math.PI;
@@ -147,16 +153,18 @@ export class Animator {
     // gaze: head and eyes; small saccades unless the gaze is blank or the child frozen
     const saccade = (1 - c.blank) * live * 0.06;
     const yaw = c.gazeYaw + saccade * wave(0.37) + 0.12 * c.gazeAway * wave(0.15);
-    f.head.rotation.y = 0.75 * yaw;
-    f.head.rotation.x = 0.75 * c.gazePitch + 0.14 * c.absent;
+    f.head.rotation.y = 0.75 * yaw + 0.02 * idle * drift(0.19, 0.37, 0.83);
+    f.head.rotation.x = 0.75 * c.gazePitch + 0.14 * c.absent + 0.012 * idle * drift(0.27, 0.45, 1.1);
     f.head.rotation.z = 0.04 * c.tremorChin * wave(11) + 0.01 * c.voiceTremor * wave(9) * (speaking ? 1 : 0);
     for (const eye of f.eyes) {
       eye.rotation.y = 0.5 * yaw + saccade * wave(0.9);
       eye.rotation.x = 0.4 * c.gazePitch;
     }
     // eyelids: follow a lowered gaze, close on a blink
-    const blink = (time % (4.3 + 2 * c.blank)) < 0.13 && c.freeze < 0.5;
-    for (const lid of f.lids) lid.rotation.x = blink ? 1.25 : -0.34 + 0.55 * c.gazePitch + 0.12 * c.low;
+    const since = time % (4.3 + 2 * c.blank), BLINK = 0.16; // closes fast, opens a little slower
+    const closed = since < BLINK ? Math.sin(Math.PI * Math.pow(since / BLINK, 0.8)) * Math.max(0, 1 - 2 * c.freeze) : 0;
+    const open = -0.34 + 0.55 * c.gazePitch + 0.12 * c.low;
+    for (const lid of f.lids) lid.rotation.x = open + (1.25 - open) * closed;
     f.materials.blush.opacity = 0.26 + 0.34 * c.arousal + 0.12 * c.tears;
 
     // eyebrows: raised in the middle when worried, lowered when tense
@@ -167,9 +175,12 @@ export class Animator {
     }
 
     // tears: a drop at the eye when wet, running down when crying
+    const wet = Math.min(1, Math.max(0, (c.tears - 0.15) / 0.25)); // the drop grows in, never pops
     for (const [i, tear] of f.tears.entries()) {
-      tear.visible = c.tears > 0.25;
       const fall = c.crying > 0.1 ? (time * 0.6 + i * 0.5) % 1 : 0;
+      const size = wet * Math.min(1, fall < 0.1 ? 0.4 + 6 * fall : (1 - fall) / 0.15); // a running drop fades at the chin
+      tear.visible = size > 0.02;
+      tear.scale.set(size, 1.4 * size, size);
       tear.position.y = 0.098 - 0.07 * fall;
     }
 
@@ -189,10 +200,15 @@ export class Animator {
     // mouth: opens on speech, smaller when low or whispering, shakes with a trembling voice
     const target = speaking ? (0.55 + 0.45 * Math.abs(wave(6.5))) * (1 - 0.35 * c.low - 0.55 * c.whisper) : 0;
     this.mouthOpen += (target - this.mouthOpen) * Math.min(1, dt * 18);
-    f.mouth.scale.set(1 - 0.3 * c.tensionJaw - 0.15 * this.mouthOpen, 1 + 3.2 * this.mouthOpen, 1);
-    f.mouth.position.x = 0.002 * c.voiceTremor * wave(17) * (speaking ? 1 : 0);
+    const smileTarget = c.smile > 0.3 && !speaking ? 1 : 0;
+    this.smileShown += (smileTarget - this.smileShown) * (1 - Math.exp(-dt * 8));
+    const s = this.smileShown, rest = 1 - s;
+    f.mouth.scale.set((1 - 0.3 * c.tensionJaw - 0.15 * this.mouthOpen) * Math.max(0.05, rest), (1 + 3.2 * this.mouthOpen) * Math.max(0.05, rest), 1);
+    f.mouth.position.x = 0.002 * c.voiceTremor * wave(12) * (speaking ? 1 : 0); // under 15 Hz: no aliasing at 30 frames/s
     f.lip.position.y = LIP_Y - 0.0085 * this.mouthOpen;
-    f.smile.visible = c.smile > 0.3 && !speaking;
-    f.mouth.visible = f.lip.visible = !f.smile.visible;
+    f.lip.scale.setScalar(Math.max(0.05, rest));
+    f.smile.scale.set(Math.max(0.05, s), Math.max(0.05, s), 1);
+    f.smile.visible = s > 0.03;
+    f.mouth.visible = f.lip.visible = rest > 0.03;
   }
 }
