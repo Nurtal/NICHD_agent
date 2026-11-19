@@ -1,21 +1,91 @@
-// A child made of primitives, seated, facing the interviewer (+z). Every part the cues act on is
-// exposed: pivots to rotate, materials to tint. No behaviour here: see cues.js.
+// The stage and a stylized seated child, facing the interviewer (+z). Every part the cues act on is
+// exposed: pivots to rotate, one material per body part to highlight. No behaviour here: see cues.js.
 import * as THREE from "three";
 
 export const BASE = {
-  skin: new THREE.Color("#e9d2bf"),
-  shirt: new THREE.Color("#9fb4cc"),
-  trousers: new THREE.Color("#5f6f86"),
+  skin: new THREE.Color("#f0d3bd"),
+  sweater: new THREE.Color("#6f9fa6"),
+  trousers: new THREE.Color("#4f5f78"),
+  shoe: new THREE.Color("#e9e4dc"),
+  hair: new THREE.Color("#5a3b2a"),
   eye: new THREE.Color("#ffffff"),
-  pupil: new THREE.Color("#1c2230"),
+  pupil: new THREE.Color("#2a1f1a"),
+  mouth: new THREE.Color("#a8524e"),
 };
 
-function mat(color) {
-  return new THREE.MeshStandardMaterial({ color: color.clone(), roughness: 0.75, metalness: 0.0 });
+/** Where the interviewer sits: the child's steady gaze meets this point. */
+export const INTERVIEWER = new THREE.Vector3(0, 1.08, 3.3);
+
+const VIEWS = {
+  user: { position: [0, 1.12, 3.4], target: [0, 0.74, 0] },
+  dev: { position: [1.14, 0.98, 1.84], target: [0.02, 0.63, 0.1] }, // three-quarter view: the gaze axis reads clearly
+};
+
+export const BROW_Y = 0.147;
+export const LIP_Y = 0.0475;
+
+/** One point of a soft bump on the unit sphere. */
+function bump(p, cx, cy, cz, sigma) {
+  const d = (p.x - cx) ** 2 + (p.y - cy) ** 2 + (p.z - cz) ** 2;
+  return Math.exp(-d / (2 * sigma * sigma));
+}
+
+const smooth = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+// Width of the head by height: straight temples, then a marked jaw angle and a narrow chin.
+const JAW = [[-1, 0.46], [-0.86, 0.66], [-0.64, 0.88], [-0.36, 0.98], [0.2, 1], [1, 1]];
+function jawWidth(y) {
+  for (let i = 1; i < JAW.length; i++) {
+    const [y0, w0] = JAW[i - 1], [y1, w1] = JAW[i];
+    if (y <= y1) return w0 + ((w1 - w0) * (y - y0)) / (y1 - y0);
+  }
+  return 1;
+}
+
+/** A child's face rather than a ball: brow, eye sockets, cheekbones, nose bridge, jaw angle, chin. */
+function faceGeometry(radius) {
+  const geo = new THREE.SphereGeometry(1, 72, 54);
+  geo.rotateY(-Math.PI / 2); // the seam goes to the back of the head, under the hair
+  const pos = geo.attributes.position, p = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i);
+    const front = smooth(-0.1, 0.65, p.z), low = smooth(0.05, -0.85, p.y);
+    let out = 1;
+    for (const s of [-1, 1]) {
+      out += 0.075 * bump(p, 0.6 * s, -0.25, 0.75, 0.2); // cheekbones and round cheeks
+      out -= 0.05 * bump(p, 0.37 * s, 0.1, 0.92, 0.13); // eye sockets
+      out += 0.022 * bump(p, 0.36 * s, 0.34, 0.86, 0.13); // brow ridge
+      out -= 0.022 * bump(p, 0.3 * s, -0.62, 0.72, 0.12); // hollow under the cheek
+    }
+    out += 0.03 * Math.exp(-(p.x * p.x) / 0.007) * smooth(0.28, 0.05, p.y) * smooth(-0.3, -0.05, p.y) * front; // nose bridge
+    out += 0.03 * bump(p, 0, -0.84, 0.54, 0.13); // chin
+    out -= 0.018 * bump(p, 0, -0.62, 0.78, 0.07); // dip under the lower lip
+    const w = jawWidth(p.y);
+    pos.setXYZ(i,
+      radius * out * p.x * w,
+      radius * out * (p.y * 1.03 - 0.07 * front * smooth(-0.42, -0.95, p.y)),
+      radius * out * p.z * (p.z > 0 ? 0.97 : 1) * (1 - 0.13 * low * front));
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function mat(color, roughness = 0.8) {
+  return new THREE.MeshStandardMaterial({ color: color.clone(), roughness, metalness: 0 });
 }
 
 function capsule(radius, length, material) {
-  const m = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 6, 16), material);
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 8, 20), material);
+  m.castShadow = true;
+  return m;
+}
+
+function ball(radius, material, scale = [1, 1, 1]) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(radius, 28, 20), material);
+  m.scale.set(...scale);
   m.castShadow = true;
   return m;
 }
@@ -25,55 +95,86 @@ export function buildScene(container) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   const background = new THREE.Color("#eef1f5");
   scene.background = background;
   const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.05, 50);
-  camera.position.set(0.55, 1.2, 2.75); // seated interviewer's eyes, slightly to the side
-  scene.add(new THREE.HemisphereLight("#ffffff", "#b9c2cf", 1.6));
+  const hemi = new THREE.HemisphereLight("#ffffff", "#b9c2cf", 1.6);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight("#ffffff", 1.6);
   sun.position.set(1.5, 3, 2);
   sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.radius = 4;
   scene.add(sun);
 
   const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 64),
-    new THREE.MeshStandardMaterial({ color: "#dfe4eb", transparent: true }));
+    new THREE.MeshStandardMaterial({ color: "#dfe4eb" }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  let shifted = false; // with the map: the child moves to the right third, the map keeps the left
+  let offset = 0; // share of the width the image is moved by, to leave room for the panels
   function frame() {
     const w = container.clientWidth, h = container.clientHeight;
     camera.aspect = w / h;
-    if (shifted) camera.setViewOffset(w, h, -0.3 * w, 0, w, h);
+    if (offset) camera.setViewOffset(w, h, offset * w, 0, w, h);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
   }
   window.addEventListener("resize", frame);
-  // With the system map behind: transparent background, almost invisible floor.
-  function setBackdrop(on) {
-    scene.background = on ? null : background;
-    floor.material.opacity = on ? 0.12 : 1;
-    shifted = on;
+
+  /** user: the room fills the window. dev: a neutral stage in its own panel. */
+  function setView(mode, controls) {
+    const view = VIEWS[mode];
+    camera.position.set(...view.position);
+    controls.target.set(...view.target);
+    controls.update();
+    const user = mode === "user";
+    floor.visible = !user;
+    scene.background = user ? null : background;
+    hemi.intensity = user ? 1.05 : 1.6;
+    hemi.groundColor.set(user ? "#dcc8b2" : "#b9c2cf"); // the room's warm floor, not a grey bounce on the face
+    sun.intensity = user ? 0.95 : 1.6;
+    sun.color.set(user ? "#fff3e4" : "#ffffff");
+    offset = user ? 0.12 : 0;
     frame();
   }
-  return { renderer, scene, camera, setBackdrop };
+  return { renderer, scene, camera, setView };
 }
 
 export function buildChild(scene) {
+  const parts = {}; // body part → its materials, for the dev highlight
+  const part = (name, color, roughness) => (parts[name] = [mat(color, roughness)])[0];
   const m = {
-    skin: mat(BASE.skin), shirt: mat(BASE.shirt), trousers: mat(BASE.trousers),
-    handL: mat(BASE.skin), handR: mat(BASE.skin), legL: mat(BASE.trousers), legR: mat(BASE.trousers),
-    eyeL: mat(BASE.eye), eyeR: mat(BASE.eye), pupil: mat(BASE.pupil), mouth: mat(new THREE.Color("#8a3b3b")),
+    head: part("head", BASE.skin, 0.65),
+    neck: part("neck", BASE.skin, 0.65),
+    chest: part("chest", BASE.sweater, 0.95),
+    upperL: part("upperL", BASE.sweater, 0.95), upperR: part("upperR", BASE.sweater, 0.95),
+    foreL: part("foreL", BASE.sweater, 0.95), foreR: part("foreR", BASE.sweater, 0.95),
+    handL: part("handL", BASE.skin, 0.65), handR: part("handR", BASE.skin, 0.65),
+    legL: part("legL", BASE.trousers, 0.9), legR: part("legR", BASE.trousers, 0.9),
+    footL: part("footL", BASE.shoe, 0.7), footR: part("footR", BASE.shoe, 0.7),
+    mouth: part("mouth", BASE.mouth, 0.6),
+    eyeL: mat(BASE.eye, 0.3), eyeR: mat(BASE.eye, 0.3),
+    pupil: mat(BASE.pupil, 0.25), hair: mat(BASE.hair, 0.72),
+    iris: mat(new THREE.Color("#6b4a2f"), 0.3), glint: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
+    shade: mat(new THREE.Color("#c9a08c"), 0.8), freckle: mat(new THREE.Color("#c49478"), 0.8),
+    lip: mat(new THREE.Color("#d58d84"), 0.5), stripe: mat(new THREE.Color("#e8dfcf"), 0.95),
+    cuff: mat(new THREE.Color("#5b8890"), 0.95), sole: mat(new THREE.Color("#8c8780"), 0.8),
+    blush: new THREE.MeshStandardMaterial({ color: "#ec8f86", transparent: true, opacity: 0.3, roughness: 0.9, depthWrite: false }),
     halo: new THREE.MeshBasicMaterial({ color: "#2a78d6", transparent: true, opacity: 0.55 }),
-    tear: new THREE.MeshStandardMaterial({ color: "#4aa3ff", transparent: true, opacity: 0.85 }),
+    tear: new THREE.MeshStandardMaterial({ color: "#8cc8ff", transparent: true, opacity: 0.85, roughness: 0.1 }),
   };
+  parts.eyes = [m.eyeL, m.eyeR];
+  for (const eye of parts.eyes) { eye.emissive.set("#ffffff"); eye.emissiveIntensity = 0.2; } // whites stay clean in shade
+  parts.chest.push(m.stripe);
 
-  // chair
+  // plain chair of the dev view (the user view seats the child in the room's armchair)
   const chairMat = new THREE.MeshStandardMaterial({ color: "#b98d5a", roughness: 0.8 });
   const chair = new THREE.Group();
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.04, 0.4), chairMat);
@@ -89,7 +190,7 @@ export function buildChild(scene) {
   chair.traverse((o) => { o.castShadow = true; });
   scene.add(chair);
 
-  // arousal halo on the floor
+  // arousal halo on the floor (dev)
   const halo = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 64), m.halo);
   halo.rotation.x = -Math.PI / 2;
   halo.position.y = 0.005;
@@ -99,76 +200,210 @@ export function buildChild(scene) {
   root.position.set(0, 0.47, -0.04);
   scene.add(root);
 
-  const torso = new THREE.Group(); // pivot at the pelvis: lean, curl, breathe
+  const torso = new THREE.Group(); // pivot at the pelvis: lean, curl
   root.add(torso);
-  const chest = capsule(0.13, 0.26, m.shirt);
-  chest.position.y = 0.2;
+  const chest = capsule(0.115, 0.19, m.chest);
+  chest.position.y = 0.175;
   torso.add(chest);
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.016, 10, 28), m.chest);
+  collar.rotation.x = Math.PI / 2;
+  collar.position.y = 0.355;
+  torso.add(collar);
+  for (const y of [0.17, 0.215]) { // knitted stripes
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.1165, 0.1165, 0.017, 40, 1, true), m.stripe);
+    band.position.y = y;
+    chest.add(band);
+    band.position.y = y - chest.position.y;
+  }
+  const neckMesh = capsule(0.04, 0.05, m.neck);
+  neckMesh.position.y = 0.38;
+  torso.add(neckMesh);
 
   const neck = new THREE.Group();
-  neck.position.y = 0.44;
+  neck.position.y = 0.4;
   torso.add(neck);
   const head = new THREE.Group(); // pivot at the neck: gaze yaw/pitch, tremor
+  head.scale.setScalar(1.14); // a child's head is large for the body
   neck.add(head);
-  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.115, 32, 24), m.skin);
-  skull.position.y = 0.1;
+  const skull = new THREE.Mesh(faceGeometry(0.118), m.head);
+  skull.position.y = 0.105;
   skull.castShadow = true;
   head.add(skull);
 
-  const eyes = [];
+  // ears, with a darker hollow
+  for (const side of [-1, 1]) {
+    const ear = ball(0.021, m.head, [0.42, 1.05, 0.72]);
+    ear.position.set(0.112 * side, 0.098, -0.004);
+    ear.rotation.y = side * 0.35;
+    head.add(ear);
+    const hollow = ball(0.011, m.shade, [0.3, 1.05, 0.7]);
+    hollow.castShadow = false;
+    hollow.position.set(0.1185 * side, 0.098, 0);
+    hollow.rotation.y = side * 0.35;
+    head.add(hollow);
+  }
+
+  // nose: bridge, tip, wings and nostrils
+  const bridge = capsule(0.0048, 0.02, m.head);
+  bridge.position.set(0, 0.106, 0.1125);
+  bridge.rotation.x = -0.32;
+  head.add(bridge);
+  const tip = ball(0.0088, m.head, [1.05, 0.85, 1]);
+  tip.position.set(0, 0.0905, 0.1195);
+  head.add(tip);
+  for (const side of [-1, 1]) {
+    const wing = ball(0.0043, m.head);
+    wing.position.set(0.0082 * side, 0.0868, 0.1148);
+    head.add(wing);
+    const nostril = ball(0.0016, m.shade);
+    nostril.castShadow = false;
+    nostril.position.set(0.0042 * side, 0.0842, 0.1205);
+    head.add(nostril);
+  }
+
+  // cheeks: a blush that follows the surface (the animator warms it with arousal)
+  const cheeks = [];
+  for (const side of [-1, 1]) {
+    const normal = new THREE.Vector3(0.6 * side, -0.24, 0.76).normalize();
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.027, 20, 14), m.blush);
+    cheek.position.set(0, 0.105, 0).addScaledVector(normal, 0.1215);
+    cheek.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+    cheek.scale.set(1, 0.74, 0.1);
+    head.add(cheek);
+    cheeks.push(cheek);
+  }
+  // a few freckles across the nose and cheeks
+  for (const [x, y] of [[-0.05, 0.097], [-0.036, 0.09], [-0.024, 0.098], [0.024, 0.098], [0.036, 0.09], [0.05, 0.097]]) {
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.0014, 6, 5), m.freckle);
+    dot.position.set(x, y, Math.sqrt(Math.max(0, 0.0139 - x * x - (y - 0.105) ** 2)) + 0.0015);
+    head.add(dot);
+  }
+
+  // hair: a cap tilted back to free the face, a fuller back, and pointed locks that break the outline
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.127, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.56), m.hair);
+  cap.position.y = 0.11;
+  cap.rotation.x = -0.65;
+  cap.castShadow = true;
+  head.add(cap);
+  const backHair = ball(0.112, m.hair, [1.04, 0.92, 0.72]);
+  backHair.position.set(0, 0.075, -0.05);
+  head.add(backHair);
+  const lock = (x, y, z, length, width, tiltX, tiltZ) => {
+    const geo = new THREE.ConeGeometry(width, length, 5);
+    geo.scale(1, 1, 0.45);
+    geo.rotateX(Math.PI); // point down
+    const mesh = new THREE.Mesh(geo, m.hair);
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(tiltX, 0, tiltZ);
+    mesh.castShadow = true;
+    head.add(mesh);
+  };
+  for (let i = -3; i <= 3; i++) { // fringe, swept slightly to one side
+    const a = i * 0.25;
+    const length = 0.034 + 0.008 * (i % 2 === 0 ? 1 : 0);
+    lock(0.108 * Math.sin(a) + 0.004, 0.181 - 0.018 * a * a, 0.094 * Math.cos(a) + 0.008, length, 0.027, -0.3, 0.08 + 0.2 * a);
+  }
+  for (const side of [-1, 1]) { // in front of the ears, and behind them
+    lock(0.113 * side, 0.106, 0.036, 0.052, 0.021, -0.04, -side * 0.1);
+    lock(0.118 * side, 0.08, -0.02, 0.07, 0.027, 0.05, -side * 0.1);
+    lock(0.098 * side, 0.056, -0.074, 0.066, 0.03, 0.14, -side * 0.08);
+  }
+
+  const eyes = [], brows = [], lids = [];
   for (const [side, em] of [[-1, m.eyeL], [1, m.eyeR]]) {
     const eye = new THREE.Group();
-    eye.position.set(0.04 * side, 0.125, 0.098);
-    const white = new THREE.Mesh(new THREE.SphereGeometry(0.022, 16, 12), em);
-    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 8), m.pupil);
-    pupil.position.z = 0.016;
-    eye.add(white, pupil);
+    eye.position.set(0.042 * side, 0.116, 0.095);
+    const white = new THREE.Mesh(new THREE.SphereGeometry(0.0205, 24, 16), em);
+    white.scale.y = 0.86;
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.0118, 20, 14), m.iris);
+    iris.position.z = 0.0112;
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.0062, 14, 10), m.pupil);
+    pupil.position.z = 0.0178;
+    const glint = new THREE.Mesh(new THREE.SphereGeometry(0.0021, 8, 6), m.glint);
+    glint.position.set(0.0036, 0.0044, 0.0226);
+    eye.add(white, iris, pupil, glint);
     head.add(eye);
     eyes.push(eye);
+
+    // upper eyelid and its lash line: outside the eye group, so they do not follow the gaze
+    const lid = new THREE.Group();
+    lid.position.copy(eye.position);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.0212, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), m.head);
+    const lash = new THREE.Mesh(new THREE.TorusGeometry(0.0212, 0.0012, 6, 28, Math.PI), m.hair);
+    lash.rotation.x = Math.PI / 2;
+    lash.rotation.z = Math.PI;
+    lid.add(shell, lash);
+    head.add(lid);
+    lids.push(lid);
+
+    const browGeo = new THREE.CapsuleGeometry(0.0038, 0.027, 4, 8);
+    browGeo.rotateZ(Math.PI / 2);
+    const brow = new THREE.Mesh(browGeo, m.hair);
+    const pivot = new THREE.Group();
+    pivot.position.set(0.044 * side, BROW_Y, 0.108);
+    pivot.add(brow);
+    head.add(pivot);
+    brows.push(pivot);
   }
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.008, 0.01), m.mouth);
-  mouth.position.set(0, 0.055, 0.108);
+
+  // the shape is in the geometry: the animator drives the mesh's scale
+  const mouthGeo = new THREE.SphereGeometry(0.0195, 18, 10);
+  mouthGeo.scale(1, 0.17, 0.26);
+  const mouth = new THREE.Mesh(mouthGeo, m.mouth);
+  mouth.position.set(0, 0.0555, 0.1075);
   head.add(mouth);
-  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.004, 6, 16, Math.PI), m.mouth);
+  const lipGeo = new THREE.SphereGeometry(0.012, 14, 8);
+  lipGeo.scale(1, 0.26, 0.3);
+  const lip = new THREE.Mesh(lipGeo, m.lip);
+  lip.position.set(0, LIP_Y, 0.1072);
+  head.add(lip);
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.0175, 0.0024, 8, 18, Math.PI), m.mouth);
   smile.rotation.z = Math.PI;
-  smile.position.set(0, 0.064, 0.106);
+  smile.position.set(0, 0.0605, 0.1085);
   smile.visible = false;
   head.add(smile);
 
-  // gaze ray: a placeholder for where the child looks, shown when the gaze leaves the interviewer
-  const gazeMat = new THREE.MeshBasicMaterial({ color: "#e87ba4", transparent: true, opacity: 0 });
-  const gazeRay = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.7, 6), gazeMat);
-  gazeRay.rotation.x = Math.PI / 2;
-  gazeRay.position.set(0, 0.125, 0.45);
-  head.add(gazeRay);
-  m.gaze = gazeMat;
-
   const tears = [];
   for (const side of [-1, 1]) {
-    const t = new THREE.Mesh(new THREE.SphereGeometry(0.013, 10, 8), m.tear);
-    t.position.set(0.04 * side, 0.1, 0.11);
+    const t = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 10, 8), m.tear);
+    t.scale.y = 1.4;
+    t.position.set(0.053 * side, 0.098, 0.107);
     t.visible = false;
     head.add(t);
     tears.push(t);
   }
 
   function arm(side) {
+    const left = side < 0;
     const shoulder = new THREE.Group();
-    shoulder.position.set(0.17 * side, 0.36, 0);
+    shoulder.position.set(0.145 * side, 0.3, 0);
     torso.add(shoulder);
-    const upper = capsule(0.04, 0.16, m.shirt);
-    upper.position.y = -0.1;
+    const upper = capsule(0.037, 0.13, left ? m.upperL : m.upperR);
+    upper.position.y = -0.08;
     shoulder.add(upper);
     const elbow = new THREE.Group();
-    elbow.position.y = -0.2;
+    elbow.position.y = -0.17;
     shoulder.add(elbow);
-    const fore = capsule(0.035, 0.14, m.skin);
-    fore.position.y = -0.09;
+    const fore = capsule(0.033, 0.12, left ? m.foreL : m.foreR);
+    fore.position.y = -0.075;
     elbow.add(fore);
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 12), side < 0 ? m.handL : m.handR);
-    hand.position.y = -0.2;
-    hand.castShadow = true;
+    const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.0085, 8, 22), m.cuff);
+    cuff.rotation.x = Math.PI / 2;
+    cuff.position.y = -0.138;
+    elbow.add(cuff);
+    const handMat = left ? m.handL : m.handR;
+    const hand = ball(0.032, handMat, [1, 1.12, 0.72]);
+    hand.position.y = -0.17;
     elbow.add(hand);
+    for (let i = 0; i < 4; i++) { // fingers, thumb on the inner side
+      const finger = capsule(0.0068, 0.02 - Math.abs(i - 1.5) * 0.003, handMat);
+      finger.position.set(0.0165 * (i - 1.5) * 0.84, -0.037, 0);
+      hand.add(finger);
+    }
+    const thumb = capsule(0.0078, 0.016, handMat);
+    thumb.position.set(-side * 0.031, -0.008, 0.008);
+    thumb.rotation.z = side * 0.75;
+    hand.add(thumb);
     // resting pose: forearm forward onto the lap
     shoulder.rotation.x = 0.15;
     elbow.rotation.x = -1.25;
@@ -176,27 +411,32 @@ export function buildChild(scene) {
   }
 
   function leg(side) {
+    const left = side < 0;
+    const material = left ? m.legL : m.legR;
     const hip = new THREE.Group();
-    hip.position.set(0.075 * side, 0, 0.02);
+    hip.position.set(0.072 * side, 0, 0.02);
     root.add(hip);
-    const thigh = capsule(0.055, 0.22, side < 0 ? m.legL : m.legR);
+    const thigh = capsule(0.056, 0.22, material);
     thigh.rotation.x = Math.PI / 2;
     thigh.position.z = 0.15;
     hip.add(thigh);
     const knee = new THREE.Group();
     knee.position.z = 0.3;
     hip.add(knee);
-    const shin = capsule(0.045, 0.22, side < 0 ? m.legL : m.legR);
-    shin.position.y = -0.17;
+    const shin = capsule(0.044, 0.2, material);
+    shin.position.y = -0.15;
     knee.add(shin);
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.15), m.trousers);
-    foot.position.set(0, -0.33, 0.04);
+    const foot = ball(0.05, left ? m.footL : m.footR, [0.95, 0.68, 1.65]);
+    foot.position.set(0, -0.3, 0.035);
     knee.add(foot);
+    const sole = ball(0.05, m.sole, [0.98, 0.16, 1.68]);
+    sole.position.set(0, -0.331, 0.035);
+    knee.add(sole);
     return { hip, knee };
   }
 
   return {
-    root, torso, neck, head, eyes, mouth, smile, tears, halo, materials: m,
+    root, torso, chest, neck, head, eyes, brows, lids, cheeks, mouth, lip, smile, tears, halo, chair, materials: m, parts,
     arms: [arm(-1), arm(1)], legs: [leg(-1), leg(1)],
   };
 }
