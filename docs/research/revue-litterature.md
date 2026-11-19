@@ -2,6 +2,8 @@
 
 *Date de la recherche : 13 novembre 2026. Les sources ont été consultées via les pages éditeurs, Crossref, OpenAlex, Europe PMC/PubMed Central, arXiv et ACL Anthology. Sauf mention « (non vérifié) », chaque chiffre provient du résumé ou du texte intégral de la source primaire.*
 
+*Suite : la [confrontation du modèle à la littérature](confrontation-modele-litterature.md) (novembre 2026) examine la dynamique de dévoilement, le mensonge, le corps et la diction, et propose des adaptations.*
+
 ---
 
 ## 1. Résumé
