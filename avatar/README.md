@@ -21,7 +21,8 @@ Options d'URL :
 - `?autoplay=0` : pas d'enchaînement automatique ;
 - `?at=MS` : figer la réponse à cet instant (captures) ;
 - `?start=1` : démarrer sans cliquer (l'audio peut alors être bloqué par le navigateur) ;
-- `?debrief=1` : ouvrir le bilan (captures).
+- `?debrief=1` : ouvrir le bilan (captures) ;
+- `?clock=manual` : horloge virtuelle pour l'enregistrement image par image (`window.__avatar.advance(ms)`, sans son).
 
 Sans `--voice`, la chronologie est estimée (environ 65 ms par caractère, silences exacts) et l'avatar reste
 muet.
@@ -83,13 +84,27 @@ Voix :
 | Fichier | Rôle |
 |---|---|
 | `index.html` | page, panneaux des deux vues, three.js épinglé (`0.170.0`, jsDelivr) |
-| `figure.js` | scène, caméras des vues, enfant stylisé (pivots et un matériau par partie du corps) |
+| `figure.js` | scène, caméras des vues, enfant stylisé (squelette et un matériau par partie du corps) |
+| `body.js` | surfaces continues (buste, manches, jambes, cou) skinnées sur le squelette : elles se plient aux articulations |
 | `room.js` | salle d'audition (vue user) |
 | `cues.js` | signe → mouvement et parties du corps (cibles lissées, animation) |
 | `debug.js` | axe du regard, surbrillance, halo (vue dev) |
 | `coaching.js` | suivi du protocole et bilan (vue user) |
 | `main.js` | chargement des données, vues, horloge (audio ou interne), enchaînement des tours |
 | `record_demo.py` | enregistre une vidéo du rejeu avec la voix (`--mode user` ou `dev`, Playwright + ffmpeg) |
+
+## Enregistrer une vidéo
+
+```bash
+uv run nichd-sim avatar avatar_sessions/demo --port 8602 &
+uv run --no-project --with playwright==1.55.0 python avatar/record_demo.py avatar_sessions/demo demo.mp4 --mode user
+```
+
+L'enregistrement se fait **image par image** : la page tourne sur une horloge virtuelle et chaque image est capturée puis
+envoyée à ffmpeg. La vidéo a donc toutes ses images (30 par seconde, `--fps`), même si le rendu est lent, et chaque réponse
+est calée sur son audio à l'image près. Chrome utilise le GPU s'il le voit (ANGLE/Vulkan), sinon le rendu logiciel, plus
+lent, pour la même vidéo. Compter environ 3 fois la durée du rejeu sur le GPU. `--limit S` s'arrête après S secondes
+(aperçu). `--realtime` garde l'ancien enregistrement en temps réel, qui perd des images quand le rendu est lent.
 
 ## Suite (ADR 0004)
 

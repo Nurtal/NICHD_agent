@@ -26,7 +26,7 @@ const ball = (r, material) => new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16)
 function drawing(paint) {
   const canvas = document.createElement("canvas");
   canvas.width = 256; canvas.height = 320;
-  const g = canvas.getContext("2d");
+  const g = canvas.getContext("2d", { willReadFrequently: true }); // a CPU canvas: uploads reliably on every GPU
   g.fillStyle = "#fffdf7";
   g.fillRect(0, 0, 256, 320);
   g.lineWidth = 8; g.lineCap = "round"; g.lineJoin = "round";
