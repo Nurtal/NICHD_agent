@@ -55,6 +55,23 @@ l'enfant (bouton « Carte », `?map=1`).
 Ces fichiers montrent les rouages du moteur, mensonges compris. Ils **ne font pas partie du contrat** : le
 `performance.json` est identique avec ou sans cette option, et un corps de formation ne les reçoit pas.
 
+## Ajout : suivi du protocole pour l'apprenant
+
+L'affichage « user » de l'avatar montre à l'apprenant s'il suit le protocole : chaque phrase est taguée, les écarts
+lèvent une alerte, un compteur indique les faits recueillis. `export-avatar` écrit ces données dans `coaching.json`
+(`src/nichd_sim/coaching.py`), à côté du contrat. Elles décrivent **l'interviewer**, pas l'enfant : le contrat
+ne change pas.
+
+Pendant l'entretien, ce canal ne doit rien apprendre que les mots de l'enfant n'aient déjà dit :
+- le tag et les alertes ne dépendent que de la phrase de l'apprenant et de la phase où elle est dite ;
+- aucune suggestion tombée juste, contamination, mensonge, identifiant ou texte de fait n'apparaît par tour ;
+- un fait obtenu par une suggestion tombée juste n'est compté qu'au bilan ;
+- le dévoilement forcé et les écarts de phase provoqués par un dévoilement de l'enfant attendent le bilan ;
+- dans un scénario avec dissimulation, le compteur reste à `? / N` jusqu'au bilan.
+
+Le bilan de fin donne les vrais chiffres. Le barème des niveaux (conforme, à surveiller, écart) est une proposition,
+à valider par un formateur NICHD.
+
 ## Jalons suivants
 
 1. **Direct** : un serveur WebSocket autour de `Session.turn(on_step=…)` ; l'avatar répond pendant qu'on lui
