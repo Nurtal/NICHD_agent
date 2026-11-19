@@ -35,6 +35,28 @@ QUESTION_TYPES = {
 }
 
 
+class SegmentHint(StrEnum):
+    BEFORE = "before"
+    DURING = "during"
+    AFTER = "after"
+
+
+class GroundRuleKind(StrEnum):
+    DONT_KNOW = "dont_know"
+    DONT_UNDERSTAND = "dont_understand"
+    CORRECT_ME = "correct_me"
+    NOT_THERE = "not_there"
+    TRUTH = "truth"
+    PROMISE = "promise"
+    PRACTICE = "practice"
+    """A practice question on a rule (« si je te demande le nom de mon chien, tu dis quoi ? »)."""
+
+
+class PracticeKind(StrEnum):
+    EPISODIC = "episodic"
+    GENERIC = "generic"
+
+
 class Classification(BaseModel):
     """Output of the classifier for one interviewer utterance."""
 
@@ -49,6 +71,16 @@ class Classification(BaseModel):
     inner_type: QuestionType | None = None
     """For a compound question: type of its most directive element (drives the engine)."""
     phase_hints: list[str] = []
+    segment: SegmentHint | None = None
+    """Part of the event the prompt asks about (« raconte-moi la fin »), skill 0.3.0."""
+    knowledge_question: bool = False
+    """« Est-ce que tu sais / te souviens… ? »: asks yes/no, implicitly asks for the information."""
+    ground_rule_kind: GroundRuleKind | None = None
+    """For a ground rule: which one (stated rules, the truth promise, a practice question)."""
+    practice_kind: PracticeKind | None = None
+    """For a narrative-practice invitation: about one past occasion (episodic) or habits (generic)."""
+    causal: bool = False
+    """Asks for a reason or a cause (« pourquoi… ? »): never answered by a bare yes or no."""
     meta: dict = {}
     """Classifier diagnostics (model, latency, errors). Logged, never used by the engine."""
     clean_text: str | None = None

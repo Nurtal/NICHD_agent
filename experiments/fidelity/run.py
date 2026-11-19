@@ -195,29 +195,6 @@ def probe_support_acquiescence(seeds: range) -> Result:
     )
 
 
-def probe_ground_rules(seeds: range) -> Result:
-    """A7 — Earhart et al. (2014): a stated rule alone barely changes answers; practice matters (lot 2)."""
-    sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
-    q = PLANS[sc.id].out_of_scenario[0]
-    res = {}
-    for rules in (0, 3):
-        hits = []
-        for seed in seeds:
-            child = Child(sc, seed)
-            for _ in range(rules):
-                child.ask("[regle@regles] Si tu ne sais pas, tu peux me dire « je ne sais pas ».")
-            if not disclose(child, 1):
-                continue
-            hits.append(child.ask(f"[dir:hors] {q}").speech_act == SpeechAct.CONFABULATE)
-        res[rules] = rate(hits)
-    return Result(
-        "A7", "invention à une question hors scénario après 0 / 3 règles énoncées (sans entraînement)",
-        f"{res[0]:.0%} / {res[3]:.0%}",
-        "effet faible d'une règle seulement énoncée ; effet net après entraînement (lot 2)",
-        None,
-    )
-
-
 def probe_lie_forms(seeds: range) -> Result:
     """A9 — Talwar et al. (2004): leaving the fact out is far more frequent than denying it."""
     sc = load_scenario(SCENARIOS / "s08_violences_maison_secret.yaml")
@@ -278,14 +255,82 @@ def probe_support_expressivity(seeds: range) -> Result:
                   f"{res[0]:.2f} / {res[3]:.2f}", "plus de signes avec le soutien", res[3] > res[0])
 
 
+def probe_segment(seeds: range) -> Result:
+    """A4 — NICHD protocol (Lamb et al., 2007): « raconte-moi la fin » asks for the end."""
+    sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
+    after = {u.id for seg, u in sc.target_units() if str(seg) == "after"}
+    ok = []
+    for seed in seeds:
+        child = Child(sc, seed)
+        if not disclose(child, 1):
+            continue
+        d = child.ask("[inv+fin] Raconte-moi la fin.")
+        told = {u.id for u in d.allowed_units if not u.contaminated and not u.lie}
+        ok.append(bool(told) and told <= after)
+    return Result("A4", "« Raconte-moi la fin » : réponses qui ne livrent que le segment final", f"{rate(ok):.0%}",
+                  "100 %", rate(ok) == 1.0)
+
+
+def probe_knowledge_question(seeds: range) -> Result:
+    """A5 — Evans et al. (2014, 2017): « tu te souviens… ? » often gets a bare « oui », less with age."""
+    sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
+    res = {}
+    for age in (5, 8, 11):
+        hits = []
+        for seed in seeds:
+            child = Child(sc, seed, age=age)
+            if not disclose(child, 1):
+                continue
+            hits.append(child.ask("[choix+sais:d_pousse] Tu te souviens qui a poussé ?").speech_act == SpeechAct.AFFIRM)
+        res[age] = rate(hits)
+    return Result("A5", "« oui » sans détail à « Tu te souviens qui… ? », à 5 / 8 / 11 ans",
+                  " / ".join(f"{v:.0%}" for v in res.values()),
+                  "décroissant avec l'âge ; de l'ordre de 15 à 45 % chez les plus jeunes",
+                  res[5] > res[8] > res[11] and 0.15 <= res[5] <= 0.5)
+
+
+def probe_ground_rule_practice(seeds: range) -> Result:
+    """A7 — Earhart et al. (2014); Brubacher et al. (2015): stating a rule does little, practising it more."""
+    sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
+    q = PLANS[sc.id].out_of_scenario[0]
+    res = {}
+    for name, rule in (("aucune", None), ("énoncée", "[regle+jsp@regles] Si tu ne sais pas, dis « je ne sais pas »."),
+                       ("entraînée", "[regle+entrainement@regles] Si je te demande le nom de mon chien, tu dis quoi ?")):
+        hits = []
+        for seed in seeds:
+            child = Child(sc, seed, age=8)
+            for _ in range(3 if rule else 0):
+                child.ask(rule)
+            if not disclose(child, 1):
+                continue
+            hits.append(child.ask(f"[dir:hors] {q}").speech_act == SpeechAct.CONFABULATE)
+        res[name] = rate(hits)
+    return Result("A7", "invention à une question hors scénario (8 ans) : sans règle / 3 règles énoncées / 3 entraînées",
+                  " / ".join(f"{v:.0%}" for v in res.values()),
+                  "énoncée : effet faible ; entraînée : effet net",
+                  res["aucune"] - res["énoncée"] < res["aucune"] - res["entraînée"])
+
+
+def probe_causal(seeds: range) -> Result:
+    """A15 — a « why » question is open: never a bare « oui » or « non »."""
+    sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
+    bad = []
+    for seed in seeds:
+        child = Child(sc, seed)
+        if not disclose(child, 1):
+            continue
+        d = child.ask("[choix+pourquoi:hors=il l'a poussé] Pourquoi il l'a poussé ?")
+        bad.append(d.speech_act in (SpeechAct.DENY, SpeechAct.ACQUIESCE, SpeechAct.AFFIRM))
+    return Result("A15", "« Pourquoi… ? » codé fermé : réponses oui/non", f"{rate(bad):.0%}", "0 %", rate(bad) == 0)
+
+
 PROBES: list[Callable[[range], Result]] = [
     probe_dont_know_reaction, probe_repetition, probe_pressure, probe_support_acquiescence,
-    probe_ground_rules, probe_lie_forms, probe_support_expressivity, probe_arousal_before_disclosure,
+    probe_segment, probe_knowledge_question, probe_ground_rule_practice, probe_causal,
+    probe_lie_forms, probe_support_expressivity, probe_arousal_before_disclosure,
 ]
 LATER = [
-    ("A4", "« Raconte-moi la fin » ne livre que le segment final", "lot 2 (indice de segment)"),
-    ("A5", "« oui » sans détail aux « Est-ce que tu te souviens… ? », décroissant avec l'âge", "lot 2"),
-    ("A8", "plus de faits protégés révélés après la promesse de dire la vérité", "lots 2 et 3"),
+    ("A8", "plus de faits protégés révélés après la promesse de dire la vérité", "lot 3"),
     ("A12", "un silence de 10 s fait compléter la réponse", "lot 5"),
 ]
 

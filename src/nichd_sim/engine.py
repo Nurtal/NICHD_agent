@@ -13,7 +13,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from nichd_sim.classification import OUT_OF_SCENARIO, Classification, QuestionType
+from nichd_sim.classification import OUT_OF_SCENARIO, Classification, GroundRuleKind, PracticeKind, QuestionType
 from nichd_sim.delivery import Delivery, HesitationCause, express, make_delivery
 from nichd_sim.demeanor import Demeanor, make_demeanor
 from nichd_sim.parameters import Parameters
@@ -36,6 +36,8 @@ class SpeechAct(StrEnum):
     SILENCE = "silence"
     RETRACT = "retract"
     """Takes back an earlier lie and tells the true fact (ADR 0002)."""
+    AFFIRM = "affirm"
+    """« Oui » to a « do you know / remember…? » question, without the information it implies."""
 
 
 class LieKind(StrEnum):
@@ -155,6 +157,15 @@ class EngineState(BaseModel):
 _CLOSED = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE}
 
 
+def effective_type(c: Classification) -> QuestionType:
+    """The type the engine acts on: a compound question's most directive part; a « why » closed
+    question is really an open one (« pourquoi… ? » is never answered by a bare yes or no)."""
+    t = (c.inner_type or QuestionType.DIRECTIVE) if c.type == QuestionType.COMPOUND else c.type
+    if c.causal and t == QuestionType.OPTION_POSING and not c.options:
+        return QuestionType.DIRECTIVE
+    return t
+
+
 def closed_key(c: Classification, effective: QuestionType, utterance: str | None) -> str | None:
     """Identity of a closed question, to count repetitions: the targeted unit, or, for a detail
     absent from the scenario, the question's normalized wording. None for open prompts."""
@@ -233,7 +244,7 @@ class BehaviorEngine:
     def decide(self, c: Classification, *, phase_violation: bool = False, utterance: str | None = None) -> Decision:
         """`phase_violation`: the phase tracker flagged this prompt (it raises the child's arousal).
         `utterance`: the prompt as the child heard it (identifies repeated questions)."""
-        effective = (c.inner_type or QuestionType.DIRECTIVE) if c.type == QuestionType.COMPOUND else c.type
+        effective = effective_type(c)
         key = closed_key(c, effective, utterance)
         st = self.state
         self.prev_act, self.prev_target = st.last_act, st.last_target
@@ -266,9 +277,7 @@ class BehaviorEngine:
         self._phase_violation = phase_violation
         self._hidden = {}
         self._withheld: list[str] = []
-        effective = c.type
-        if c.type == QuestionType.COMPOUND:
-            effective = c.inner_type or QuestionType.DIRECTIVE
+        effective = effective_type(c)
         self._apply_phase_effects(c, effective)
         was_disclosed = self.state.disclosed
         about_target = self._about_target(c, effective)
@@ -285,6 +294,11 @@ class BehaviorEngine:
         retraction = self._maybe_retract(effective)
         if retraction is not None:
             decision = retraction.model_copy(update={"effective_type": effective})
+            self._commit(decision)
+            return self._with_delivery(decision, c, about_target)
+        if c.knowledge_question and effective in (QuestionType.OPTION_POSING, QuestionType.DIRECTIVE) and not c.options:
+            decision = self._knowledge_question(c, effective).model_copy(update={"effective_type": effective})
+            decision = self._record_deception(decision, effective)
             self._commit(decision)
             return self._with_delivery(decision, c, about_target)
         handler = {
@@ -319,9 +333,13 @@ class BehaviorEngine:
                 st.acquiescence = round(max(0.0, st.acquiescence - p["support_acquiescence_drop"]), 6)
         elif t == QuestionType.INVITATION and hint == "rapport":
             st.reluctance = max(0.0, st.reluctance - p["rapport_reluctance_drop"])
-        elif t == QuestionType.GROUND_RULE and st.ground_rules_given < p["max_effective_ground_rules"]:
+        elif (
+            t == QuestionType.GROUND_RULE
+            and st.ground_rules_given < p["max_effective_ground_rules"]
+            and c.ground_rule_kind not in (GroundRuleKind.TRUTH, GroundRuleKind.PROMISE)
+        ):
             st.ground_rules_given += 1
-            st.acquiescence = max(0.0, st.acquiescence - p["ground_rule_acquiescence_drop"])
+            st.acquiescence = max(0.0, st.acquiescence - p["ground_rule_acquiescence_drop"] * self._ground_rule_factor(c))
         if self.scenario.deception is not None:
             if t == QuestionType.SUPPORT:
                 st.concealment -= p["support_concealment_drop"]
@@ -334,9 +352,19 @@ class BehaviorEngine:
             t in (QuestionType.INVITATION, QuestionType.CUED_INVITATION)
             and hint == "narrative_practice"
             and st.practice_turns < p["max_effective_practice_turns"]
+            and (c.practice_kind != PracticeKind.GENERIC or p["generic_practice_counts"])
         ):
             st.practice_turns += 1
             st.verbosity = min(1.0, st.verbosity + p["narrative_practice_verbosity_boost"])
+
+    def _ground_rule_factor(self, c: Classification) -> float:
+        """A rule only stated barely changes answers in the field (Earhart et al., 2014); practising it
+        does, less so for the youngest (Brubacher et al., 2015). Unknown kind (older classifier): 1."""
+        if c.ground_rule_kind is None:
+            return 1.0
+        if c.ground_rule_kind == GroundRuleKind.PRACTICE:
+            return self.params["ground_rule_age_factor"]
+        return self.params["ground_rule_stated_factor"]
 
     def _about_target(self, c: Classification, t: QuestionType) -> bool:
         """Does this prompt push the child to talk about the target event?"""
@@ -472,6 +500,9 @@ class BehaviorEngine:
                 return self._anything_else()
         if topic is None:
             return Decision(speech_act=SpeechAct.SMALL_TALK, reason="invitation de rapport")
+        if c.segment is not None:  # « raconte-moi la fin »: that part of the event only
+            return self._narrate(self._time_segment(topic, c.segment), self._invitation_size(),
+                                 f"invitation (segment {c.segment})", recall_contamination=topic == EventKind.TARGET)
         fresh = self._unrevealed(self._orders[topic])
         central_left = [u for u in fresh if u.centrality == Centrality.CENTRAL]
         # Hidden central facts do not count as "left to tell": the child moves on to peripheral ones.
@@ -499,7 +530,14 @@ class BehaviorEngine:
             )
         return Decision(speech_act=SpeechAct.DENY, reason="clôture « autre chose ? » → non, c'est tout")
 
+    def _time_segment(self, kind: EventKind, segment: str) -> list[InfoUnit]:
+        return [u for s, u in self.scenario.event(kind).units() if str(s) == str(segment)]
+
     def _cued_invitation(self, c: Classification, t: QuestionType) -> Decision:
+        if c.segment is not None:
+            kind = self._topic(c) or EventKind.TARGET
+            return self._narrate(self._time_segment(kind, c.segment), self._invitation_size(),
+                                 f"invitation indicée (segment {c.segment})")
         found = self._segment_pool(c.target)
         if found is None or not self._unrevealed(found[1]):
             return self._invitation(c, t, topic=found[0] if found else _FROM_HINT)
@@ -517,6 +555,14 @@ class BehaviorEngine:
         return self._narrate(self._orders[kind], 1, "facilitateur")
 
     # -- focused questions --------------------------------------------------
+
+    def _knowledge_question(self, c: Classification, t: QuestionType) -> Decision:
+        """« Est-ce que tu sais / te souviens… ? »: often a bare « oui », more so for the youngest
+        (Evans et al., 2014, 2017); otherwise the child answers the implied wh- question."""
+        unit = self._target_unit(c)
+        if not (unit is not None and self._lies_about(unit)) and self._dyn_draw(self.params["p_unelaborated_yes"]):
+            return Decision(speech_act=SpeechAct.AFFIRM, reason="« est-ce que tu sais… ? » → oui, sans détail")
+        return self._directive(c, QuestionType.DIRECTIVE)
 
     def _target_unit(self, c: Classification) -> InfoUnit | None:
         if not c.target or c.target == OUT_OF_SCENARIO:

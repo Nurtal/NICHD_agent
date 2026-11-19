@@ -126,6 +126,11 @@ def _to_classification(raw: dict[str, Any], context: ClassificationContext, meta
         options=raw.get("options") or None,
         inner_type=QuestionType(inner) if inner and qtype == QuestionType.COMPOUND else None,
         phase_hints=[phase] if phase else [],
+        segment=raw.get("segment") or None,
+        knowledge_question=bool(raw.get("knowledge_question")),
+        ground_rule_kind=(raw.get("ground_rule_kind") or None) if qtype == QuestionType.GROUND_RULE else None,
+        practice_kind=raw.get("practice_kind") or None,
+        causal=bool(raw.get("causal")),
         meta=meta,
     )
 
