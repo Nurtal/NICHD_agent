@@ -365,3 +365,102 @@ def test_only_episodic_narrative_practice_raises_verbosity():
         start = s.state.verbosity
         ask(s, clf, "Raconte-moi.", C("invitation", practice_kind=kind, phase_hints=["narrative_practice"]))
         assert (s.state.verbosity > start) is rises
+
+
+# -- lot 3: deception (A8 promise, A9 leak) ---------------------------------------
+
+from nichd_sim.delivery import HesitationCause  # noqa: E402
+from nichd_sim.metrics import compute_metrics  # noqa: E402
+
+S08 = ROOT / "scenarios" / "s08_violences_maison_secret.yaml"
+
+
+def s08_dyn(seed=0, strength=1.0, **profile):
+    sc = load_scenario(S08)
+    sc = sc.model_copy(update={"deception": sc.deception.model_copy(update={"strength": strength})})
+    sc = with_profile(sc, reluctance=0.0, **profile)
+    return make_session(sc, seed=seed, dynamics=True)
+
+
+PROMISE = C("ground_rule", ground_rule_kind=GroundRuleKind.PROMISE, phase_hints=["ground_rules"])
+
+
+def test_a_promise_lowers_concealment_once():
+    s, clf, _ = s08_dyn(strength=0.7)
+    ask(s, clf, "Tu me promets de dire la vérité ?", PROMISE)
+    drop = s.params["promise_concealment_drop"]
+    assert abs(s.state.concealment - (0.7 - drop)) < 1e-9 and s.state.promised
+    ask(s, clf, "Promis ?", PROMISE)
+    assert abs(s.state.concealment - (0.7 - drop)) < 1e-9
+
+
+def test_a_promise_has_no_effect_without_deception_nor_on_confabulation():
+    s, clf, _ = dyn()
+    before = s.state.model_copy()
+    ask(s, clf, "Tu me promets de dire la vérité ?", PROMISE)
+    assert s.state.concealment == 0 and not s.state.promised
+    assert s.state.acquiescence == before.acquiescence
+
+
+def test_a_promise_brings_out_more_protected_facts():
+    def protected_told(promise: bool) -> int:
+        total = 0
+        for seed in range(60):
+            s, clf, _ = s08_dyn(seed=seed, strength=0.7)
+            if promise:
+                ask(s, clf, "Tu me promets de dire la vérité ?", PROMISE)
+            for _ in range(4):
+                ask(s, clf, "Raconte-moi tout.", C("invitation"))
+            total += sum(s.scenario.is_protected(u) for u in s.state.revealed)
+        return total
+    assert protected_told(True) > protected_told(False)
+
+
+def _lie_then_follow_up(seed, age):
+    s, clf, _ = s08_dyn(seed=seed, age=age)
+    first = ask(s, clf, "Qui était là ?", C("directive", "d_karim"))
+    assert first.decision.lie is not None
+    return s, ask(s, clf, "C'était qui, le monsieur ?", C("directive", "d_karim"))
+
+
+def test_a_follow_up_question_may_let_the_truth_slip_out():
+    for seed in range(80):
+        s, r = _lie_then_follow_up(seed, age=5)
+        if r.decision.speech_act == SpeechAct.LEAK:
+            break
+    else:
+        raise AssertionError("aucune fuite en 80 seeds à 5 ans")
+    d = r.decision
+    assert [u.id for u in d.allowed_units] == ["d_karim"] and "d_karim" in s.state.revealed
+    assert d.leak.protected == "d_karim" and d.lie is None
+    lie = next(lr for lr in s.state.lies if lr.id == d.leak.id)
+    assert lie.leaked_turn == s.state.turn and lie.retracted_turn is None  # not taken back
+
+
+def test_leaks_become_rarer_with_age():
+    def rate(age):
+        return sum(_lie_then_follow_up(seed, age)[1].decision.speech_act == SpeechAct.LEAK for seed in range(150))
+    assert rate(5) > rate(8) > rate(11)
+
+
+def test_a_leak_does_not_change_the_delivery_of_the_truth():
+    """ADR 0002 addendum: the slip is verbal content, delivered like the same fact told plainly."""
+    for seed in range(80):
+        s, r = _lie_then_follow_up(seed, age=5)
+        if r.decision.speech_act == SpeechAct.LEAK:
+            break
+    loads = r.decision.delivery.loads
+    assert loads.get(HesitationCause.DECEPTION, 0) == 0
+
+
+def test_the_debrief_lists_the_contradiction_but_the_live_view_does_not():
+    for seed in range(80):
+        s, r = _lie_then_follow_up(seed, age=5)
+        if r.decision.speech_act == SpeechAct.LEAK:
+            break
+    log = s.end()
+    coaching = build_coaching(log, s.scenario)
+    assert len(coaching.debrief.contradictions) == 1 and "Tour 2" in coaching.debrief.contradictions[0]
+    live = coaching.model_dump(exclude={"debrief"})
+    assert "contradiction" not in str(live) and "leak" not in str(live)
+    assert compute_metrics(log, s.scenario).deception.leaked == 1

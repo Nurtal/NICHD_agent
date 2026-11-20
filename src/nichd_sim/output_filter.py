@@ -73,7 +73,7 @@ class OutputFilter:
                     leaked.append(unit.id)
                     break
         missing = []
-        if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT):
+        if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT, SpeechAct.LEAK):
             for au in decision.allowed_units:
                 unit = self.scenario.unit(au.id) or self.scenario.lie_unit(au.id)
                 anchors = unit.anchors if unit is not None else []

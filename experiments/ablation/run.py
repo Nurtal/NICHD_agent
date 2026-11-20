@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from protocol import baseline_messages, script, strip_tag  # noqa: E402
+from protocol import PLANS, baseline_messages, script, strip_tag  # noqa: E402
 
 from nichd_sim.classifiers.manual import ManualClassifier  # noqa: E402
 from nichd_sim.evaluation import load_scenarios  # noqa: E402
@@ -114,7 +114,7 @@ def main():
         for line in path.read_text(encoding="utf-8").splitlines():
             d = json.loads(line)
             done.add((d["model"], d["condition"], d["scenario"], d["seed"]))
-    scenarios = load_scenarios(ROOT / "scenarios")
+    scenarios = {sid: sc for sid, sc in load_scenarios(ROOT / "scenarios").items() if sid in PLANS}
     for model in args.models:  # one model at a time: Ollama keeps it loaded
         client = make_client(model, candidates.get(model, {}).get("options"))
         for seed in args.seeds:

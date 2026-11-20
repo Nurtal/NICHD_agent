@@ -45,6 +45,7 @@ SPEECH_ACT_LABELS = {
     SpeechAct.CONFUSION: "confus",
     SpeechAct.SILENCE: "silence",
     SpeechAct.RETRACT: "revient sur un mensonge",
+    SpeechAct.LEAK: "laisse échapper la vérité",
     SpeechAct.AFFIRM: "« oui » sans détail",
 }
 

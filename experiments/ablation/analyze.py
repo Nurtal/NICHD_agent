@@ -198,9 +198,9 @@ def main():
     for s, p in zip(sids, prof):
         cells = []
         for c in conds:
-            acc = st.mean(v for m in models if (v := agg(m, c, "suggestion_accepted", {s})) == v)
+            acc = [v for m in models if (v := agg(m, c, "suggestion_accepted", {s})) == v]
             fd = [v for m in models if (v := agg(m, c, "first_disclosure_turn", {s})) == v]
-            cells += [pct(acc), f"{st.mean(fd):.1f}" if fd else "—"]
+            cells += [pct(st.mean(acc)) if acc else "—", f"{st.mean(fd):.1f}" if fd else "—"]
         out.append(f"| {s} | {p.age} | {p.reluctance} | {p.suggestibility} | {pct(target[s])} | " + " | ".join(cells) + " |")
     text = "\n".join(out) + "\n"
     if args.output:

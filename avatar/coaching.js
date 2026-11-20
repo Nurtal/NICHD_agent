@@ -104,6 +104,9 @@ export class CoachPanel {
     $("dfalse").textContent = d.false_details;
     $("dissues").replaceChildren(...d.issues.map((text) => el("li", null, text)));
     $("dissuesbox").style.display = d.issues.length ? "" : "none";
+    const contra = d.contradictions ?? [];
+    $("dcontra").replaceChildren(...contra.map((text) => el("li", null, text)));
+    $("dcontrabox").style.display = contra.length ? "" : "none";
     $("debrief").classList.add("open");
   }
 

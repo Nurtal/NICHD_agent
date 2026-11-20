@@ -136,3 +136,23 @@ Trois risques encadrent la conception :
 - **Repo ou branche longue séparés** pour la voix et le moteur : le mensonge touche le cœur (moteur, scénario,
   journal), et deux bases divergeraient. On fige plutôt le MVP par un tag et on garde les nouveautés désactivées
   par défaut.
+
+## Avenant (2026-11-20) : promesse et fuite de la vérité
+
+Lot 3 du [plan d'adaptations](../plans/adaptations-litterature.md) (pistes A8 et A9 de la
+[confrontation à la littérature](../research/confrontation-modele-litterature.md)).
+
+- **Promesse.** Une règle de base de type « promesse » (champ `ground_rule_kind` du skill 0.3.0) fait baisser la
+  dissimulation de `promise_concealment_drop`, une seule fois par entretien (Talwar et al., 2004 ; Lyon & Dorado,
+  2008). Elle n'agit ni sur l'acquiescement ni sur la confabulation.
+- **Fuite.** Sur une question focalisée à propos d'un fait déjà couvert par un mensonge, l'enfant peut laisser
+  échapper la vérité (acte `leak`, probabilité `p_leak` décroissante avec l'âge : Talwar & Lee, 2002 ; Talwar et al.,
+  2007). Le mensonge n'est **pas** retiré : il reste au journal avec `leaked_turn`, et le fait vrai est désormais dit.
+  L'enfant ne revient pas sur ce qu'il avait dit ; c'est la contradiction que l'apprenant doit repérer.
+- **La fuite est un contenu verbal décidé par le moteur, pas un signe.** Elle ne change ni la diction ni le corps :
+  elle se dit comme le même fait dit sans mensonge (aucune charge de mensonge), et les paires contrôlées
+  mensonge/vérité restent identiques.
+- **Suivi (ADR 0004).** La contradiction n'apparaît qu'au bilan (« Contradictions de l'enfant »), jamais pendant
+  l'entretien : la montrer en direct dirait quel fait était vrai.
+- Format de journal 5. Les deux paramètres ont la valeur neutre 0 : les journaux antérieurs se rejouent à
+  l'identique.
