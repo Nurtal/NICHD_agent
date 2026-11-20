@@ -117,7 +117,7 @@ QUESTIONS = {
 }
 
 
-def lie_truth_pairs(seeds=range(15)):
+def lie_truth_pairs(seeds=range(15), dynamics=False):
     """Same session, same question about the same protected fact; only the will to conceal differs."""
     base = load_scenario(S08)
     out = []
@@ -127,7 +127,7 @@ def lie_truth_pairs(seeds=range(15)):
             for make in QUESTIONS.values():
                 decisions = []
                 for strength in (1.0, 0.0):
-                    s, clf, _ = make_session(s08(strength), seed=seed)
+                    s, clf, _ = make_session(s08(strength), seed=seed, dynamics=dynamics)
                     for i, c in enumerate([C("support"), C("invitation", phase_hints=["transition"]),
                                            C("invitation", phase_hints=["transition"]), C("invitation")]):
                         ask(s, clf, f"w{i}", c)
@@ -143,6 +143,15 @@ def lie_truth_pairs(seeds=range(15)):
 def test_body_does_not_give_the_lie_away():
     """Controlled pairs: a lie shows exactly the same body as the truth it hides."""
     pairs = lie_truth_pairs()
+    assert len(pairs) >= 30
+    for lie, truth in pairs:
+        assert lie.demeanor == truth.demeanor
+        assert lie.delivery.tremor == truth.delivery.tremor
+
+
+def test_body_does_not_give_the_lie_away_with_the_new_dynamics():
+    """Same controlled pairs with expressivity, disengagement and pre-disclosure rise switched on."""
+    pairs = lie_truth_pairs(dynamics=True)
     assert len(pairs) >= 30
     for lie, truth in pairs:
         assert lie.demeanor == truth.demeanor
@@ -330,3 +339,67 @@ def test_low_shaking_voice_is_said_once():
     d = Demeanor(cues=[ShownCue(cue=Cue.GAZE_DOWN, intensity=Intensity.SLIGHT)])
     text = stage_direction(d, Delivery(onset_ms=500, volume=Volume.LOW, tremor=0.6))
     assert "d'une voix basse et tremblante" in text and "à voix basse" not in text
+
+
+# -- lot 4: expressivity, disengagement, body before disclosure (ADR 0003 addendum) ----------
+
+
+def _emotion(demeanors):
+    fams = {CueFamily.TEARS, CueFamily.TREMOR, CueFamily.TENSION}
+    return sum(len(d.families() & fams) for d in demeanors) / len(demeanors)
+
+
+def test_expressivity_amplifies_emotion_cues_at_equal_arousal():
+    p, rng0, rng1 = params(), random.Random(0), random.Random(0)
+    shy = [make_demeanor(0.8, {}, ExpressionStyle.MIXED, p, rng0) for _ in range(400)]
+    open_ = [make_demeanor(0.8, {}, ExpressionStyle.MIXED, p, rng1, expressivity=1.0) for _ in range(400)]
+    assert _emotion(open_) > _emotion(shy) + 0.1
+
+
+def test_reluctance_adds_disengagement_at_equal_arousal():
+    p, rng0, rng1 = params(), random.Random(0), random.Random(0)
+    willing = [make_demeanor(0.3, {}, ExpressionStyle.MIXED, p, rng0) for _ in range(400)]
+    reluctant = [make_demeanor(0.3, {}, ExpressionStyle.MIXED, p, rng1, reluctance=0.8) for _ in range(400)]
+    assert _share(reluctant, CueFamily.WITHDRAWAL) > _share(willing, CueFamily.WITHDRAWAL) + 0.15
+    assert sum(d.has(Cue.GAZE_AVERTED) for d in reluctant) > sum(d.has(Cue.GAZE_AVERTED) for d in willing)
+
+
+def test_neutral_values_leave_the_body_unchanged():
+    p = Parameters.load(AgeBand.B7_9, Parameters.neutral_overrides())
+    a = make_demeanor(0.7, {}, ExpressionStyle.MIXED, p, random.Random(5))
+    b = make_demeanor(0.7, {}, ExpressionStyle.MIXED, p, random.Random(5), expressivity=1.0, reluctance=1.0)
+    assert a == b
+
+
+def test_support_raises_expressivity_and_pressure_lowers_it():
+    s, clf, _ = make_session(load_scenario(S02), dynamics=True)
+    assert s.state.expressivity == 0
+    ask(s, clf, "Je suis là pour toi.", C("support"))
+    ask(s, clf, "Je suis là pour toi.", C("support"))
+    raised = s.state.expressivity
+    assert raised > 0
+    ask(s, clf, "Il t'a tapé, hein ?", C("suggestive", "d_tape", suggested_proposition="il t'a tapé"))
+    assert s.state.expressivity < raised
+
+
+def test_body_rises_when_the_child_is_close_to_disclosing():
+    """Same invitations; only the pre-disclosure rule differs. The turn before disclosure is more aroused."""
+    higher = 0
+    for seed in range(20):
+        traces = []
+        for rise in (0.0, None):
+            sc = load_scenario(S02)
+            if rise is not None:
+                sc = overridden(sc, pre_disclosure_rise=rise)
+            s, clf, _ = make_session(sc, seed=seed, dynamics=True)
+            trace = []
+            for _ in range(8):
+                ask(s, clf, "Raconte-moi ce qui s'est passé à la maison.", C("invitation"))
+                trace.append((s.state.arousal, s.state.disclosed))
+            traces.append(trace)
+        off, on = traces
+        assert [d for _, d in off] == [d for _, d in on]  # the body never changes the words
+        first = next((i for i, (_, d) in enumerate(on) if d), None)
+        if first and first >= 1:
+            higher += on[first - 1][0] > off[first - 1][0]
+    assert higher >= 10

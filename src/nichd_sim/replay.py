@@ -111,6 +111,7 @@ _ADDED_IN: dict[int, dict[str, set[str]]] = {
     3: {"decision": {"delivery", "demeanor"}, "state_after": {"arousal", "arousal_baseline"}},
     4: {"state_after": {"last_act", "last_target", "closed_asked", "last_key", "supports_given"}},
     5: {"state_after": {"promised"}},
+    6: {"state_after": {"expressivity"}},
 }
 """Per log format, the fields it added or computes differently (format 3: the delivery depends on
 arousal; format 4: the engine remembers the previous turn and the closed questions asked; format 5: the
