@@ -464,3 +464,60 @@ def test_the_debrief_lists_the_contradiction_but_the_live_view_does_not():
     live = coaching.model_dump(exclude={"debrief"})
     assert "contradiction" not in str(live) and "leak" not in str(live)
     assert compute_metrics(log, s.scenario).deception.leaked == 1
+
+
+# -- lot 5: wait time (A12) -----------------------------------------------------------
+
+from nichd_sim.session import WAIT  # noqa: E402
+
+
+def test_a_wait_lets_the_child_go_on_with_its_story():
+    added = 0
+    for seed in range(40):
+        s, clf, _ = dyn(seed=seed)
+        disclosed(s, clf)
+        before = len(s.state.revealed)
+        r = s.wait()
+        assert r.decision.speech_act in (SpeechAct.ANSWER, SpeechAct.SILENCE)
+        added += len(s.state.revealed) > before
+    assert 15 <= added <= 35  # often, not always (p_wait_elaboration)
+
+
+def test_a_wait_is_not_seen_by_the_classifier_nor_counted_as_a_question():
+    s, clf, _ = dyn(seed=3)
+    disclosed(s, clf)
+    n_classified = len(clf.contexts)
+    s.wait()
+    assert len(clf.contexts) == n_classified
+    t = s.log.turns[-1]
+    assert t.kind == WAIT and t.utterance == ""
+    log = s.end()
+    assert compute_metrics(log, s.scenario).open_question_ratio.questions == sum(
+        1 for x in log.turns if x.kind != WAIT and x.asked_in == "substantive"
+        and x.classification.type in ("invitation", "cued_invitation", "facilitator", "directive",
+                                      "option_posing", "suggestive", "compound")
+    )
+    coaching = build_coaching(log, s.scenario)
+    assert coaching.turns[-1].tag.label == "attente" and coaching.turns[-1].alerts == []
+
+
+def test_a_wait_before_any_story_gets_silence():
+    s, clf, _ = dyn(seed=0)
+    r = s.wait()
+    assert r.decision.speech_act == SpeechAct.SILENCE
+
+
+def test_wait_turns_replay_identically(tmp_path):
+    s, clf, _ = dyn(seed=5)
+    disclosed(s, clf)
+    s.wait()
+    ask(s, clf, "Et ensuite ?", C("facilitator"))
+    s.wait()
+    log = s.end()
+    assert replay(log, s.scenario).identical
+
+
+def test_neutral_wait_keeps_the_child_silent():
+    s, clf, _ = make_session(seed=1)  # neutral dynamics: old behaviour, no elaboration
+    disclosed(s, clf)
+    assert s.wait().decision.speech_act == SpeechAct.SILENCE

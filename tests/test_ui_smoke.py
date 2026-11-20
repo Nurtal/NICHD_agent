@@ -123,3 +123,15 @@ def test_system_map_lights_the_path_of_the_turn(app):
     svg = " ".join(base64.b64decode(m).decode() for m in re.findall(r"base64,([A-Za-z0-9+/=]+)", bodies))
     assert "MOTEUR DE COMPORTEMENT" in svg and "Réalisateur (LLM)" in svg
     assert "class='n chip on" in svg  # the suggestive rule lit up
+
+
+def test_wait_button_adds_a_silent_turn(app, tmp_path):
+    """Plan lot 5 (A12): « Attendre » lets a silence run on, without an utterance."""
+    at = app
+    button(at, "Nouvel entretien").click().run()
+    assert not any(b.label == "Attendre" for b in at.button)  # nothing to wait for yet
+    at.chat_input[0].set_value("[inv@transition] Raconte-moi tout ce qui s'est passé.").run()
+    button(at, "Attendre").click().run()
+    assert not at.exception, at.exception
+    assert len(at.chat_message) == 4
+    assert "attente silencieuse" in at.chat_message[2].markdown[0].value

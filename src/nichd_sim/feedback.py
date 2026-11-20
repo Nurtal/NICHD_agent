@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 
 TO_REPHRASE = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE, QuestionType.COMPOUND}
 
+WAIT_LABEL = "(attente silencieuse)"
+"""How a wait turn (the interviewer says nothing) appears in transcripts."""
+
 TYPE_LABELS = {
     QuestionType.INVITATION: "invitation",
     QuestionType.CUED_INVITATION: "invitation indicée",
@@ -232,7 +235,7 @@ def build_feedback(
     transcript, rephrasings, lucky, off = [], [], [], []
     child_said: list[str] = []
     for t in log.turns:
-        heard = t.classification.clean_text or t.utterance
+        heard = WAIT_LABEL if t.kind == "wait" else (t.classification.clean_text or t.utterance)
         qtype = t.classification.type
         flags = []
         if t.decision.lucky_suggestion:

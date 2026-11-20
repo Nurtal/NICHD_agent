@@ -202,7 +202,7 @@ def _deception(log: SessionLog, scenario: Scenario, recall: AccurateInfoRecall) 
 def _open_ratio(log: SessionLog) -> OpenQuestionRatio:
     by_type: dict[str, int] = {}
     for t in log.turns:
-        if t.asked_in != Phase.SUBSTANTIVE or t.classification.type not in QUESTION_TYPES:
+        if t.asked_in != Phase.SUBSTANTIVE or t.kind == "wait" or t.classification.type not in QUESTION_TYPES:
             continue
         by_type[t.classification.type.value] = by_type.get(t.classification.type.value, 0) + 1
     questions = sum(by_type.values())

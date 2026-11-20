@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from nichd_sim.classification import Classification, ClassificationContext, Classifier
+from nichd_sim.classification import Classification, ClassificationContext, Classifier, QuestionType
 from nichd_sim.delivery import SpeechChunk, plan_speech
 from nichd_sim.engine import BehaviorEngine, Decision, EngineState, SpeechAct
 from nichd_sim.feedback import FeedbackReport, Rephraser, SummaryMatcher, build_feedback
@@ -67,9 +67,18 @@ class TurnTiming(BaseModel):
     """Duration of the learner's utterance."""
 
 
+WAIT = "wait"
+"""Kind of a turn where the interviewer says nothing and waits (plan, lot 5)."""
+WAIT_LINE = "(silence : l'adulte attend sans rien dire)"
+"""How a wait turn appears in the history the realizer sees."""
+
+
 class TurnRecord(BaseModel):
     index: int
     utterance: str
+    kind: str = "utterance"
+    """`utterance`, or `wait`: the interviewer let a silence run on (empty utterance, never seen by
+    the classifier)."""
     classification: Classification
     asked_in: Phase
     """Phase when the interviewer spoke."""
@@ -94,12 +103,13 @@ class TurnRecord(BaseModel):
         return self.attempts[-1].prompt if self.attempts else None
 
 
-LOG_FORMAT = 6
+LOG_FORMAT = 7
 """2: decisions carry a delivery (ADR 0002). 3: arousal and demeanor (ADR 0003); the delivery now
 depends on arousal. 4: the engine remembers the previous turn and the closed questions asked, and
 parameters added since carry a neutral value (docs/plans/adaptations-litterature.md). 5: the promise to tell
 the truth and the slips of the truth (speech act `leak`). 6: expressivity (what the child dares
-to show) and the body announcing a disclosure (ADR 0003 addendum). Older logs still
+to show) and the body announcing a disclosure (ADR 0003 addendum). 7: wait turns (`kind = wait`).
+Older logs still
 replay: decisions are compared, newer fields ignored, newer parameters neutral."""
 
 
@@ -203,14 +213,29 @@ class Session:
         emit("classify", {"utterance": utterance})
         t0 = time.perf_counter()
         classification = self.classifier.classify(utterance, context)
-        t1 = time.perf_counter()
         emit("classified", {"classification": classification})
+        return self._process(utterance, classification, timing, emit, t0)
+
+    def wait(self, timing: TurnTiming | None = None, on_step: StepListener | None = None) -> TurnResult:
+        """The interviewer says nothing and lets the silence run on: the child may go on with what
+        it was telling (Rezmer et al., 2020), or stay silent. Not a question: the classifier and
+        the phase tracker do not see it."""
+        emit = on_step or (lambda step, data: None)
+        if self._ended:
+            raise SessionEnded("la session est terminée")
+        classification = Classification(type=QuestionType.FACILITATOR, clean_text="")
+        return self._process("", classification, timing, emit, time.perf_counter(), kind=WAIT)
+
+    def _process(self, utterance, classification, timing, emit, t0, kind: str = "utterance") -> TurnResult:
+        t1 = time.perf_counter()
+        waiting = kind == WAIT
         heard = classification.clean_text or utterance
         before = self.state
         n_violations = len(self.phases.violations)
-        asked_in = self.phases.observe(classification)
+        asked_in = self.phases.phase if waiting else self.phases.observe(classification)
         decision = self.engine.decide(
-            classification, phase_violation=len(self.phases.violations) > n_violations, utterance=heard
+            classification, phase_violation=len(self.phases.violations) > n_violations, utterance=heard,
+            wait=waiting,
         )
         phase = self.phases.after_decision(
             revealed_target=any(
@@ -225,7 +250,7 @@ class Session:
             "state_before": before, "state_after": self.state,
         })
 
-        history = self.history + [("interviewer", heard)]
+        history = self.history + [("interviewer", WAIT_LINE if waiting else heard)]
         # The child may mention what it already said: true units, and the lies it told.
         known = before.revealed + [lr.lie_unit for lr in self.engine.state.lies if lr.lie_unit]
         attempts, response, fallback = self._realize(decision, history, known=known, emit=emit)
@@ -239,6 +264,7 @@ class Session:
             TurnRecord(
                 index=len(self.log.turns) + 1,
                 utterance=utterance,
+                kind=kind,
                 classification=classification,
                 asked_in=asked_in,
                 phase=phase,

@@ -783,3 +783,27 @@ generic_practice_counts:
     Brubacher, Roberts & Powell (2011), Psychology, Public Policy, and Law 17(2) — la pratique épisodique
     amène un récit plus épisodique dans la phase substantive que la pratique générique.
   estimated: true
+
+# --- Temps d'attente (plan, lot 5) ---------------------------------------------
+
+p_wait_elaboration:
+  description: >
+    Tour d'attente (l'interviewer laisse le silence durer après la réponse) : probabilité que l'enfant
+    reprenne et ajoute une unité, comme après un facilitateur. Sinon, il reste silencieux.
+  value: 0.6
+  neutral: 0
+  source: >
+    Rezmer, Trager, Catlin & Poole (2020), Pause for effect: A 10-second interviewer wait time gives
+    children time to respond to open-ended prompts, Journal of Experimental Child Psychology 194 —
+    l'attente fait souvent ajouter de l'information ; valeur choisie.
+  estimated: true
+
+wait_turn_ms:
+  description: >
+    Mode vocal : silence de l'apprenant après la réponse de l'enfant au-delà duquel l'enfant reprend
+    (tour d'attente) avant que l'apprenant ne parle.
+  value: 6000
+  neutral: 6000
+  source: Rezmer et al. (2020), voir p_wait_elaboration (attente de 10 s) ; seuil choisi plus court.
+  estimated: true
+

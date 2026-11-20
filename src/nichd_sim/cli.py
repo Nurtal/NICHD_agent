@@ -29,7 +29,7 @@ from nichd_sim.replay import (
 from nichd_sim.scenario import ScenarioError, load_scenario
 from nichd_sim.session import Session
 
-COMMANDS = """Commandes : /aide  /unites  /etat  /fin"""
+COMMANDS = """Commandes : /aide  /unites  /etat  /attendre (laisser un silence)  /fin"""
 
 
 def build_classifier(args: argparse.Namespace):
@@ -106,7 +106,7 @@ def play(args: argparse.Namespace) -> int:
             print(session.state.model_dump_json(indent=2))
             continue
         try:
-            result = session.turn(line)
+            result = session.wait() if line == "/attendre" else session.turn(line)
         except ManualClassificationError as e:
             print(e)
             continue
@@ -359,6 +359,8 @@ def converse_cmd(args: argparse.Namespace) -> int:
                 audio.extend(interviewer.synthesize(turn["say"]))
                 audio.extend(Audio.silence(24000, 150))
             ex = conv.exchange(audio, turn.get("after_ms", 800), tag=turn.get("tag"))
+            if ex.waited is not None and ex.waited.decision.speech_act != SpeechAct.SILENCE:
+                print(f"     (vous laissez un long silence) {child} > {render_plan(ex.waited.speech_plan)}")
             b = ex.timing.barge_in
             if b is None:
                 when = f"attend {ex.timing.wait_ms} ms"
