@@ -4,6 +4,10 @@
 # (la littérature donne surtout des ordres de grandeur) : à relire par un chercheur
 # ou un formateur NICHD. Les scénarios peuvent surcharger une valeur
 # (`parameter_overrides`), globalement ou par bande.
+#
+# Tout paramètre ajouté après le format de journal 3 déclare `neutral:`, la valeur qui
+# désactive sa règle : un journal plus ancien, qui ne le liste pas, se rejoue avec elle
+# (docs/plans/adaptations-litterature.md, lot 0).
 
 units_per_invitation:
   description: >

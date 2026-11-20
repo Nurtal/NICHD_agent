@@ -25,6 +25,9 @@ class Parameter(BaseModel):
     estimated: bool = Field(description="Vrai si la valeur est extrapolée plutôt que lue dans la source.")
     value: Any = None
     values: dict[AgeBand, Any] | None = None
+    neutral: Any = None
+    """Value that switches the parameter's rule off. Required for every parameter added after log
+    format 3: an older log, which does not list it, replays with this value (see `for_log`)."""
 
     @model_validator(mode="after")
     def _one_of(self) -> Parameter:
@@ -36,6 +39,10 @@ class Parameter(BaseModel):
 
     def for_band(self, band: AgeBand) -> Any:
         return self.value if self.values is None else self.values[band]
+
+    @property
+    def has_neutral(self) -> bool:
+        return "neutral" in self.model_fields_set
 
 
 class Parameters:
@@ -56,6 +63,14 @@ class Parameters:
         else:
             table = _parse(Path(path).read_text(encoding="utf-8"))
         return cls(table, band, overrides)
+
+    @classmethod
+    def for_log(cls, band: AgeBand, logged: Mapping[str, Any], path: str | Path | None = None) -> Parameters:
+        """Parameters of a logged session. A parameter the log does not list did not exist then: its
+        rule is switched off (neutral value), so that older logs replay the decisions they recorded."""
+        table = _default_table() if path is None else _parse(Path(path).read_text(encoding="utf-8"))
+        missing = {name: p.neutral for name, p in table.items() if name not in logged and p.has_neutral}
+        return cls(table, band, {**missing, **logged})
 
     def __getitem__(self, name: str) -> Any:
         if name in self.overrides:

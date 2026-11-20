@@ -87,7 +87,7 @@ class ReplayReport:
 
 def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
     """Re-run a session from its log and check every decision, response and phase matches."""
-    params = Parameters.load(scenario.child_profile.age_band, overrides=log.parameters)
+    params = Parameters.for_log(scenario.child_profile.age_band, log.parameters)
     session = Session(scenario, _LoggedClassifier(log), _LoggedRealizer(log), seed=log.seed, params=params)
     report = ReplayReport(turns=len(log.turns))
     for original in log.turns:
@@ -107,19 +107,24 @@ def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
     return report
 
 
-_LEGACY_EXCLUDE = {
-    "decision": {"delivery", "demeanor"},
-    "state_after": {"arousal", "arousal_baseline"},
+_ADDED_IN: dict[int, dict[str, set[str]]] = {
+    3: {"decision": {"delivery", "demeanor"}, "state_after": {"arousal", "arousal_baseline"}},
+    4: {"state_after": {"last_act", "last_target", "closed_asked"}},
 }
-"""Fields that did not exist before format 3, or that format 3 computes differently (the delivery
-depends on arousal): not compared for older logs. Decisions themselves must still match."""
+"""Per log format, the fields it added or computes differently (format 3: the delivery depends on
+arousal; format 4: the engine remembers the previous turn and the closed questions asked). They are
+not compared for older logs. Decisions themselves must still match."""
+
+
+def _legacy_exclude(name: str, log_format: int) -> set[str]:
+    return set().union(*(fields.get(name, set()) for fmt, fields in _ADDED_IN.items() if fmt > log_format))
 
 
 def _same(new, original, name: str, log_format: int) -> bool:
     """Equality; for older logs, ignore what later formats added (new fields at their default too)."""
     if log_format >= LOG_FORMAT or not isinstance(new, BaseModel):
         return new == original
-    exclude = _LEGACY_EXCLUDE.get(name, set())
+    exclude = _legacy_exclude(name, log_format)
     return new.model_dump(exclude=exclude, exclude_defaults=True) == original.model_dump(
         exclude=exclude, exclude_defaults=True
     )
