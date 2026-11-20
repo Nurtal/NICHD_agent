@@ -17,7 +17,7 @@ from nichd_sim.classifiers.manual import HELP, ManualClassificationError, Manual
 from nichd_sim.demeanor import STYLE_LABELS, stage_direction
 from nichd_sim.engine import SpeechAct
 from nichd_sim.evaluation import load_scenarios
-from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS, LLMRephraser, LLMSummaryMatcher
+from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS, WAIT_LABEL, LLMRephraser, LLMSummaryMatcher
 from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.phases import ORDER as PHASE_ORDER
 from nichd_sim.phases import VIOLATION_LABELS
@@ -234,11 +234,12 @@ if st.session_state.get("ending"):
 # -- interview ---------------------------------------------------------------------
 
 
-def submit(prompt: str, on_step=None) -> None:
-    """One interviewer utterance, from any view. `on_step`: live display of the turn's steps."""
+def submit(prompt: str | None, on_step=None) -> None:
+    """One interviewer utterance, from any view (None: wait in silence). `on_step`: live display of the
+    turn's steps."""
     try:
         with st.spinner(f"{session.scenario.child_profile.name} réfléchit…"):
-            result = session.turn(prompt, on_step=on_step)
+            result = session.wait(on_step=on_step) if prompt is None else session.turn(prompt, on_step=on_step)
     except ManualClassificationError as e:
         st.error(str(e))
     except LLMError as e:
@@ -246,7 +247,7 @@ def submit(prompt: str, on_step=None) -> None:
     else:
         st.session_state.turns.append(
             {
-                "interviewer": result.classification.clean_text or prompt,
+                "interviewer": WAIT_LABEL if prompt is None else (result.classification.clean_text or prompt),
                 "child": result.response,
                 "stage": stage_direction(
                     result.decision.demeanor, result.decision.delivery,
@@ -271,6 +272,10 @@ def conversation(key: str, on_step=None) -> None:
             st.write(t["child"])
         for n in t["notices"]:
             st.info(n)
+    if st.session_state.turns and st.button(
+        "Attendre", key=f"{key}_wait", help="Laisser un silence, sans rien dire : l'enfant peut compléter sa réponse."
+    ):
+        submit(None, on_step=on_step)
     prompt = st.chat_input("Votre énoncé…", key=key)
     if prompt:
         submit(prompt, on_step=on_step)

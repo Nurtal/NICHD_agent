@@ -247,6 +247,7 @@ class BehaviorEngine:
         )
         self._phase_violation = False
         self._near_disclosure = False
+        self._waiting = False
         self._orders: dict[EventKind, list[InfoUnit]] = {
             EventKind.TARGET: [u for _, u in scenario.target_units()],
             EventKind.NEUTRAL: [u for _, u in scenario.neutral_units()],
@@ -254,9 +255,12 @@ class BehaviorEngine:
 
     # -- public -------------------------------------------------------------
 
-    def decide(self, c: Classification, *, phase_violation: bool = False, utterance: str | None = None) -> Decision:
+    def decide(
+        self, c: Classification, *, phase_violation: bool = False, utterance: str | None = None, wait: bool = False
+    ) -> Decision:
         """`phase_violation`: the phase tracker flagged this prompt (it raises the child's arousal).
-        `utterance`: the prompt as the child heard it (identifies repeated questions)."""
+        `utterance`: the prompt as the child heard it (identifies repeated questions).
+        `wait`: no prompt at all, the interviewer lets a silence run on (plan, lot 5)."""
         effective = effective_type(c)
         key = closed_key(c, effective, utterance)
         st = self.state
@@ -266,6 +270,7 @@ class BehaviorEngine:
         self.rejection = is_rejection(st.last_act, st.last_key, key)
         self._acq_boost = 0.0
         self._react_to_refusal()
+        self._waiting = wait
         decision = self._decide(c, phase_violation)
         if key:
             st.closed_asked = {**st.closed_asked, key: self.asked_before + 1}
@@ -295,6 +300,11 @@ class BehaviorEngine:
         self._apply_phase_effects(c, effective)
         was_disclosed = self.state.disclosed
         about_target = self._about_target(c, effective)
+        if self._waiting:
+            decision = self._wait(c).model_copy(update={"effective_type": effective})
+            decision = self._record_deception(decision, effective)
+            self._commit(decision)
+            return self._with_delivery(decision, c, about_target)
         if not was_disclosed and about_target:
             gate = self._disclosure_gate(effective)
             if effective in (QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING) and self.params["pressure_reluctance_rise"]:
@@ -576,6 +586,18 @@ class BehaviorEngine:
             return self._narrate(found[1], 1, "facilitateur (suite du segment)")
         kind = found[0] if found else (self._topic(c) or EventKind.TARGET)
         return self._narrate(self._orders[kind], 1, "facilitateur")
+
+    def _wait(self, c: Classification) -> Decision:
+        """A silence after the child's answer: it often goes on with what it was telling (Rezmer et
+        al., 2020), like after a facilitator; otherwise it stays silent. It never opens a disclosure:
+        before one, there is nothing about the event under way to go on with."""
+        silent = Decision(speech_act=SpeechAct.SILENCE, reason="attente → l'enfant reste silencieux")
+        if self.state.last_unit is None or not self._dyn_draw(self.params["p_wait_elaboration"]):
+            return silent
+        d = self._facilitator(c, QuestionType.FACILITATOR)
+        if d.speech_act != SpeechAct.ANSWER:
+            return silent.model_copy(update={"reason": "attente → plus rien à ajouter"})
+        return d.model_copy(update={"reason": "attente → " + d.reason})
 
     # -- focused questions --------------------------------------------------
 

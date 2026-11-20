@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from nichd_sim.delivery import ChunkKind, plan_speech
 from nichd_sim.demeanor import CUE_LABELS, INTENSITY_LABELS, stage_direction
 from nichd_sim.engine import SpeechAct
+from nichd_sim.feedback import WAIT_LABEL
 
 if TYPE_CHECKING:
     from nichd_sim.session import SessionLog, TurnRecord
@@ -121,7 +122,7 @@ def build_turn(turn: TurnRecord, rendered: RenderedSpeech | None = None, audio: 
         )
     return TurnPerformance(
         turn=turn.index,
-        interviewer=turn.classification.clean_text or turn.utterance,
+        interviewer=WAIT_LABEL if turn.kind == "wait" else (turn.classification.clean_text or turn.utterance),
         response=text,
         speech_act=str(d.speech_act),
         stage_direction=stage_direction(d.demeanor, d.delivery, silent=d.speech_act == SpeechAct.SILENCE, text=text),

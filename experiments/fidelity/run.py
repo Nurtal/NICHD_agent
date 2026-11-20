@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "experiments" / "ablation"))
 
 from protocol import PLANS  # noqa: E402
 
-from nichd_sim.classification import ClassificationContext  # noqa: E402
+from nichd_sim.classification import Classification, ClassificationContext, QuestionType  # noqa: E402
 from nichd_sim.classifiers.manual import ManualClassifier  # noqa: E402
 from nichd_sim.demeanor import CueFamily  # noqa: E402
 from nichd_sim.engine import BehaviorEngine, Decision, SpeechAct  # noqa: E402
@@ -32,6 +32,7 @@ from nichd_sim.scenario import Scenario, load_scenario  # noqa: E402
 
 SCENARIOS = ROOT / "scenarios"
 _MANUAL = ManualClassifier()
+_WAIT = Classification(type=QuestionType.FACILITATOR, clean_text="")
 
 
 class Child:
@@ -49,6 +50,12 @@ class Child:
         c = _MANUAL.classify(line, ClassificationContext(scenario=self.scenario))
         heard = c.clean_text or line.split("]", 1)[-1].strip()
         d = self.engine.decide(c, utterance=heard)
+        self.decisions.append(d)
+        return d
+
+    def wait(self) -> Decision:
+        """The interviewer says nothing (wait turn)."""
+        d = self.engine.decide(_WAIT, wait=True)
         self.decisions.append(d)
         return d
 
@@ -258,6 +265,22 @@ def probe_leak(seeds: range) -> Result:
     )
 
 
+def probe_wait(seeds: range) -> Result:
+    """A12 — Rezmer et al. (2020): a long wait after the answer often brings more information."""
+    sc = load_scenario(SCENARIOS / "s01_bagarre_parc.yaml")
+    gains, waited = [], []
+    for seed in seeds:
+        child = Child(sc, seed)
+        for _ in range(2):
+            child.ask("[inv] Raconte-moi tout ce qui s'est passé.")
+        before = len(child.state.revealed)
+        child.wait()
+        waited.append(len(child.state.revealed) - before)
+    m = statistics.mean(waited)
+    return Result("A12", "s01 : unités vraies ajoutées par un tour d'attente après deux récits (même seed)",
+                  f"+{m:.2f} ; {rate([w > 0 for w in waited]):.0%} des enfants complètent", "> 0, souvent", m > 0.3)
+
+
 def probe_arousal_before_disclosure(seeds: range) -> Result:
     """A11 — Karni-Visel et al. (2023): non-verbal signs precede the verbal disclosure."""
     sc = load_scenario(SCENARIOS / "s02_violences_maison.yaml")
@@ -368,10 +391,9 @@ def probe_causal(seeds: range) -> Result:
 PROBES: list[Callable[[range], Result]] = [
     probe_dont_know_reaction, probe_repetition, probe_pressure, probe_support_acquiescence,
     probe_segment, probe_knowledge_question, probe_ground_rule_practice, probe_causal,
-    probe_lie_forms, probe_promise, probe_leak, probe_support_expressivity, probe_arousal_before_disclosure,
+    probe_lie_forms, probe_promise, probe_leak, probe_wait, probe_support_expressivity, probe_arousal_before_disclosure,
 ]
 LATER = [
-    ("A12", "un silence de 10 s fait compléter la réponse", "lot 5"),
 ]
 
 
@@ -389,8 +411,9 @@ def report(results: list[Result], seeds: int) -> str:
         "|---|---|---|---|---|",
     ]
     lines += [f"| {r.piste} | {r.mesure} | {r.valeurs} | {r.cible} | {mark[r.atteinte]} |" for r in results]
-    lines += ["", "**Pas encore mesurables** (champs ou mécanismes à venir) :", ""]
-    lines += [f"- {p} : {m} ({when})." for p, m, when in LATER]
+    if LATER:
+        lines += ["", "**Pas encore mesurables** (champs ou mécanismes à venir) :", ""]
+        lines += [f"- {p} : {m} ({when})." for p, m, when in LATER]
     return "\n".join(lines) + "\n"
 
 

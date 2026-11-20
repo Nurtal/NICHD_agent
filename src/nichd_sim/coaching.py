@@ -157,6 +157,8 @@ def _violation_text(v: PhaseViolation) -> str:
 
 def _tag(t: TurnRecord, premature: bool) -> Tag:
     c = t.classification
+    if t.kind == "wait":  # letting the child go on: good practice (Rezmer et al., 2020)
+        return Tag(type=c.type, label="attente", level=Level.OK)
     level = TYPE_LEVELS[c.type]
     if c.type == QuestionType.COMPOUND and c.inner_type == QuestionType.SUGGESTIVE:
         level = Level.ALERT

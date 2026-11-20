@@ -194,6 +194,12 @@ fait baisser la dissimulation une fois, et une question de suite sur un mensonge
 Le lot 4 sépare l'activation (ce que l'enfant ressent) de l'expressivité (ce qu'il ose montrer, relevée par le soutien),
 ajoute le repli lié à la réticence et fait monter l'activation quand l'enfant est près de dévoiler (avenant à l'ADR 0003).
 
+Le lot 5 ajoute le **tour d'attente** : l'interviewer ne dit rien et laisse le silence durer. L'enfant reprend souvent ce
+qu'il racontait (une unité, comme après un facilitateur, `p_wait_elaboration`) ou reste silencieux ; avant tout récit, il
+reste silencieux. Le tour est journalisé avec `kind = wait` et un énoncé vide : le classifieur et le suivi des phases ne le
+voient pas, et il ne compte pas comme une question. On l'obtient par `/attendre` dans le terminal, par le bouton
+« Attendre » de l'interface, et en mode vocal quand l'apprenant se tait plus de `wait_turn_ms` après la réponse.
+
 ### 6.5 Paramètres
 
 Fichier de paramètres où **chaque valeur cite sa source** (Ceci & Bruck, Bruck & Melnyk, Lamb et al., Krackow & Lynn…). Toute valeur extrapolée est marquée `estimated`. Un chercheur ou un formateur relit le fichier. Les valeurs sont surchargeables par scénario, ce qui permet de futures analyses de sensibilité.
