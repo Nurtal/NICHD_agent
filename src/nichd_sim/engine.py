@@ -161,6 +161,9 @@ class EngineState(BaseModel):
     """Support statements counted for their effect on acquiescence (capped)."""
     promised: bool = False
     """The child promised to tell the truth (its effect on concealment counts once)."""
+    expressivity: float = 0.0
+    """How much the child dares to show what it feels (0–1, ADR 0003 addendum): raised by support
+    and rapport, lowered by pressure. Body only, like arousal."""
 
 
 _CLOSED = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE}
@@ -243,6 +246,7 @@ class BehaviorEngine:
             arousal_baseline=baseline,
         )
         self._phase_violation = False
+        self._near_disclosure = False
         self._orders: dict[EventKind, list[InfoUnit]] = {
             EventKind.TARGET: [u for _, u in scenario.target_units()],
             EventKind.NEUTRAL: [u for _, u in scenario.neutral_units()],
@@ -284,6 +288,7 @@ class BehaviorEngine:
     def _decide(self, c: Classification, phase_violation: bool) -> Decision:
         self.state.turn += 1
         self._phase_violation = phase_violation
+        self._near_disclosure = False
         self._hidden = {}
         self._withheld: list[str] = []
         effective = effective_type(c)
@@ -401,6 +406,8 @@ class BehaviorEngine:
         threshold = st.reluctance * p["disclosure_threshold_scale"]
         if st.disclosure_pressure >= threshold:
             return None
+        # Close to telling: the body shows it before the words (Karni-Visel et al., 2023).
+        self._near_disclosure = st.disclosure_pressure >= p["pre_disclosure_fraction"] * threshold
         return Decision(
             speech_act=SpeechAct.RELUCTANT,
             reason=f"pas encore prêt à dévoiler (pression {st.disclosure_pressure:.1f} / seuil {threshold:.1f})",
@@ -842,6 +849,7 @@ class BehaviorEngine:
         demeanor = make_demeanor(
             self.state.arousal, delivery.loads, self.style, self.params, self.demeanor_rng,
             sociable=d.speech_act in (SpeechAct.SMALL_TALK, SpeechAct.ACKNOWLEDGE),
+            expressivity=self.state.expressivity, reluctance=self.state.reluctance,
         )
         return d.model_copy(update={"delivery": delivery, "demeanor": demeanor})
 
@@ -865,6 +873,9 @@ class BehaviorEngine:
             ups.append(rise["pressure_target"] if about_target else rise["pressure"])
         if self._phase_violation:
             ups.append(rise["phase_violation"])
+        if self._near_disclosure and p["pre_disclosure_rise"]:
+            ups.append(p["pre_disclosure_rise"])
+        self._update_expressivity(t, hint)
         ids = [au.id for au in d.allowed_units if not au.contaminated and not au.lie] + list(d.withheld)
         if d.lie is not None:
             ids.append(d.lie.protected)
@@ -882,6 +893,21 @@ class BehaviorEngine:
         for up in ups:
             a += up * (1.0 - a)
         st.arousal = round(min(1.0, max(0.0, a)), 6)
+
+    def _update_expressivity(self, t: QuestionType, hint: str | None) -> None:
+        """Support and rapport make the child dare to show its emotion (Karni-Visel et al., 2023)."""
+        change = self.params["expressivity_change"]
+        if t == QuestionType.SUPPORT:
+            delta = change["support"]
+        elif t == QuestionType.INVITATION and hint == "rapport":
+            delta = change["rapport"]
+        elif t in (QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING):
+            delta = change["pressure"]
+        else:
+            return
+        if delta:
+            st = self.state
+            st.expressivity = round(min(1.0, max(0.0, st.expressivity + delta)), 6)
 
     def _hesitation_loads(self, d: Decision, c: Classification, about_target: bool) -> dict[HesitationCause, float]:
         p, st = self.params, self.state

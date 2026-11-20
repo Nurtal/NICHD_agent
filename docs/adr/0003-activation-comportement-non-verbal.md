@@ -155,3 +155,25 @@ La charge `affect` de la diction est alimentée par l'activation.
 - **Module de prosodie distinct de `Delivery`** : deux descriptions concurrentes de la même voix.
 - **Trait « anxiété » dans la fiche** : un paramètre de plus à renseigner, sans gain tant que la réticence et
   l'âge suffisent à fixer le point de départ.
+
+## Avenant (2026-11-20) : expressivité, désengagement, corps qui annonce le dévoilement
+
+Lot 4 du [plan d'adaptations](../plans/adaptations-litterature.md), pistes A10 et A11 de la
+[confrontation à la littérature](../research/confrontation-modele-litterature.md).
+
+- **Deux variables distinctes.** L'activation reste l'état intérieur. L'**expressivité** (0–1, `EngineState.expressivity`)
+  dit ce que l'enfant ose en montrer. Elle part de 0 ; le soutien et le rapport la font monter, la pression (question
+  suggestive ou à choix) la fait baisser (`expressivity_change`). Elle multiplie le niveau des signes d'émotion (pleurs,
+  tremblement, crispation) par `1 + expressivity_gain × expressivité`. Le soutien apaise donc l'enfant tout en le laissant
+  montrer davantage ce qu'il ressent (Karni-Visel et al., 2023).
+- **Désengagement.** Le repli (bras serrés, recroquevillé) et le regard fuyant suivent aussi la réticence
+  (`withdrawal_reluctance_weight`), comme chez les enfants qui ne révèlent pas (Katz et al., 2012).
+- **Le corps annonce le dévoilement.** Quand la pression de dévoilement dépasse `pre_disclosure_fraction` du seuil sans
+  l'atteindre, l'activation monte de `pre_disclosure_rise`. La porte de dévoilement ne connaît que l'événement cible, pas
+  les faits protégés : le mécanisme est le même pour un fait vrai ou caché.
+- **Garde-fous inchangés.** Aucune des deux variables ne dépend du mensonge. Les paires contrôlées mensonge/vérité restent
+  identiques, règles activées (`test_body_does_not_give_the_lie_away_with_the_new_dynamics`). Le corps ne change aucun acte de
+  langage. Les tirages restent ceux du flux `{seed}:demeanor`, en nombre fixe par tour, et le contrat de prestation
+  (`performance.json`) ne change pas : la didascalie et l'avatar lisent les signes, pas leurs causes.
+- Format de journal 6. Les valeurs neutres (gain 0, poids 0, hausse 0) laissent le corps des journaux antérieurs identique.
+

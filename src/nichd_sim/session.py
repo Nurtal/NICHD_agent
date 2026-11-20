@@ -94,11 +94,12 @@ class TurnRecord(BaseModel):
         return self.attempts[-1].prompt if self.attempts else None
 
 
-LOG_FORMAT = 5
+LOG_FORMAT = 6
 """2: decisions carry a delivery (ADR 0002). 3: arousal and demeanor (ADR 0003); the delivery now
 depends on arousal. 4: the engine remembers the previous turn and the closed questions asked, and
 parameters added since carry a neutral value (docs/plans/adaptations-litterature.md). 5: the promise to tell
-the truth and the slips of the truth (speech act `leak`). Older logs still
+the truth and the slips of the truth (speech act `leak`). 6: expressivity (what the child dares
+to show) and the body announcing a disclosure (ADR 0003 addendum). Older logs still
 replay: decisions are compared, newer fields ignored, newer parameters neutral."""
 
 

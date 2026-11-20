@@ -191,6 +191,9 @@ Le lot 3 ajoute deux règles aux scénarios avec dissimulation (avenant à l'ADR
 fait baisser la dissimulation une fois, et une question de suite sur un mensonge peut faire échapper la vérité
 (acte `leak`, plus fréquent chez les plus jeunes), signalée au bilan seulement.
 
+Le lot 4 sépare l'activation (ce que l'enfant ressent) de l'expressivité (ce qu'il ose montrer, relevée par le soutien),
+ajoute le repli lié à la réticence et fait monter l'activation quand l'enfant est près de dévoiler (avenant à l'ADR 0003).
+
 ### 6.5 Paramètres
 
 Fichier de paramètres où **chaque valeur cite sa source** (Ceci & Bruck, Bruck & Melnyk, Lamb et al., Krackow & Lynn…). Toute valeur extrapolée est marquée `estimated`. Un chercheur ou un formateur relit le fichier. Les valeurs sont surchargeables par scénario, ce qui permet de futures analyses de sensibilité.

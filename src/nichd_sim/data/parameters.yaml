@@ -686,6 +686,57 @@ demeanor_max_cues:
   source: Choix de modélisation.
   estimated: true
 
+# --- Corps : expressivité et annonce du dévoilement (plan, lot 4 ; avenant ADR 0003) ---
+
+expressivity_change:
+  description: >
+    Variation de l'expressivité (0–1 : ce que l'enfant ose montrer de son émotion, distinct de
+    l'activation) après un énoncé de soutien, une invitation de rapport, une question suggestive ou à
+    choix. Elle part de 0 : sans soutien, le corps se comporte comme avant le lot 4.
+  value: {support: 0.2, rapport: 0.08, pressure: -0.1}
+  neutral: {support: 0, rapport: 0, pressure: 0}
+  source: >
+    Karni-Visel, Hershkowitz, Blasbalg & Lamb (2023), Nonverbal emotions while disclosing child abuse:
+    The role of interviewer support, Child Maltreatment 28(1) — plus d'expression non verbale
+    d'émotion quand l'interviewer soutient l'enfant ; valeurs choisies.
+  estimated: true
+
+expressivity_gain:
+  description: >
+    Amplification des signes d'émotion (pleurs, tremblement, crispation) à expressivité 1 :
+    niveau × (1 + gain × expressivité).
+  value: 1.5
+  neutral: 0
+  source: Karni-Visel et al. (2023), voir expressivity_change ; valeur choisie.
+  estimated: true
+
+withdrawal_reluctance_weight:
+  description: >
+    Part de la réticence ajoutée au repli (bras serrés, recroquevillé) et au regard fuyant : les
+    enfants qui ne révèlent pas montrent plus de désengagement physique.
+  value: 0.3
+  neutral: 0
+  source: >
+    Katz, Hershkowitz, Malloy, Lamb, Atabaki & Spindler (2012), Non-verbal behavior of children who
+    disclose or do not disclose child abuse in investigative interviews, Child Abuse & Neglect 36(1).
+  estimated: true
+
+pre_disclosure_fraction:
+  description: >
+    Part du seuil de dévoilement à partir de laquelle l'enfant, sans encore dévoiler, est « près de
+    le dire » : son activation monte de pre_disclosure_rise. Même mécanisme pour un fait vrai ou caché.
+  value: 0.6
+  neutral: 1
+  source: Karni-Visel et al. (2023), voir expressivity_change — le non-verbal précède le verbal.
+  estimated: true
+
+pre_disclosure_rise:
+  description: Hausse d'activation (en saturation) d'un enfant près de dévoiler.
+  value: 0.1
+  neutral: 0
+  source: Choix de modélisation (voir pre_disclosure_fraction).
+  estimated: true
+
 # --- Classifieur 0.3.0 : formes de question distinguées (plan, lot 2) ---------
 
 p_unelaborated_yes:
