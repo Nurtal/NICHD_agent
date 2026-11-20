@@ -127,6 +127,8 @@ class Debrief(BaseModel):
     false_details: int
     issues: list[str]
     """Protocol deviations that were not shown during the interview."""
+    contradictions: list[str] = []
+    """Truths that slipped out against an earlier lie: never shown live, it would expose the lie."""
 
 
 class SessionCoaching(BaseModel):
@@ -203,6 +205,15 @@ def _alerts(t: TurnRecord, live: list[PhaseViolation], tag: Tag, interaction: li
     return alerts
 
 
+def _contradictions(metrics) -> list[str]:
+    if metrics.deception is None:
+        return []
+    return [
+        f"Tour {e.leaked_turn} : la vérité lui échappe, alors qu'au tour {e.turn} l'enfant avait dit « {e.value} »."
+        for e in metrics.deception.lies if e.leaked_turn is not None
+    ]
+
+
 def build_coaching(log: SessionLog, scenario: Scenario) -> SessionCoaching:
     metrics = compute_metrics(log, scenario)
     recall = metrics.accurate_info_recall
@@ -247,6 +258,7 @@ def build_coaching(log: SessionLog, scenario: Scenario) -> SessionCoaching:
             open_questions=oq.open_questions, questions=oq.questions, open_ratio=oq.ratio,
             false_details=metrics.contamination_score.contaminated,
             issues=[_violation_text(v) for i, v in enumerate(log.phase_violations) if i not in shown],
+            contradictions=_contradictions(metrics),
         ),
     )
 

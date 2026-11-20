@@ -82,6 +82,8 @@ class LieEntry(BaseModel):
     """The interviewer's utterance that drew the lie."""
     times: int
     retracted_turn: int | None
+    leaked_turn: int | None = None
+    """Turn at which the child let the truth slip out, contradicting this lie."""
 
 
 class DeceptionSummary(BaseModel):
@@ -97,6 +99,8 @@ class DeceptionSummary(BaseModel):
     retracted: int
     standing: int
     """Lies never taken back by the end of the interview."""
+    leaked: int = 0
+    """Lies contradicted by a slip of the truth (Talwar & Lee, 2002)."""
     lies_by_question_type: dict[str, int]
 
 
@@ -174,7 +178,7 @@ def _deception(log: SessionLog, scenario: Scenario, recall: AccurateInfoRecall) 
         LieEntry(
             id=lr.id, kind=str(lr.kind), protected=lr.protected, value=lr.value, turn=lr.turn,
             question_type=lr.question_type, utterance=utterances.get(lr.turn, ""), times=lr.times,
-            retracted_turn=lr.retracted_turn,
+            retracted_turn=lr.retracted_turn, leaked_turn=lr.leaked_turn,
         )
         for lr in records
         if lr.kind != "omission"
@@ -190,6 +194,7 @@ def _deception(log: SessionLog, scenario: Scenario, recall: AccurateInfoRecall) 
         omissions=sorted({lr.protected for lr in records if lr.kind == "omission"}),
         retracted=sum(e.retracted_turn is not None for e in lies),
         standing=sum(e.retracted_turn is None for e in lies),
+        leaked=sum(e.leaked_turn is not None for e in lies),
         lies_by_question_type=by_type,
     )
 

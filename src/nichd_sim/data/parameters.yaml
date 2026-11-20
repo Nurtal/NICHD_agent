@@ -505,6 +505,35 @@ rehearsed_lie_factor:
   source: "Choix de modélisation (Vrij, 2008 : un récit préparé réduit la charge cognitive)."
   estimated: true
 
+promise_concealment_drop:
+  description: >
+    Baisse de la pression de dissimulation quand l'enfant promet de dire la vérité (règle de base de
+    type « promesse »). Compte une fois par entretien ; aucun effet sur la confabulation.
+  value: 0.15
+  neutral: 0
+  source: >
+    Talwar, Lee, Bala & Lindsay (2004), Children's lie-telling to conceal a parent's transgression:
+    Legal implications, Law and Human Behavior 28(4) — la promesse fait passer les omissions de 48 à
+    15 % (parent absent) ; Lyon & Dorado (2008), voir support_concealment_drop — plus de révélations
+    vraies, pas plus de fausses.
+  estimated: true
+
+p_leak:
+  description: >
+    Question focalisée sur un fait protégé déjà couvert par un mensonge : probabilité que l'enfant
+    laisse échapper la vérité sans revenir sur son mensonge (acte `leak`). Le contrôle de ces fuites
+    progresse avec l'âge.
+  values: {"4_6": 0.35, "7_9": 0.2, "10_12": 0.1}
+  neutral: 0
+  source: >
+    Talwar & Lee (2002), Development of lying to conceal a transgression: Children's control of
+    expressive behaviour during verbal deception, International Journal of Behavioral Development
+    26(5) ; Talwar, Gordon & Lee (2007), Lying in the elementary school years: Verbal deception and
+    its relation to second-order belief understanding, Developmental Psychology 43(3) — les plus
+    jeunes se trahissent aux questions de suite, les plus âgés maintiennent une feinte d'ignorance
+    cohérente.
+  estimated: true
+
 # --- Activation et comportement non verbal (ADR 0003) ------------------------
 # Aucun signe non verbal n'est un indice fiable du mensonge (DePaulo et al., 2003 ;
 # Bond & DePaulo, 2006, Accuracy of deception judgments, Personality and Social

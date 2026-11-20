@@ -38,6 +38,9 @@ class SpeechAct(StrEnum):
     """Takes back an earlier lie and tells the true fact (ADR 0002)."""
     AFFIRM = "affirm"
     """« Oui » to a « do you know / remember…? » question, without the information it implies."""
+    LEAK = "leak"
+    """Asked again about a fact it lied about, the child lets the truth slip out, without taking the
+    lie back (Talwar & Lee, 2002; Talwar et al., 2007): the lie and the fact now contradict."""
 
 
 class LieKind(StrEnum):
@@ -67,6 +70,8 @@ class LieRecord(BaseModel):
     """Type of the question that drew the lie (effective type)."""
     times: int = 1
     retracted_turn: int | None = None
+    leaked_turn: int | None = None
+    """Turn at which the child let slip the true fact this lie hides (speech act `leak`)."""
 
 
 class AllowedUnit(BaseModel):
@@ -106,6 +111,8 @@ class Decision(BaseModel):
     """Protected units deliberately left out of this turn's narrative (omission)."""
     retraction: LieRecord | None = None
     """The lie taken back at this turn (speech act `retract`)."""
+    leak: LieRecord | None = None
+    """The lie this turn's slip contradicts (speech act `leak`)."""
     demeanor: Demeanor | None = None
     """What the child's body shows (ADR 0003). None in logs older than format 3."""
 
@@ -152,6 +159,8 @@ class EngineState(BaseModel):
     """Closed-question key of the previous prompt (None if it was open)."""
     supports_given: int = 0
     """Support statements counted for their effect on acquiescence (capped)."""
+    promised: bool = False
+    """The child promised to tell the truth (its effect on concealment counts once)."""
 
 
 _CLOSED = {QuestionType.DIRECTIVE, QuestionType.OPTION_POSING, QuestionType.SUGGESTIVE}
@@ -345,6 +354,13 @@ class BehaviorEngine:
                 st.concealment -= p["support_concealment_drop"]
             elif t == QuestionType.INVITATION and hint == "rapport":
                 st.concealment -= p["rapport_concealment_drop"]
+            elif (
+                t == QuestionType.GROUND_RULE and c.ground_rule_kind == GroundRuleKind.PROMISE
+                and not st.promised and p["promise_concealment_drop"]
+            ):
+                # Promising to tell the truth lowers lying about an adult's fault (Talwar et al., 2004).
+                st.promised = True
+                st.concealment -= p["promise_concealment_drop"]
             elif t in (QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING) and self.scenario.is_protected(c.target):
                 st.concealment += p["pressure_concealment_rise"]
             st.concealment = round(min(1.0, max(0.0, st.concealment)), 6)
@@ -735,6 +751,14 @@ class BehaviorEngine:
         """Lie to a focused question about a protected fact: keep the standing lie, else the
         softest authored content (minimization, then cover story), else `default`."""
         standing = self._active_lie(unit.id)
+        if standing is not None and self._leaks():
+            standing.leaked_turn = self.state.turn
+            return Decision(
+                speech_act=SpeechAct.LEAK,
+                allowed_units=[self._allowed(unit)],
+                leak=standing.model_copy(),
+                reason=f"{reason} sur {unit.id} : la vérité échappe, contredit {standing.id} ({standing.kind})",
+            )
         if standing is not None:
             content = self.scenario.lie_unit(standing.lie_unit) if standing.lie_unit else None
             return self._lie(standing.kind, unit.id, f"{reason} sur {unit.id} (mensonge maintenu)", content)
@@ -745,6 +769,11 @@ class BehaviorEngine:
         if cover is not None:
             return self._lie(LieKind.COVER_STORY, unit.id, f"{reason} sur {unit.id}", cover)
         return self._lie(default, unit.id, f"{reason} sur {unit.id}")
+
+    def _leaks(self) -> bool:
+        """A follow-up question on a lie: the younger the child, the likelier the truth slips out."""
+        p = self.params["p_leak"]
+        return p > 0 and self.deception_rng.random() < p
 
     def _record_deception(self, d: Decision, t: QuestionType) -> Decision:
         """Log the lie told and the omissions made at this turn."""

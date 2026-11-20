@@ -217,6 +217,47 @@ def probe_lie_forms(seeds: range) -> Result:
     )
 
 
+def probe_promise(seeds: range) -> Result:
+    """A8 — Talwar et al. (2004): the promise to tell the truth cuts lying about a parent's fault."""
+    sc = load_scenario(SCENARIOS / "s08_violences_maison_secret.yaml")
+    protected = set(sc.deception.protected)
+
+    def told(promise: bool) -> float:
+        counts = []
+        for seed in seeds:
+            child = Child(sc, seed, reluctance=0.0)
+            if promise:
+                child.ask("[regle+promesse] Tu me promets de dire seulement la vérité ?")
+            for _ in range(4):
+                child.ask("[inv] Raconte-moi tout ce qui s'est passé.")
+            counts.append(len(protected & set(child.state.revealed)))
+        return statistics.mean(counts)
+    without, with_ = told(False), told(True)
+    return Result(
+        "A8", f"s08 : faits protégés révélés après 4 récits, sans / avec promesse (sur {len(protected)})",
+        f"{without:.2f} / {with_:.2f}", "plus de faits révélés avec la promesse", with_ > without,
+    )
+
+
+def probe_leak(seeds: range) -> Result:
+    """A9 — Talwar & Lee (2002), Talwar et al. (2007): younger liars give themselves away at follow-ups."""
+    sc = load_scenario(SCENARIOS / "s08_violences_maison_secret.yaml")
+    rates = []
+    for age in (5, 8, 11):
+        leaks = []
+        for seed in seeds:
+            child = Child(sc, seed, reluctance=0.0, age=age)
+            child.engine.state.concealment = 1.0
+            if child.ask("[dir:d_karim] Qui était là ?").lie is None:
+                continue
+            leaks.append(child.ask("[dir:d_karim] C'était qui, le monsieur ?").speech_act == SpeechAct.LEAK)
+        rates.append(rate(leaks))
+    return Result(
+        "A9", "s08 : la vérité échappe à la question de suite sur un mensonge, à 5 / 8 / 11 ans",
+        " / ".join(f"{r:.0%}" for r in rates), "décroissant avec l'âge", rates[0] > rates[1] > rates[2],
+    )
+
+
 def probe_arousal_before_disclosure(seeds: range) -> Result:
     """A11 — Karni-Visel et al. (2023): non-verbal signs precede the verbal disclosure."""
     sc = load_scenario(SCENARIOS / "s02_violences_maison.yaml")
@@ -327,10 +368,9 @@ def probe_causal(seeds: range) -> Result:
 PROBES: list[Callable[[range], Result]] = [
     probe_dont_know_reaction, probe_repetition, probe_pressure, probe_support_acquiescence,
     probe_segment, probe_knowledge_question, probe_ground_rule_practice, probe_causal,
-    probe_lie_forms, probe_support_expressivity, probe_arousal_before_disclosure,
+    probe_lie_forms, probe_promise, probe_leak, probe_support_expressivity, probe_arousal_before_disclosure,
 ]
 LATER = [
-    ("A8", "plus de faits protégés révélés après la promesse de dire la vérité", "lot 3"),
     ("A12", "un silence de 10 s fait compléter la réponse", "lot 5"),
 ]
 

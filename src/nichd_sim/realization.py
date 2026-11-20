@@ -37,6 +37,7 @@ FALLBACK_RESPONSES: dict[SpeechAct, str] = {
     SpeechAct.SILENCE: "…",
     SpeechAct.RETRACT: "En fait… c'était pas vrai.",
     SpeechAct.AFFIRM: "Oui.",
+    SpeechAct.LEAK: "Euh… je sais plus trop.",
 }
 
 
@@ -44,7 +45,7 @@ class TemplateRealizer:
     """LLM-free realizer: renders the decision readably. For dev, demo without GPU, and tests."""
 
     def realize(self, decision, profile, history, attempt=0) -> Realization:
-        if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT) and decision.allowed_units:
+        if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT, SpeechAct.LEAK) and decision.allowed_units:
             facts = ". ".join(u.value[0].upper() + u.value[1:] for u in decision.allowed_units)
             prefix = {SpeechAct.ACQUIESCE: "Oui. ", SpeechAct.RETRACT: "En fait c'était pas vrai. "}.get(
                 decision.speech_act, ""
@@ -105,6 +106,10 @@ ACT_INSTRUCTIONS: dict[SpeechAct, str] = {
         "(« en fait c'était pas vrai… »), puis tu racontes ce qui s'est vraiment passé, avec TOUTES ces choses ({n}), "
         "et RIEN d'autre :"
     ),
+    SpeechAct.LEAK: (
+        "Tout à l'heure tu as dit « {lie} ». Là, sans faire exprès, tu réponds à la question avec ce qui s'est "
+        "vraiment passé, sans dire que tu avais dit autre chose avant, avec TOUTES ces choses ({n}), et RIEN d'autre :"
+    ),
 }
 
 RULES = (
@@ -119,10 +124,10 @@ def build_system_prompt(decision: Decision, profile: ChildProfile) -> str:
         f"Tu es {profile.name}, {profile.age} ans. Un adulte te pose des questions sur quelque chose que tu as vécu.",
         REGISTERS[profile.age_band].format(age=profile.age),
         ACT_INSTRUCTIONS[decision.speech_act].format(
-            n=len(decision.allowed_units), lie=decision.retraction.value if decision.retraction else ""
+            n=len(decision.allowed_units), lie=(decision.retraction or decision.leak).value if (decision.retraction or decision.leak) else ""
         ),
     ]
-    if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT):
+    if decision.speech_act in (SpeechAct.ANSWER, SpeechAct.ACQUIESCE, SpeechAct.RETRACT, SpeechAct.LEAK):
         lines += [f"{i}. {u.value}" for i, u in enumerate(decision.allowed_units, 1)]
         if len(decision.allowed_units) > 1:
             lines.append(f"Ta réponse doit contenir les {len(decision.allowed_units)} choses, aucune ne doit manquer.")
