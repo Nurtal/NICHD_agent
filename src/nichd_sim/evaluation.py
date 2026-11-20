@@ -71,6 +71,14 @@ class EvalReport:
     def phase_accuracy(self) -> float:
         return _mean(i.gold["phase_hint"] == i.pred["phase_hint"] for i in self.items)
 
+    def field_scores(self, name: str) -> tuple[float, float | None, int]:
+        """Accuracy over all items, recall over items whose gold value is set (not null/false), count."""
+        scored = [i for i in self.items if name in i.gold]
+        positives = [i for i in scored if i.gold[name] not in (None, False)]
+        accuracy = _mean(i.gold[name] == i.pred.get(name) for i in scored)
+        recall = _mean(i.gold[name] == i.pred.get(name) for i in positives) if positives else None
+        return accuracy, recall, len(positives)
+
     def confusion(self) -> dict[tuple[str, str], int]:
         return Counter((i.gold["type"], i.pred["type"]) for i in self.items if not i.type_ok)
 
@@ -94,6 +102,11 @@ class EvalReport:
             "## Confusions de type (attendu → prédit)",
             "",
         ]
+        lines[-2:-2] = ["## Champs du skill 0.3.0", "", "| Champ | Exactitude | Rappel (valeurs renseignées) | n |", "|---|---|---|---|"]
+        for name in NEW_FIELDS:
+            acc, rec, n_pos = self.field_scores(name)
+            lines.insert(-2, f"| `{name}` | {acc:.1%} | {'—' if rec is None else f'{rec:.1%}'} | {n_pos} |")
+        lines.insert(-2, "")
         conf = self.confusion()
         lines += [f"- {g} → {p} : {k}" for (g, p), k in conf.most_common()] or ["- aucune"]
         lines += ["", "## Erreurs", "", "| id | énoncé | attendu | prédit |", "|---|---|---|---|"]
@@ -105,6 +118,14 @@ class EvalReport:
             amb_mark = " *(ambigu)*" if i.ambiguous else ""
             lines.append(f"| {i.id} | {i.utterance}{amb_mark} | {g} | {p} |")
         return "\n".join(lines) + "\n"
+
+
+NEW_FIELDS = ("segment", "knowledge_question", "ground_rule_kind", "practice_kind", "causal")
+"""Fields added by skill 0.3.0 (docs/plans/adaptations-litterature.md, lot 2)."""
+
+
+def _value(v):
+    return v.value if hasattr(v, "value") else v
 
 
 def evaluate(classifier: Classifier, items: list[dict], scenarios: dict[str, Scenario], *, model: str, skill_version: str, progress=None) -> EvalReport:
@@ -119,6 +140,7 @@ def evaluate(classifier: Classifier, items: list[dict], scenarios: dict[str, Sce
             "target": c.target,
             "inner_type": c.inner_type.value if c.inner_type else None,
             "phase_hint": c.phase_hints[0] if c.phase_hints else None,
+            **{name: _value(getattr(c, name)) for name in NEW_FIELDS},
         }
         report.items.append(
             ItemResult(id=item["id"], utterance=item["utterance"], gold=item["label"], pred=pred,

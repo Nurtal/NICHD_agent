@@ -75,7 +75,12 @@ REPETITION_ADVICE = (
     "Répétée, une question fait croire à l'enfant que sa première réponse était fausse : il risque d'en changer "
     "ou d'inventer.",
 )
-"""Interaction alerts (docs/plans/adaptations-litterature.md, lot 1). They depend only on the learner's
+KNOWLEDGE_ADVICE = (
+    "« Est-ce que tu sais / te souviens… ? »",
+    "L'enfant peut répondre « oui » sans rien dire de plus : demandez directement (« Qu'est-ce que… ? »), ou "
+    "mieux, invitez-le à raconter.",
+)
+"""Interaction alerts (docs/plans/adaptations-litterature.md, lots 1 and 2). They depend only on the learner's
 questions and on what the child visibly answered, never on whether that answer was true."""
 
 LIVE_VIOLATIONS = set(PHASE_ADVICE)
@@ -168,6 +173,13 @@ def _key(t: TurnRecord) -> str | None:
 
 
 def _interaction_alerts(t: TurnRecord, prev: TurnRecord | None, asked: dict[str, int]) -> list[Alert]:
+    alerts = []
+    if t.classification.knowledge_question:
+        alerts.append(Alert(kind="knowledge_question", level=Level.WATCH, message=KNOWLEDGE_ADVICE[0], hint=KNOWLEDGE_ADVICE[1]))
+    return alerts + _repeat_alerts(t, prev, asked)
+
+
+def _repeat_alerts(t: TurnRecord, prev: TurnRecord | None, asked: dict[str, int]) -> list[Alert]:
     key = _key(t)
     if key is None:
         return []

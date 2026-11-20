@@ -3,20 +3,122 @@
   "properties": {
     "type": {
       "type": "string",
-      "enum": ["invitation", "cued_invitation", "directive", "option_posing", "suggestive",
-               "facilitator", "ground_rule", "support", "compound", "other"]
+      "enum": [
+        "invitation",
+        "cued_invitation",
+        "directive",
+        "option_posing",
+        "suggestive",
+        "facilitator",
+        "ground_rule",
+        "support",
+        "compound",
+        "other"
+      ]
     },
     "inner_type": {
-      "type": ["string", "null"],
-      "enum": ["invitation", "cued_invitation", "directive", "option_posing", "suggestive", null]
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "invitation",
+        "cued_invitation",
+        "directive",
+        "option_posing",
+        "suggestive",
+        null
+      ]
     },
-    "target": {"type": ["string", "null"]},
-    "suggested_proposition": {"type": ["string", "null"]},
-    "options": {"type": ["array", "null"], "items": {"type": "string"}},
+    "target": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "suggested_proposition": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "options": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
     "phase_hint": {
       "type": "string",
-      "enum": ["rapport", "ground_rules", "narrative_practice", "transition", "substantive", "closure"]
+      "enum": [
+        "rapport",
+        "ground_rules",
+        "narrative_practice",
+        "transition",
+        "substantive",
+        "closure"
+      ]
+    },
+    "segment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "before",
+        "during",
+        "after",
+        null
+      ]
+    },
+    "knowledge_question": {
+      "type": "boolean"
+    },
+    "ground_rule_kind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "dont_know",
+        "dont_understand",
+        "correct_me",
+        "not_there",
+        "truth",
+        "promise",
+        "practice",
+        null
+      ]
+    },
+    "practice_kind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "episodic",
+        "generic",
+        null
+      ]
+    },
+    "causal": {
+      "type": "boolean"
     }
   },
-  "required": ["type", "inner_type", "target", "suggested_proposition", "options", "phase_hint"]
+  "required": [
+    "type",
+    "inner_type",
+    "target",
+    "suggested_proposition",
+    "options",
+    "phase_hint",
+    "segment",
+    "knowledge_question",
+    "ground_rule_kind",
+    "practice_kind",
+    "causal"
+  ]
 }

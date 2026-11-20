@@ -90,3 +90,42 @@ La phase de l'entretien que suggère l'énoncé :
 - `substantive` : questions sur l'événement qui fait l'objet de l'audition ;
 - `closure` : fin de l'entretien (« Y a-t-il autre chose que je devrais savoir ? », remerciements
   finaux, sujet neutre de fin).
+
+## Segment visé (`segment`)
+
+Pour une `invitation` ou une `cued_invitation` qui demande **une partie** de l'événement :
+- `before` : le début, ce qui s'est passé avant (« Raconte-moi le début », « ce qui s'est passé avant que… ») ;
+- `during` : le moment même (« Raconte-moi le moment où ça s'est passé ») ;
+- `after` : la fin, ce qui s'est passé après (« Raconte-moi la fin », « comment ça s'est terminé », « ce qui
+  s'est passé après que… »).
+
+Sinon `null`. « Raconte-moi tout du début à la fin » couvre tout l'événement : `null`. « Et après ? », « Et
+ensuite ? » sont des relances du récit en cours, pas une demande de la fin : `null`.
+
+## Question de connaissance (`knowledge_question`)
+
+`true` quand l'énoncé demande en apparence oui ou non, mais en réalité une information : « Est-ce que tu
+sais… ? », « Tu te souviens de… ? », « Tu te rappelles… ? », « Est-ce que tu peux me dire… ? ». Le type reste
+celui de la forme (le plus souvent `option_posing`), et la cible est l'information implicitement demandée.
+« Est-ce qu'il t'a poussé ? » n'est pas une question de connaissance : `false`. Sinon `false`.
+
+## Type de règle de base (`ground_rule_kind`)
+
+Pour `ground_rule` seulement, sinon `null` :
+- `dont_know` : dire « je ne sais pas » ; `dont_understand` : dire « je ne comprends pas » ;
+- `correct_me` : corriger l'interviewer ; `not_there` : l'interviewer n'était pas là ;
+- `truth` : l'importance de dire la vérité ; `promise` : demander à l'enfant de **promettre** de dire la vérité ;
+- `practice` : une **question d'entraînement** sur une règle (« Si je te demande comment s'appelle mon chien,
+  qu'est-ce que tu dis ? », « Si je dis que tu as dix ans, tu me réponds quoi ? »).
+
+## Type de pratique narrative (`practice_kind`)
+
+Pour une `invitation` ou une `cued_invitation` en phase `narrative_practice` seulement, sinon `null` :
+- `episodic` : un événement précis et passé (« ton dernier anniversaire », « ce que tu as fait hier ») ;
+- `generic` : des habitudes (« ce que tu fais d'habitude le mercredi », « une journée normale »).
+
+## Question de cause (`causal`)
+
+`true` quand l'énoncé demande une raison ou une cause : « Pourquoi… ? », « Comment ça se fait que… ? », « Pour
+quelle raison… ? », y compris « Dis-moi pourquoi tu es venu ». Sinon `false`. Une question en « comment » sur
+la manière (« Comment il est tombé ? ») n'est pas une question de cause.

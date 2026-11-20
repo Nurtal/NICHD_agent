@@ -656,3 +656,50 @@ demeanor_max_cues:
   value: 3
   source: Choix de modélisation.
   estimated: true
+
+# --- Classifieur 0.3.0 : formes de question distinguées (plan, lot 2) ---------
+
+p_unelaborated_yes:
+  description: >
+    Question « Est-ce que tu sais / te souviens… ? » : probabilité que l'enfant réponde « oui » sans
+    donner l'information implicitement demandée. Sinon, il répond comme à une question directive.
+  values: {"4_6": 0.45, "7_9": 0.25, "10_12": 0.1}
+  neutral: 0
+  source: >
+    Evans, Stolzenberg, Lee & Lyon (2014) — 14 à 18 % de « oui » sans détail en expérience, en baisse
+    avec l'âge ; Evans & Lyon (2012) — 46 % dans des transcriptions de tribunal (4–9 ans) ; cités par
+    Evans, Stolzenberg & Lyon (2017), Psychology, Public Policy, and Law 23(2).
+  estimated: true
+
+ground_rule_stated_factor:
+  description: >
+    Part de l'effet d'une règle de base (ground_rule_acquiescence_drop) quand elle est seulement énoncée,
+    sans question d'entraînement.
+  value: 0.4
+  neutral: 1
+  source: >
+    Earhart, La Rooy, Brubacher & Lamb (2014), Behavioral Sciences & the Law 32(6) — sur le terrain, la
+    consigne « tu peux dire je ne sais pas » ne change pas la fréquence des « je ne sais pas ».
+  estimated: true
+
+ground_rule_age_factor:
+  description: >
+    Part de l'effet d'une règle de base entraînée (question d'entraînement), selon l'âge.
+  values: {"4_6": 0.6, "7_9": 0.85, "10_12": 1.0}
+  neutral: 1
+  source: >
+    Brubacher, Poole & Dickinson (2015), Developmental Review 36 ; Dickinson, Brubacher & Poole (2015),
+    Law and Human Behavior 39(1) — les 4–6 ans réussissent moins bien les règles « je ne sais pas » et
+    « corrige-moi », la pratique compte.
+  estimated: true
+
+generic_practice_counts:
+  description: >
+    Une pratique narrative générique (« qu'est-ce que tu fais d'habitude… ») augmente-t-elle la
+    verbosité ? Faux : seule la pratique épisodique (un événement précis) compte.
+  value: false
+  neutral: true
+  source: >
+    Brubacher, Roberts & Powell (2011), Psychology, Public Policy, and Law 17(2) — la pratique épisodique
+    amène un récit plus épisodique dans la phase substantive que la pratique générique.
+  estimated: true

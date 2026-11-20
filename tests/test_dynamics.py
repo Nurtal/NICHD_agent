@@ -269,3 +269,99 @@ def test_coaching_flags_a_rejected_dont_know_and_a_repeated_question():
     assert "rejected_refusal" in kinds[2]
     assert "repeated_question" in kinds[4]
     assert not any(k in ("rejected_refusal", "repeated_question") for k in kinds[0] + kinds[1] + kinds[3])
+
+
+# -- lot 2: question forms told apart by skill 0.3.0 -------------------------------------------
+
+from nichd_sim.classification import GroundRuleKind, PracticeKind, QuestionType, SegmentHint  # noqa: E402
+
+
+def test_asking_for_the_end_tells_the_end_only():
+    """« Raconte-moi la fin » used to tell the beginning (avatar demo, Léo)."""
+    s, clf, _ = dyn(seed=0)
+    disclosed(s, clf)
+    r = ask(s, clf, "Raconte-moi la fin.", C("invitation", segment=SegmentHint.AFTER))
+    sc = load_scenario(S01)
+    after = {u.id for seg, u in sc.target_units() if str(seg) == "after"}
+    assert r.decision.allowed_units and {u.id for u in r.decision.allowed_units if not u.contaminated} <= after
+
+
+def test_a_cued_invitation_with_a_segment_follows_the_segment():
+    s, clf, _ = dyn(seed=0)
+    disclosed(s, clf)
+    r = ask(s, clf, "Tu as parlé du monsieur. Raconte-moi ce qui s'est passé avant.",
+            C("cued_invitation", "d_messieurs", segment=SegmentHint.BEFORE))
+    sc = load_scenario(S01)
+    before = {u.id for seg, u in sc.target_units() if str(seg) == "before"}
+    assert {u.id for u in r.decision.allowed_units if not u.contaminated} <= before
+
+
+def test_knowledge_questions_often_get_a_bare_yes_more_so_for_the_youngest():
+    def bare_yes(age):
+        n = 0
+        for seed in range(80):
+            s, clf, _ = dyn(seed=seed, age=age)
+            disclosed(s, clf)
+            r = ask(s, clf, "Tu te souviens qui a poussé ?", C("option_posing", "d_pousse", knowledge_question=True))
+            n += r.decision.speech_act == SpeechAct.AFFIRM
+        return n
+    young, old = bare_yes(5), bare_yes(11)
+    assert young > old > 0
+
+
+def test_a_knowledge_question_not_answered_by_yes_is_answered_like_a_directive():
+    for seed in range(40):
+        s, clf, _ = dyn(seed=seed)
+        disclosed(s, clf)
+        r = ask(s, clf, "Tu sais qui a poussé ?", C("option_posing", "d_pousse", knowledge_question=True))
+        if r.decision.speech_act != SpeechAct.AFFIRM:
+            assert r.decision.speech_act == SpeechAct.ANSWER
+            assert [u.id for u in r.decision.allowed_units] == ["d_pousse"]
+            assert not r.decision.lucky_suggestion  # nothing was suggested
+            return
+    raise AssertionError("toujours « oui » sur 40 seeds")
+
+
+def test_a_why_question_is_never_answered_by_yes_or_no():
+    """« Ben non » answered a « pourquoi » in a demo: a causal closed question is treated as open."""
+    for seed in range(30):
+        s, clf, _ = dyn(seed=seed)
+        disclosed(s, clf)
+        r = ask(s, clf, "Pourquoi il l'a poussé ?", C("option_posing", OUT_OF_SCENARIO, causal=True,
+                                                   suggested_proposition="il l'a poussé"))
+        assert r.decision.speech_act not in (SpeechAct.DENY, SpeechAct.ACQUIESCE, SpeechAct.AFFIRM)
+        assert r.decision.effective_type == QuestionType.DIRECTIVE
+
+
+def test_a_stated_ground_rule_counts_less_than_a_practised_one():
+    def acquiescence(kind):
+        s, clf, _ = dyn(age=11)
+        ask(s, clf, "Règle.", C("ground_rule", ground_rule_kind=kind, phase_hints=["ground_rules"]))
+        return s.state.acquiescence
+    start = dyn(age=11)[0].state.acquiescence
+    stated, practised = acquiescence(GroundRuleKind.DONT_KNOW), acquiescence(GroundRuleKind.PRACTICE)
+    assert practised < stated < start
+
+
+def test_truth_and_promise_do_not_lower_acquiescence():
+    for kind in (GroundRuleKind.TRUTH, GroundRuleKind.PROMISE):
+        s, clf, _ = dyn()
+        start = s.state.acquiescence
+        ask(s, clf, f"Règle {kind}.", C("ground_rule", ground_rule_kind=kind, phase_hints=["ground_rules"]))
+        assert s.state.acquiescence == start and s.state.ground_rules_given == 0
+
+
+def test_an_unknown_ground_rule_kind_keeps_the_full_effect():
+    """Older classifiers do not give the kind: same effect as before skill 0.3.0."""
+    s, clf, _ = dyn()
+    start = s.state.acquiescence
+    ask(s, clf, "Règle.", C("ground_rule", phase_hints=["ground_rules"]))
+    assert abs(start - s.state.acquiescence - s.params["ground_rule_acquiescence_drop"]) < 1e-9
+
+
+def test_only_episodic_narrative_practice_raises_verbosity():
+    for kind, rises in ((PracticeKind.EPISODIC, True), (PracticeKind.GENERIC, False)):
+        s, clf, _ = dyn()
+        start = s.state.verbosity
+        ask(s, clf, "Raconte-moi.", C("invitation", practice_kind=kind, phase_hints=["narrative_practice"]))
+        assert (s.state.verbosity > start) is rises

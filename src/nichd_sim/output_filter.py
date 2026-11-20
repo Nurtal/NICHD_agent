@@ -37,7 +37,7 @@ class FilterVerdict:
 
 CONTENT_FREE_ACTS = {
     SpeechAct.DONT_KNOW, SpeechAct.DENY, SpeechAct.RELUCTANT,
-    SpeechAct.ACKNOWLEDGE, SpeechAct.CONFUSION, SpeechAct.SILENCE,
+    SpeechAct.ACKNOWLEDGE, SpeechAct.CONFUSION, SpeechAct.SILENCE, SpeechAct.AFFIRM,
 }
 MAX_CONTENT_FREE_WORDS = 10
 _YES = {"oui", "ouais", "ouai", "exactement"}

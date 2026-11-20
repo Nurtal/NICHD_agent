@@ -36,6 +36,7 @@ FALLBACK_RESPONSES: dict[SpeechAct, str] = {
     SpeechAct.CONFUSION: "Hein ? Je comprends pas.",
     SpeechAct.SILENCE: "…",
     SpeechAct.RETRACT: "En fait… c'était pas vrai.",
+    SpeechAct.AFFIRM: "Oui.",
 }
 
 
@@ -83,6 +84,10 @@ ACT_INSTRUCTIONS: dict[SpeechAct, str] = {
         "et banale à la question (quelques mots), sans parler de rien d'autre."
     ),
     SpeechAct.ACKNOWLEDGE: "Tu réponds brièvement (d'accord, oui, hmm), sans raconter quoi que ce soit.",
+    SpeechAct.AFFIRM: (
+        "L'adulte t'a demandé si tu sais ou si tu te souviens de quelque chose. Tu réponds juste oui (« oui », "
+        "« ouais », « oui je sais »), sans dire ce que c'est. N'ajoute aucun détail."
+    ),
     SpeechAct.RELUCTANT: (
         "Tu n'es pas encore prêt à parler de ce qui s'est passé. Réponds seulement par une courte phrase "
         "comme « je sais pas », « je veux pas trop en parler », « bof… » ou « … ». N'évoque RIEN de ce qui "
