@@ -6,6 +6,7 @@ from pathlib import Path
 
 from nichd_sim.classification import Classification, ClassificationContext, QuestionType
 from nichd_sim.engine import Decision
+from nichd_sim.parameters import Parameters
 from nichd_sim.realization import Realization, TemplateRealizer
 from nichd_sim.scenario import ChildProfile, Scenario, load_scenario
 from nichd_sim.session import Session
@@ -40,8 +41,20 @@ def C(type: str, target: str | None = None, **kw) -> Classification:
     return Classification(type=QuestionType(type), target=target, **kw)
 
 
-def make_session(scenario: Scenario | None = None, seed: int = 0, **kw) -> tuple[Session, ScriptedClassifier, RecordingRealizer]:
+def neutral_params(scenario: Scenario) -> Parameters:
+    """The scenario's parameters with the interaction dynamics switched off (see `make_session`)."""
+    overrides = {**Parameters.neutral_overrides(), **scenario.parameter_overrides}
+    return Parameters.load(scenario.child_profile.age_band, overrides)
+
+
+def make_session(
+    scenario: Scenario | None = None, seed: int = 0, dynamics: bool = False, **kw
+) -> tuple[Session, ScriptedClassifier, RecordingRealizer]:
+    """`dynamics=False` (default): the rules added by docs/plans/adaptations-litterature.md are
+    switched off, so tests of the base mechanics stay exact; tests of those rules pass True."""
     scenario = scenario or load_scenario(S01)
+    if not dynamics and "params" not in kw:
+        kw["params"] = neutral_params(scenario)
     clf, real = ScriptedClassifier(), RecordingRealizer()
     return Session(scenario, clf, real, seed=seed, **kw), clf, real
 

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from doubles import S01, C, ScriptedClassifier, ask, RecordingRealizer
+from doubles import S01, C, RecordingRealizer, ScriptedClassifier, ask, neutral_params
 from nichd_sim.classification import OUT_OF_SCENARIO
 from nichd_sim.feedback import LLMRephraser, render_text
 from nichd_sim.llm import ChatResult, LLMError
@@ -42,7 +42,7 @@ def run(rephraser=None, log_dir=None):
         "p_acquiesce": 1.0, "p_integration": 0.0, "suggestibility_multiplier_range": [1, 1],
     }})
     clf = ScriptedClassifier()
-    s = Session(sc, clf, RecordingRealizer(), seed=3, rephraser=rephraser, log_dir=log_dir)
+    s = Session(sc, clf, RecordingRealizer(), seed=3, rephraser=rephraser, log_dir=log_dir, params=neutral_params(sc))
     for u, c in SCRIPT:
         ask(s, clf, u, c)
     return s.end()
@@ -151,7 +151,7 @@ def test_text_rendering_contains_the_key_figures():
 
 def test_no_question_in_substantive_phase_gives_undefined_ratio():
     clf = ScriptedClassifier()
-    s = Session(load_scenario(S01), clf, RecordingRealizer())
+    s = Session(load_scenario(S01), clf, RecordingRealizer(), params=neutral_params(load_scenario(S01)))
     ask(s, clf, "Bonjour.", H("support", phase="rapport"))
     fb = s.end().feedback
     assert fb.metrics.open_question_ratio.ratio is None
@@ -180,7 +180,7 @@ def run_with_summary(summary, match):
         "p_acquiesce": 1.0, "p_integration": 0.0, "suggestibility_multiplier_range": [1, 1],
     }})
     clf = ScriptedClassifier()
-    s = Session(sc, clf, RecordingRealizer(), seed=3, summary_matcher=matcher)
+    s = Session(sc, clf, RecordingRealizer(), seed=3, summary_matcher=matcher, params=neutral_params(sc))
     for u, c in SCRIPT:
         ask(s, clf, u, c)
     return s.end(learner_summary=summary).feedback, matcher

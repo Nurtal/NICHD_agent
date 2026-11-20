@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 from nichd_sim.classification import QuestionType
+from nichd_sim.engine import closed_key, is_rejection
 from nichd_sim.feedback import PHASE_LABELS, TYPE_LABELS
 from nichd_sim.metrics import compute_metrics
 from nichd_sim.phases import ORDER, VIOLATION_LABELS, Phase, PhaseViolation, ViolationKind
@@ -63,6 +64,19 @@ PHASE_ADVICE = {
     ViolationKind.TRUNCATED_PHASE: "Prenez le temps de cette étape avant de passer à la suivante.",
     ViolationKind.PREMATURE_FOCUSED_QUESTION: "Attendez la transition, puis laissez l'enfant amener les faits.",
 }
+
+REJECTION_ADVICE = (
+    "« Je sais pas » ou « non » repris",
+    "Acceptez la réponse et passez à autre chose, ou revenez à une invitation : reposer la question pousse "
+    "l'enfant à répondre pour vous satisfaire.",
+)
+REPETITION_ADVICE = (
+    "Question déjà posée",
+    "Répétée, une question fait croire à l'enfant que sa première réponse était fausse : il risque d'en changer "
+    "ou d'inventer.",
+)
+"""Interaction alerts (docs/plans/adaptations-litterature.md, lot 1). They depend only on the learner's
+questions and on what the child visibly answered, never on whether that answer was true."""
 
 LIVE_VIOLATIONS = set(PHASE_ADVICE)
 """Forced disclosure stays out of the live alerts: announcing it would confirm the suggestion."""
@@ -144,11 +158,33 @@ def _tag(t: TurnRecord, premature: bool) -> Tag:
     return Tag(type=c.type, label=TYPE_LABELS[c.type], level=level)
 
 
-def _alerts(t: TurnRecord, live: list[PhaseViolation], tag: Tag) -> list[Alert]:
+def _effective(t: TurnRecord) -> QuestionType:
+    c = t.classification
+    return (c.inner_type or QuestionType.DIRECTIVE) if c.type == QuestionType.COMPOUND else c.type
+
+
+def _key(t: TurnRecord) -> str | None:
+    return closed_key(t.classification, _effective(t), t.classification.clean_text or t.utterance)
+
+
+def _interaction_alerts(t: TurnRecord, prev: TurnRecord | None, asked: dict[str, int]) -> list[Alert]:
+    key = _key(t)
+    if key is None:
+        return []
+    level = Level.ALERT if _effective(t) == QuestionType.SUGGESTIVE else Level.WATCH
+    if prev is not None and is_rejection(prev.decision.speech_act, _key(prev), key):
+        return [Alert(kind="rejected_refusal", level=level, message=REJECTION_ADVICE[0], hint=REJECTION_ADVICE[1])]
+    if asked.get(key, 0):
+        return [Alert(kind="repeated_question", level=level, message=REPETITION_ADVICE[0], hint=REPETITION_ADVICE[1])]
+    return []
+
+
+def _alerts(t: TurnRecord, live: list[PhaseViolation], tag: Tag, interaction: list[Alert]) -> list[Alert]:
     alerts = []
     advice = TYPE_ADVICE.get(t.classification.type)
     if advice is not None:
         alerts.append(Alert(kind=t.classification.type.value, level=tag.level, message=advice[0], hint=advice[1]))
+    alerts += interaction
     for v in live:
         level = Level.ALERT if v.kind == ViolationKind.PREMATURE_FOCUSED_QUESTION else Level.WATCH
         alerts.append(Alert(kind=v.kind.value, level=level, message=_violation_text(v), hint=PHASE_ADVICE[v.kind]))
@@ -165,7 +201,13 @@ def build_coaching(log: SessionLog, scenario: Scenario) -> SessionCoaching:
     shown: set[int] = set()
     turns = []
     asked_in = {t.index: t.asked_in for t in log.turns}
+    asked: dict[str, int] = {}
+    prev = None
     for t in log.turns:
+        interaction = _interaction_alerts(t, prev, asked)
+        if (key := _key(t)) is not None:
+            asked[key] = asked.get(key, 0) + 1
+        prev = t
         live = []
         for i, v in enumerate(log.phase_violations):
             if v.turn == t.index and _is_live(v, asked_in[t.index]):
@@ -175,7 +217,7 @@ def build_coaching(log: SessionLog, scenario: Scenario) -> SessionCoaching:
         tag = _tag(t, premature)
         turns.append(TurnCoaching(
             turn=t.index, phase=t.asked_in, phase_label=PHASE_LABELS[t.asked_in], tag=tag,
-            alerts=_alerts(t, live, tag),
+            alerts=_alerts(t, live, tag, interaction),
             facts_found=None if hidden else sum(turn <= t.index for turn in countable),
         ))
 

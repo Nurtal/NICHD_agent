@@ -187,8 +187,112 @@ disclosure_threshold_scale:
 
 disclosure_pressure:
   description: Pression exercée par une incitation, selon le type de question.
-  value: {invitation: 1.0, cued_invitation: 1.0, facilitator: 0.5, directive: 1.5, option_posing: 2.0, suggestive: 3.0}
-  source: Choix de modélisation (les incitations focalisées obtiennent le dévoilement plus vite, au prix de la fiabilité).
+  value: {invitation: 1.0, cued_invitation: 1.0, facilitator: 0.5, directive: 1.5, option_posing: 1.2, suggestive: 1.5}
+  source: >
+    Choix de modélisation. v3 (lot 1, 2026-11) : suggestive 3,0 → 1,5 et à choix 2,0 → 1,2. Avec
+    l'ancienne échelle, la pression était le chemin le plus rapide vers le dévoilement d'un enfant
+    réticent (2 tours contre 5 par invitations, docs/evaluations/fidelite.md), alors que les entretiens
+    sans dévoilement sont ceux où l'interviewer a moins invité et moins soutenu (Hershkowitz, Orbach,
+    Lamb, Sternberg & Horowitz, 2006, Child Abuse & Neglect 30(7)). Les journaux anciens gardent la
+    valeur qu'ils ont enregistrée.
+  estimated: true
+
+pressure_reluctance_rise:
+  description: >
+    Avant le dévoilement, hausse relative de la réticence après une question suggestive ou à choix sur
+    l'événement cible (réticence × (1 + hausse)) : un enfant réticent mis sous pression se ferme.
+  value: 0.15
+  neutral: 0
+  source: >
+    Hershkowitz et al. (2006), voir disclosure_pressure ; Katz, Hershkowitz, Malloy, Lamb, Atabaki &
+    Spindler (2012), Child Abuse & Neglect 36(1) — stress et désengagement montent au fil de l'entretien.
+  estimated: true
+
+reluctance_informativeness_weight:
+  description: >
+    Baisse relative du nombre d'unités livrées à une invitation, par unité de réticence courante
+    (taille × (1 − poids × réticence), arrondi stochastique).
+  value: 0.5
+  neutral: 0
+  source: >
+    Blasbalg, Hershkowitz & Karni-Visel (2018), Support, reluctance, and production in child abuse
+    investigative interviews, Psychology, Public Policy, and Law 24(4) — la baisse de la réticence
+    explique en partie l'effet du soutien sur l'informativité.
+  estimated: true
+
+acceptance_reluctance_drop:
+  description: >
+    Baisse de la réticence quand l'interviewer accepte un « je sais pas », un refus ou un « non » (il
+    passe à autre chose, soutient ou relance par une invitation).
+  value: 0.05
+  neutral: 0
+  source: >
+    Bücken, Erens, de Ruiter, Raymaekers & Otgaar (2026), Navigating reluctance in Dutch child forensic
+    interviews, Psychology, Public Policy, and Law 32(3) — une réponse productive est environ 7 fois plus
+    probable après une acceptation qu'après un rejet ; Ahern, Hershkowitz, Lamb, Blasbalg & Winstanley
+    (2014), Behavioral Sciences & the Law 32(6) — coopération immédiate quand la réticence reçoit du soutien.
+  estimated: true
+
+rejection_reluctance_rise:
+  description: >
+    Hausse de la réticence quand l'interviewer rejette un « je sais pas » ou un « non » en reposant la
+    même question fermée.
+  value: 0.08
+  neutral: 0
+  source: Bücken et al. (2026), voir acceptance_reluctance_drop.
+  estimated: true
+
+rejection_acquiescence_boost:
+  description: >
+    Hausse de l'acquiescement, pour ce tour seulement, après un rejet : la plupart des enfants finissent
+    par répondre, avec un risque de réponse de complaisance.
+  value: 0.3
+  neutral: 0
+  source: >
+    Earhart, La Rooy, Brubacher & Lamb (2014), Behavioral Sciences & the Law 32(6), et Grung et al. (2024),
+    cités par Bücken et al. (2026) — 76 à 81 % des enfants répondent après un rejet.
+  estimated: true
+
+support_acquiescence_drop:
+  description: >
+    Baisse de la propension à acquiescer après chaque énoncé de soutien, dans la limite de
+    max_effective_supports.
+  value: 0.08
+  neutral: 0
+  source: >
+    Saywitz, Wells, Larson & Hobbs (2019), Effects of interviewer support on children's memory and
+    suggestibility: Systematic review and meta-analyses, Trauma, Violence, & Abuse 20(1) — moins
+    d'acquiescement et plus de résistance aux suggestions avec un interviewer soutenant (effet modéré).
+  estimated: true
+
+max_effective_supports:
+  description: Nombre d'énoncés de soutien au-delà duquel le soutien ne baisse plus l'acquiescement.
+  value: 3
+  neutral: 3
+  source: Choix de modélisation (même plafond que les règles de base).
+  estimated: true
+
+repeat_confabulation_gain:
+  description: >
+    Question directive hors scénario déjà posée n fois : la probabilité d'inventer est multipliée par
+    gain^n.
+  value: 1.15
+  neutral: 1
+  source: >
+    Krähenbühl, Blades & Eiser (2009), The effect of repeated questioning on children's accuracy and
+    consistency in eyewitness testimony, Legal and Criminological Psychology 14(2) — plus la question
+    sans réponse possible est répétée, plus l'enfant invente.
+  estimated: true
+
+p_change_on_repeat:
+  description: >
+    Question fermée vraie déjà posée : probabilité que l'enfant change sa réponse (il croit la première
+    fausse), vers une réponse moins exacte.
+  value: 0.25
+  neutral: 0
+  source: >
+    Krähenbühl et al. (2009), voir repeat_confabulation_gain — plus d'un quart des réponses changent à la
+    répétition, en général vers moins d'exactitude.
   estimated: true
 
 no_disclosure_reluctance:

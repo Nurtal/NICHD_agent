@@ -169,6 +169,24 @@ La réticence fixe un **seuil de dévoilement**, c'est-à-dire le nombre ou le n
 | Autre / détournement | Acte « confusion » ou « silence », tour signalé dans le feedback. |
 | « Autre chose ? » (clôture) | Révélation éventuelle d'une unité centrale restante, avec une probabilité donnée. |
 
+### 6.4 bis Dynamique de l'interaction
+
+Ajoutée par le lot 1 du [plan d'adaptations](plans/adaptations-litterature.md), d'après la
+[confrontation à la littérature](research/confrontation-modele-litterature.md). La réticence n'est plus seulement
+une baisse :
+
+| Situation | Effet |
+|---|---|
+| Question suggestive ou à choix sur l'événement, avant le dévoilement | La réticence monte (un enfant réticent se ferme) |
+| « Je sais pas », refus ou « non » **repris** par la même question fermée (rejet) | La réticence monte ; pour ce tour, l'enfant est plus enclin à répondre pour satisfaire l'interviewer |
+| « Je sais pas », refus ou « non » **accepté** (soutien, autre sujet, invitation) | La réticence baisse |
+| Énoncé de soutien | Baisse aussi l'acquiescement (plafonné) |
+| Question fermée répétée | Invention plus probable à chaque répétition ; une réponse vraie peut changer |
+| Réticence courante | Réduit le nombre d'unités livrées à une invitation |
+
+Le suivi de l'apprenant signale le rejet d'un « je sais pas » et la question répétée (orange, rouge si suggestive).
+Les journaux antérieurs se rejouent avec ces règles désactivées (valeurs `neutral`).
+
 ### 6.5 Paramètres
 
 Fichier de paramètres où **chaque valeur cite sa source** (Ceci & Bruck, Bruck & Melnyk, Lamb et al., Krackow & Lynn…). Toute valeur extrapolée est marquée `estimated`. Un chercheur ou un formateur relit le fichier. Les valeurs sont surchargeables par scénario, ce qui permet de futures analyses de sensibilité.

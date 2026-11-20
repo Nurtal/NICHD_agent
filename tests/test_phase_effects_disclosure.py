@@ -102,7 +102,7 @@ def test_support_during_transition_lowers_the_threshold():
 
 
 def test_suggestive_prompt_can_force_disclosure_and_is_flagged():
-    s, clf, _ = child(reluctance=0.5, p_acquiesce=1.0, suggestibility_multiplier_range=[1, 1])  # threshold 2.5
+    s, clf, _ = child(reluctance=0.25, p_acquiesce=1.0, suggestibility_multiplier_range=[1, 1])  # threshold 1.25 ≤ 1.5
     r = ask(s, clf, "Le monsieur a poussé Monsieur Bertin, hein ?", H("suggestive", "d_pousse", phase="transition", suggested_proposition="il a poussé Monsieur Bertin"))
     assert r.decision.disclosure and r.decision.forced_disclosure
     assert [(v.kind, v.phase) for v in r.violations if v.kind == ViolationKind.FORCED_DISCLOSURE] == [

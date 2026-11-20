@@ -72,6 +72,13 @@ class Parameters:
         missing = {name: p.neutral for name, p in table.items() if name not in logged and p.has_neutral}
         return cls(table, band, {**missing, **logged})
 
+    @staticmethod
+    def neutral_overrides(path: str | Path | None = None) -> dict[str, Any]:
+        """Every rule added after log format 3, switched off: the engine's mechanics without the
+        interaction dynamics (tests of the base mechanics, ablations)."""
+        table = _default_table() if path is None else _parse(Path(path).read_text(encoding="utf-8"))
+        return {name: p.neutral for name, p in table.items() if p.has_neutral}
+
     def __getitem__(self, name: str) -> Any:
         if name in self.overrides:
             ov = self.overrides[name]
