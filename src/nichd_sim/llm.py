@@ -94,5 +94,8 @@ class OllamaClient:
                 "think": think,
                 "latency_s": round(elapsed, 3),
                 "eval_count": data.get("eval_count"),
+                "prompt_eval_count": data.get("prompt_eval_count"),
+                "load_s": round(data.get("load_duration", 0) / 1e9, 3),
+                "prompt_eval_s": round(data.get("prompt_eval_duration", 0) / 1e9, 3),
             },
         )
