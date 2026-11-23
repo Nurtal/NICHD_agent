@@ -32,8 +32,9 @@ def label(type, target=None, phase="substantive", **kw):
             "suggested_proposition": kw.get("prop"), "options": kw.get("options"), "phase_hint": phase}
 
 
-def session(chat, **kw):
-    return Session(load_scenario(S01), LLMClassifier(chat), RecordingRealizer(), **kw)
+def session(chat, think="medium", **kw):
+    """One pass per utterance (the cascade is tested on its own below)."""
+    return Session(load_scenario(S01), LLMClassifier(chat, think=think), RecordingRealizer(), **kw)
 
 
 def test_free_utterance_is_classified_and_drives_the_engine():
@@ -52,7 +53,7 @@ def test_request_uses_skill_schema_temperature_zero_and_scenario_catalog():
     s = session(chat)
     s.turn("Raconte-moi.")
     call = chat.calls[0]
-    assert call["temperature"] == 0 and call["think"] == "medium"  # most accurate measured setting
+    assert call["temperature"] == 0 and call["think"] == "medium"
     assert call["format"] == Skill.load().schema
     system, user = call["messages"][0]["content"], call["messages"][1]["content"]
     assert "cued_invitation" in system and "Exemples" in system
@@ -121,3 +122,36 @@ def test_skill_examples_conform_to_schema_and_typology():
         assert lab["target"] in ids | {OUT_OF_SCENARIO, None}, ex["id"]
         assert set(ex["already_said"]) <= ids
     assert types <= {ex["label"]["type"] for ex in skill.examples}
+
+
+def test_cascade_is_the_default_and_keeps_a_safe_fast_answer_without_thinking():
+    """Lot L1: the cascade answers without thinking when the fast answer is not risky."""
+    chat = FakeChat(label("invitation"))
+    r = Session(load_scenario(S01), LLMClassifier(chat), RecordingRealizer()).turn("Raconte-moi.")
+    assert [c["think"] for c in chat.calls] == [False]
+    assert r.classification.type == QuestionType.INVITATION and r.classification.meta["cascade"] == "fast"
+
+
+def test_cascade_thinks_again_on_a_risky_or_broken_fast_answer(monkeypatch):
+    from nichd_sim.classifiers import llm
+
+    monkeypatch.setattr(llm, "ESCALATE_TYPES", frozenset({QuestionType.SUGGESTIVE}))
+    chat = FakeChat(label("suggestive", "d_pousse", prop="il l'a poussé"), label("directive", "d_pousse"),
+                    "pas du json", label("invitation"),
+                    label("directive", OUT_OF_SCENARIO), label("directive", OUT_OF_SCENARIO))
+    s = Session(load_scenario(S01), LLMClassifier(chat, think="cascade"), RecordingRealizer())
+    r = s.turn("Il l'a poussé, hein ?")
+    assert r.classification.type == QuestionType.DIRECTIVE  # the thinking pass wins
+    assert r.classification.meta["escalation"] == "type:suggestive"
+    assert r.classification.meta["fast"]["type"] == "suggestive"
+    assert s.turn("Raconte.").classification.meta["escalation"] == "error"
+    assert s.turn("Il avait des chaussures ?").classification.meta["escalation"] == "out_of_scenario"
+    assert [c["think"] for c in chat.calls] == [False, "low"] * 3
+
+
+def test_warm_up_reads_the_system_prompt_once_and_survives_ollama_down():
+    chat = FakeChat(label("invitation"), LLMError("down"))
+    clf = LLMClassifier(chat)
+    clf.warm_up()
+    assert chat.calls[0]["messages"][0]["content"] == clf._system and chat.calls[0]["think"] is False
+    clf.warm_up()  # no exception
