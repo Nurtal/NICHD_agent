@@ -265,3 +265,24 @@ def test_voiced_bounds_resist_noise():
     click = Audio.silence(SR, 1000)
     click.samples[8000] = 20000  # an isolated click is not speech
     assert click.voiced_bounds() is None
+
+
+def test_a_long_silence_lets_the_child_go_on_before_the_learner_speaks():
+    """Plan lot 5 (A12): past wait_turn_ms, the session plays a wait turn first."""
+    went_on = 0
+    for seed in range(12):
+        sc = load_scenario(S02)
+        sc = sc.model_copy(update={"child_profile": sc.child_profile.model_copy(update={"reluctance": 0.0})})
+        s, _, _ = make_session(sc, seed=seed, dynamics=True)
+        s.classifier = type("K", (), {"classify": lambda self, u, ctx: C("invitation")})()
+        conv = VoiceConversation(s, ToneSpeaker(sample_rate=SR), FakeListener(lead_ms=200))
+        conv.exchange(_learner(), after_ms=0)
+        short = conv.exchange(_learner(), after_ms=600)
+        assert short.waited is None
+        long = conv.exchange(_learner(), after_ms=s.params["wait_turn_ms"] + 1000)
+        assert long.waited is not None and s.log.turns[-2].kind == "wait"
+        if long.waited.decision.speech_act != "silence":
+            went_on += 1
+            assert [e.speaker for e in conv.events][-3:] == ["child", "learner", "child"]
+            assert long.timing.wait_ms == 1200  # the rest of the silence, after the continuation
+    assert went_on > 0

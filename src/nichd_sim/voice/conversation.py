@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from nichd_sim.delivery import FILLER, ChunkKind
+from nichd_sim.engine import SpeechAct
 from nichd_sim.session import BargeIn, Session, TurnResult, TurnTiming
 from nichd_sim.voice.audio import Audio
 from nichd_sim.voice.listener import Listener, Transcript
@@ -55,6 +56,8 @@ class Exchange:
     timing: TurnTiming
     result: TurnResult
     child: RenderedSpeech
+    waited: TurnResult | None = None
+    """The child went on during the learner's long silence (wait turn, plan lot 5), before the learner spoke."""
 
 
 @dataclass
@@ -79,9 +82,22 @@ class VoiceConversation:
         bounds = learner.voiced_bounds()
         speech_start, speech_end = bounds if bounds else (transcript.speech_start_ms or 0,
                                                           transcript.speech_end_ms or learner.duration_ms)
+        child_end = self._last_start + (self._last.audio.duration_ms if self._last else 0)
+        waited = None
+        threshold = self.session.params["wait_turn_ms"]
+        if self._last is not None and after_ms + speech_start >= threshold:
+            # A long silence after the reply: the child may go on before the learner speaks.
+            waited = self.session.wait(timing=TurnTiming(wait_ms=threshold))
+            if waited.decision.speech_act != SpeechAct.SILENCE:
+                more = render_speech(waited.speech_plan, self.speaker, waited.decision.delivery)
+                at = child_end + threshold
+                self.track.mix_at(more.audio, at)
+                self.events.append(TrackEvent("child", at + more.onset_ms, at + more.audio.duration_ms, waited.response))
+                self._last, self._last_start = more, at
+                after_ms -= threshold  # the rest of the silence comes after the continuation
+                child_end = at + more.audio.duration_ms
         wait = after_ms + speech_start
         barge = None
-        child_end = self._last_start + (self._last.audio.duration_ms if self._last else 0)
         if self._last is not None and wait < 0:
             barge = barge_in_at(self._last, self._last.audio.duration_ms + wait)
         timing = TurnTiming(
@@ -108,7 +124,7 @@ class VoiceConversation:
         self.events.append(TrackEvent("child", child_at + child.onset_ms, child_at + child.audio.duration_ms,
                                       result.response))
         self._last, self._last_start = child, child_at
-        return Exchange(transcript, timing, result, child)
+        return Exchange(transcript, timing, result, child, waited)
 
     def _ms_to_samples(self, ms: int) -> int:
         return round(self.track.sample_rate * ms / 1000)

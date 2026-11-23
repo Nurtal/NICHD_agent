@@ -12,7 +12,7 @@ from nichd_sim.realization import Realization
 from nichd_sim.scenario import Scenario, ScenarioError, load_scenario
 from pydantic import BaseModel, ValidationError
 
-from nichd_sim.session import LOG_FORMAT, Session, SessionLog
+from nichd_sim.session import LOG_FORMAT, WAIT, Session, SessionLog
 
 
 class ReplayError(RuntimeError):
@@ -52,7 +52,7 @@ class _LoggedClassifier:
     """Returns the logged classifications, in order."""
 
     def __init__(self, log: SessionLog):
-        self._items = [t.classification for t in log.turns]
+        self._items = [t.classification for t in log.turns if t.kind != WAIT]  # waits are not classified
 
     def classify(self, utterance: str, context: ClassificationContext) -> Classification:
         return self._items.pop(0)
@@ -92,7 +92,10 @@ def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
     report = ReplayReport(turns=len(log.turns))
     for original in log.turns:
         try:
-            session.turn(original.utterance, timing=original.timing)
+            if original.kind == WAIT:
+                session.wait(timing=original.timing)
+            else:
+                session.turn(original.utterance, timing=original.timing)
         except ReplayError as e:
             report.mismatches.append(f"tour {original.index} : {e}")
             break

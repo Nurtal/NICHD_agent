@@ -15,9 +15,6 @@
 | A9 | s08, 3 récits puis 3 oui/non vrais : omission / déni / feinte d'ignorance / couverture / minimisation | 7% / 4% / 0% / 41% / 48% (n = 417) | omissions > dénis (Talwar et al., 2004) | oui |
 | A8 | s08 : faits protégés révélés après 4 récits, sans / avec promesse (sur 6) | 1.83 / 2.73 | plus de faits révélés avec la promesse | oui |
 | A9 | s08 : la vérité échappe à la question de suite sur un mensonge, à 5 / 8 / 11 ans | 34% / 18% / 10% | décroissant avec l'âge | oui |
+| A12 | s01 : unités vraies ajoutées par un tour d'attente après deux récits (même seed) | +0.64 ; 64% des enfants complètent | > 0, souvent | oui |
 | A10 | s02 : signes d'émotion au 4ᵉ récit, sans / avec 3 énoncés de soutien | 0.17 / 0.20 | plus de signes avec le soutien | oui |
 | A11 | s02 : variation d'activation au tour qui précède le dévoilement | +0.090 | hausse avant le dévoilement | oui |
-
-**Pas encore mesurables** (champs ou mécanismes à venir) :
-
-- A12 : un silence de 10 s fait compléter la réponse (lot 5).
