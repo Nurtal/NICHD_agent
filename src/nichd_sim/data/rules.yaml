@@ -1,0 +1,598 @@
+# Catalogue des règles du modèle (panneau « Règles du modèle »).
+#
+# Une règle regroupe les paramètres du registre (parameters.yaml) qui portent un même
+# comportement de l'enfant. Chaque paramètre appartient à une seule règle.
+#
+# - `summary` : la règle en une phrase « si… alors… ».
+# - `evidence` : `tendance publiée` (la littérature donne le sens de l'effet, la valeur est
+#   estimée) ou `choix de modélisation` (aucune donnée directe).
+# - `params` : `label` (nom du curseur), `primary` (curseur visible sans déplier), `range` [min, max, pas] pour les
+#   curseurs (toutes les clés d'un paramètre-dictionnaire, ou les deux bornes d'une paire).
+#   Sans `range`, le paramètre est affiché sans être réglable.
+# - `toggle: false` : mécanique de base, réglable mais pas désactivable.
+# - `when_off` : valeurs qui éteignent la règle ; pour un paramètre absent de `when_off`, la valeur
+#   `neutral` du registre. Un dictionnaire partiel ne remplace que ses clés.
+# - `refs` : clés de references.yaml.
+
+families:
+  recit: Récit libre
+  questions: Questions fermées et suggestibilité
+  dynamique: Soutien, rapport et réticence
+  divulgation: Dévoilement
+  mensonge: Dissimulation et mensonge
+  activation: Émotion (activation)
+  diction: Hésitations et voix
+  corps: Corps et regard
+
+rules:
+  # --- Récit libre -------------------------------------------------------------
+  invitation_size:
+    title: Quantité de détails par invitation
+    family: recit
+    summary: >
+      Si l'interviewer pose une invitation ouverte, alors l'enfant livre quelques détails
+      nouveaux, plus avec l'âge et la verbosité.
+    evidence: tendance publiée
+    toggle: false
+    params:
+      units_per_invitation: {label: "Détails nouveaux par invitation", primary: true, range: [1, 8, 1]}
+      verbosity_multiplier_range: {label: "Effet de la verbosité (min – max)", range: [0.1, 3.0, 0.1]}
+    refs: [lamb2003]
+
+  reluctance_informativeness:
+    title: La réticence appauvrit le récit
+    family: recit
+    summary: Si l'enfant est réticent, alors il donne moins de détails à chaque invitation.
+    evidence: tendance publiée
+    params:
+      reluctance_informativeness_weight: {label: "Perte de détails due à la réticence", primary: true, range: [0, 1, 0.05]}
+    refs: [blasbalg2018]
+
+  contamination_recall:
+    title: Un faux détail intégré revient dans le récit
+    family: recit
+    summary: >
+      Si l'enfant a accepté un détail faux suggéré plus tôt, alors il peut le redire
+      spontanément dans son récit libre.
+    evidence: choix de modélisation
+    params:
+      p_contamination_recall: {label: "Probabilité de redire un faux détail", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_contamination_recall: 0}
+    refs: [ceci_bruck1993]
+
+  closure_reveal:
+    title: « Autre chose ? » fait sortir un détail
+    family: recit
+    summary: >
+      Si l'interviewer demande s'il y a autre chose, alors l'enfant ajoute parfois un détail
+      encore non dit.
+    evidence: choix de modélisation
+    params:
+      p_closure_reveal: {label: "Probabilité d'un détail à « autre chose ? »", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_closure_reveal: 0}
+    refs: []
+
+  wait_turn:
+    title: Attendre en silence fait continuer l'enfant (A12)
+    family: recit
+    summary: >
+      Si l'interviewer laisse un silence après la réponse, alors l'enfant reprend souvent et
+      ajoute de l'information (jamais un dévoilement).
+    evidence: tendance publiée
+    params:
+      p_wait_elaboration: {label: "Probabilité de reprendre après un silence", primary: true, range: [0, 1, 0.05]}
+      wait_turn_ms: {label: "Silence avant reprise (ms, mode vocal)", range: [2000, 15000, 500]}
+    refs: [rezmer2020]
+
+  # --- Questions fermées et suggestibilité -------------------------------------
+  forced_choice:
+    title: Questions à choix
+    family: questions
+    summary: >
+      Si la question propose des options, alors l'enfant choisit la bonne si elle y est,
+      sinon souvent la dernière entendue (effet de récence), surtout jeune.
+    evidence: tendance publiée
+    toggle: false
+    params:
+      p_correct_option: {label: "Choisir la bonne option", primary: true, range: [0, 1, 0.05]}
+      p_recency: {label: "Choisir la dernière option (récence)", primary: true, range: [0, 1, 0.05]}
+    refs: [brown_lamb2015, fritzley_lee2003, mehrani_peterson2015]
+
+  yes_bias:
+    title: Biais du « oui »
+    family: questions
+    summary: >
+      Si on lui pose une question oui/non sur quelque chose de faux, alors le jeune enfant
+      répond parfois « oui ».
+    evidence: tendance publiée
+    params:
+      p_yes_bias: {label: "Faux « oui »", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_yes_bias: 0}
+    refs: [fritzley_lee2003, okanda_itakura2010]
+
+  suggestion_acceptance:
+    title: Acceptation d'une suggestion
+    family: questions
+    summary: >
+      Si la question suggère une information fausse, alors l'enfant peut l'accepter, d'autant
+      plus qu'il est jeune et suggestible.
+    evidence: tendance publiée
+    params:
+      p_acquiesce: {label: "Accepter une suggestion fausse", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_acquiesce: 0}
+    refs: [ceci_bruck1993]
+
+  integration:
+    title: Intégration d'une fausse information
+    family: questions
+    summary: >
+      Si l'enfant a accepté ou choisi une réponse fausse, alors il peut l'intégrer à son
+      souvenir et la répéter ensuite.
+    evidence: tendance publiée
+    params:
+      p_integration: {label: "Intégrer la réponse fausse au souvenir", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_integration: 0}
+    refs: [bruck_melnyk2004]
+
+  confabulation:
+    title: Invention sur une question hors scénario
+    family: questions
+    summary: >
+      Si une question directive porte sur un détail que l'enfant ne connaît pas, alors il
+      invente parfois une réponse au lieu de dire « je sais pas ».
+    evidence: tendance publiée
+    params:
+      p_confabulation: {label: "Inventer une réponse", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_confabulation: 0}
+    refs: [waterman2001]
+
+  suggestibility_profile:
+    title: Poids de la suggestibilité de l'enfant
+    family: questions
+    toggle: false
+    summary: >
+      Plus l'enfant est suggestible (profil, consignes, soutien), plus les probabilités
+      d'erreur aux questions fermées sont multipliées.
+    evidence: choix de modélisation
+    params:
+      suggestibility_multiplier_range: {label: "Effet de la suggestibilité (min – max)", primary: true, range: [0, 3, 0.1]}
+    refs: []
+
+  repetition:
+    title: Question répétée
+    family: questions
+    summary: >
+      Si l'interviewer répète une question fermée, alors l'enfant change parfois sa réponse,
+      et invente de plus en plus sur une question sans réponse possible.
+    evidence: tendance publiée
+    params:
+      p_change_on_repeat: {label: "Changer de réponse à la répétition", primary: true, range: [0, 1, 0.05]}
+      repeat_confabulation_gain: {label: "Hausse de l'invention à chaque répétition (×)", range: [1, 2, 0.05]}
+    refs: [krahenbuhl2009]
+
+  unelaborated_yes:
+    title: « Est-ce que tu sais… ? » → « oui » sans détail (A5)
+    family: questions
+    summary: >
+      Si l'interviewer demande « est-ce que tu sais / te rappelles… ? », alors le jeune enfant
+      répond souvent juste « oui », sans donner l'information.
+    evidence: tendance publiée
+    params:
+      p_unelaborated_yes: {label: "« Oui » sans détail", primary: true, range: [0, 1, 0.05]}
+    refs: [evans2014, evans2017]
+
+  # --- Soutien, rapport et réticence -------------------------------------------
+  support_reluctance:
+    title: Le soutien et le rapport font baisser la réticence
+    family: dynamique
+    summary: >
+      Si l'interviewer soutient l'enfant ou construit le rapport, alors sa réticence baisse.
+    evidence: tendance publiée
+    params:
+      support_reluctance_drop: {label: "Baisse de réticence par soutien", primary: true, range: [0, 0.3, 0.01]}
+      rapport_reluctance_drop: {label: "Baisse de réticence par rapport", primary: true, range: [0, 0.3, 0.01]}
+    when_off: {support_reluctance_drop: 0, rapport_reluctance_drop: 0}
+    refs: [hershkowitz2014, ahern2014]
+
+  support_acquiescence:
+    title: Le soutien rend moins suggestible (A6)
+    family: dynamique
+    summary: >
+      Si l'interviewer soutient l'enfant, alors il acquiesce moins aux suggestions (effet
+      plafonné à quelques soutiens).
+    evidence: tendance publiée
+    params:
+      support_acquiescence_drop: {label: "Baisse d'acquiescement par soutien", primary: true, range: [0, 0.3, 0.01]}
+      max_effective_supports: {label: "Soutiens qui comptent (au plus)", range: [1, 10, 1]}
+    refs: [saywitz2019]
+
+  ground_rules:
+    title: Les règles de base rendent moins suggestible
+    family: dynamique
+    summary: >
+      Si l'interviewer énonce les règles de base (« tu peux dire je sais pas », « corrige-moi »),
+      alors l'enfant acquiesce moins aux questions fermées.
+    evidence: tendance publiée
+    params:
+      ground_rule_acquiescence_drop: {label: "Baisse d'acquiescement par règle", primary: true, range: [0, 0.4, 0.01]}
+      max_effective_ground_rules: {label: "Règles qui comptent (au plus)", range: [1, 10, 1]}
+    when_off: {ground_rule_acquiescence_drop: 0}
+    refs: [brown_lamb2015]
+
+  ground_rules_practice:
+    title: Une règle s'apprend en la pratiquant (A7)
+    family: dynamique
+    summary: >
+      Si la règle est seulement énoncée, sans être pratiquée, alors elle agit moins ; les plus
+      jeunes en profitent moins.
+    evidence: tendance publiée
+    params:
+      ground_rule_stated_factor: {label: "Efficacité d'une règle seulement énoncée", primary: true, range: [0, 1, 0.05]}
+      ground_rule_age_factor: {label: "Efficacité d'une règle selon l'âge", range: [0, 1, 0.05]}
+    refs: [earhart2014, brubacher2015, dickinson2015]
+
+  narrative_practice:
+    title: L'entraînement narratif allonge les réponses
+    family: dynamique
+    summary: >
+      Si l'interviewer fait raconter un événement neutre avant les faits, alors l'enfant
+      donne ensuite des réponses plus longues.
+    evidence: tendance publiée
+    params:
+      narrative_practice_verbosity_boost: {label: "Hausse de verbosité par tour de pratique", primary: true, range: [0, 0.4, 0.01]}
+      max_effective_practice_turns: {label: "Tours de pratique qui comptent (au plus)", range: [1, 10, 1]}
+    when_off: {narrative_practice_verbosity_boost: 0}
+    refs: [sternberg1997]
+
+  episodic_practice:
+    title: Seule la pratique épisodique compte (A13)
+    family: dynamique
+    summary: >
+      Si l'entraînement narratif porte sur un événement générique (« d'habitude… ») plutôt
+      que sur un épisode précis, alors il n'allonge pas les réponses.
+    evidence: tendance publiée
+    params:
+      generic_practice_counts: {label: "La pratique générique compte aussi", primary: true}
+    refs: [brubacher2011]
+
+  refusal_reaction:
+    title: Réaction de l'interviewer à un refus (A1)
+    family: dynamique
+    summary: >
+      Si l'interviewer accepte un « je sais pas » ou un refus, alors la réticence baisse ; s'il
+      repose la même question fermée, la réticence monte et l'enfant acquiesce davantage.
+    evidence: tendance publiée
+    params:
+      acceptance_reluctance_drop: {label: "Baisse de réticence si le refus est accepté", primary: true, range: [0, 0.3, 0.01]}
+      rejection_reluctance_rise: {label: "Hausse de réticence si la question est reposée", primary: true, range: [0, 0.3, 0.01]}
+      rejection_acquiescence_boost: {label: "Hausse d'acquiescement si la question est reposée", range: [0, 1, 0.05]}
+    refs: [bucken2026, earhart2014, ahern2014]
+
+  pressure_cost:
+    title: La pression augmente la réticence (A3)
+    family: dynamique
+    summary: >
+      Si l'interviewer pose une question suggestive ou à choix sur les faits, alors la
+      réticence de l'enfant augmente.
+    evidence: tendance publiée
+    params:
+      pressure_reluctance_rise: {label: "Hausse de réticence par question de pression (×)", primary: true, range: [0, 0.5, 0.01]}
+    refs: [hershkowitz2006, katz2012]
+
+  # --- Dévoilement ---------------------------------------------------------------
+  disclosure_gate:
+    title: Seuil de dévoilement
+    family: divulgation
+    toggle: false
+    summary: >
+      L'enfant ne dévoile les faits que lorsque les questions sur le sujet ont accumulé assez
+      de « pression », proportionnellement à sa réticence ; au-delà d'une réticence très
+      forte, il ne dévoile pas.
+    evidence: choix de modélisation
+    params:
+      disclosure_threshold_scale: {label: "Seuil de dévoilement (× réticence)", primary: true, range: [1, 15, 0.5]}
+      no_disclosure_reluctance: {label: "Réticence au-delà de laquelle l'enfant ne dévoile pas", primary: true, range: [0.5, 1, 0.01]}
+      disclosure_pressure: {label: "Pression de chaque type de question", range: [0, 4, 0.1]}
+    refs: [lamb2007, hershkowitz2006]
+
+  pre_disclosure:
+    title: Le corps annonce le dévoilement (A11)
+    family: divulgation
+    summary: >
+      Si l'enfant approche du dévoilement, alors son activation monte avant qu'il ne parle :
+      le non-verbal précède le verbal.
+    evidence: tendance publiée
+    params:
+      pre_disclosure_fraction: {label: "Proximité du dévoilement qui active le corps", primary: true, range: [0, 1, 0.05]}
+      pre_disclosure_rise: {label: "Hausse d'activation avant le dévoilement", primary: true, range: [0, 0.4, 0.01]}
+    refs: [karni_visel2023]
+
+  # --- Dissimulation et mensonge -------------------------------------------------
+  concealment_dynamics:
+    title: Le soutien fait céder le secret, la pression le renforce
+    family: mensonge
+    summary: >
+      Si l'interviewer soutient l'enfant ou construit le rapport, alors sa volonté de cacher
+      baisse ; s'il insiste par des questions suggestives sur le secret, elle monte.
+    evidence: tendance publiée
+    params:
+      support_concealment_drop: {label: "Baisse de dissimulation par soutien", primary: true, range: [0, 0.4, 0.01]}
+      rapport_concealment_drop: {label: "Baisse de dissimulation par rapport", range: [0, 0.4, 0.01]}
+      pressure_concealment_rise: {label: "Hausse de dissimulation par pression", primary: true, range: [0, 0.4, 0.01]}
+    when_off: {support_concealment_drop: 0, rapport_concealment_drop: 0, pressure_concealment_rise: 0}
+    refs: [lyon_dorado2008, hershkowitz2014, bottoms2002]
+
+  promise:
+    title: La promesse de dire la vérité (A8)
+    family: mensonge
+    summary: >
+      Si l'enfant a promis de dire la vérité, alors sa volonté de cacher baisse nettement.
+    evidence: tendance publiée
+    params:
+      promise_concealment_drop: {label: "Baisse de dissimulation après la promesse", primary: true, range: [0, 0.5, 0.01]}
+    refs: [talwar2004, lyon_dorado2008]
+
+  leak:
+    title: La vérité qui s'échappe (A9)
+    family: mensonge
+    summary: >
+      Si l'enfant ment, alors il laisse parfois échapper un fragment de vérité, plus souvent
+      quand il est jeune.
+    evidence: tendance publiée
+    params:
+      p_leak: {label: "Probabilité de laisser échapper la vérité", primary: true, range: [0, 1, 0.05]}
+    refs: [talwar_lee2002, talwar2007]
+
+  retraction:
+    title: Rétractation du mensonge
+    family: mensonge
+    summary: >
+      Si la volonté de cacher passe sous un seuil et que l'interviewer soutient ou invite,
+      alors l'enfant peut revenir sur un mensonge.
+    evidence: choix de modélisation
+    params:
+      p_retraction: {label: "Probabilité de se rétracter", primary: true, range: [0, 1, 0.05]}
+      retraction_threshold: {label: "Dissimulation sous laquelle la rétractation est possible", primary: true, range: [0, 1, 0.05]}
+    when_off: {p_retraction: 0}
+    refs: []
+
+  deception_load:
+    title: Mentir demande un effort (hésitation)
+    family: mensonge
+    summary: >
+      Si l'enfant ment, alors l'effort de tenir le mensonge ajoute un peu d'hésitation,
+      moins pour un mensonge déjà répété ; jamais de signe corporel.
+    evidence: tendance publiée
+    params:
+      deception_load: {label: "Effort de chaque forme de mensonge", primary: true, range: [0, 1, 0.05]}
+      rehearsed_lie_factor: {label: "Effort d'un mensonge déjà dit (×)", range: [0, 1, 0.05]}
+    when_off: {deception_load: {omission: 0, false_deny: 0, feigned_ignorance: 0, minimization: 0, cover_story: 0}}
+    refs: [vrij2008, talwar_lee2008, depaulo2003]
+
+  # --- Émotion (activation) ------------------------------------------------------
+  arousal_dynamics:
+    title: Activation émotionnelle
+    family: activation
+    toggle: false
+    summary: >
+      L'activation de l'enfant part d'un niveau de base (plus haut s'il est réticent), monte
+      avec les questions sur les faits et la pression, baisse avec le soutien, et revient
+      vers la base à chaque tour.
+    evidence: choix de modélisation
+    params:
+      arousal_base: {label: "Activation de base", primary: true, range: [0, 1, 0.05]}
+      arousal_reluctance_weight: {label: "Activation ajoutée par la réticence", range: [0, 1, 0.05]}
+      arousal_decay: {label: "Retour vers la base à chaque tour", primary: true, range: [0, 1, 0.05]}
+      arousal_rise: {label: "Hausses d'activation", range: [0, 0.5, 0.01]}
+      arousal_drop: {label: "Baisses d'activation", range: [0, 0.5, 0.01]}
+    refs: [hershkowitz2014]
+
+  expressivity:
+    title: Le soutien libère l'expression des émotions (A10)
+    family: activation
+    summary: >
+      Si l'interviewer soutient l'enfant, alors il ose davantage montrer ses émotions
+      (larmes, tremblements) ; la pression a l'effet inverse.
+    evidence: tendance publiée
+    params:
+      expressivity_change: {label: "Effet du soutien, du rapport et de la pression", primary: true, range: [-0.5, 0.5, 0.01]}
+      expressivity_gain: {label: "Amplification des émotions visibles", primary: true, range: [0, 3, 0.1]}
+    refs: [karni_visel2023]
+
+  expression_style:
+    title: Style d'expression (agité, mixte, figé)
+    family: activation
+    toggle: false
+    summary: >
+      Selon son style, l'enfant montre son activation par le mouvement (agité) ou au
+      contraire se fige : un enfant calme n'est pas un enfant à qui rien n'est arrivé.
+    evidence: choix de modélisation
+    params:
+      expression_style_default: {label: "Style par défaut", primary: true}
+      expression_gains: {label: "Mouvement et figement par style"}
+    refs: [sayfan2008]
+
+  # --- Hésitations et voix -------------------------------------------------------
+  onset_latency:
+    title: Délai avant de répondre
+    family: diction
+    toggle: false
+    summary: >
+      L'enfant met un temps avant de parler, plus court avec l'âge et plus long quand la
+      réponse lui coûte (mémoire, émotion, confusion).
+    evidence: tendance publiée
+    params:
+      delivery_base_onset_ms: {label: "Délai de base (ms)", primary: true, range: [200, 3000, 50]}
+      delivery_onset_span_ms: {label: "Délai ajouté par l'hésitation maximale (ms)", primary: true, range: [0, 6000, 100]}
+      delivery_onset_noise_ms: {label: "Variabilité du délai (ms)", range: [0, 1000, 50]}
+      delivery_min_onset_ms: {label: "Délai minimal (ms)", range: [0, 1000, 50]}
+    refs: [stivers2009, casillas2016]
+
+  hesitation_causes:
+    title: Ce qui fait hésiter
+    family: diction
+    toggle: false
+    summary: >
+      L'hésitation combine l'effort de mémoire, l'émotion, la confusion et l'effort de mentir,
+      chacun avec son poids.
+    evidence: tendance publiée
+    params:
+      hesitation_weights: {label: "Poids de chaque cause d'hésitation", primary: true, range: [0, 1, 0.05]}
+    refs: [sporer_schwandt2006, vrij2008]
+
+  memory_effort:
+    title: Effort de mémoire
+    family: diction
+    summary: >
+      Si la question porte sur un détail difficile à retrouver (quand, combien de fois, un
+      détail périphérique), alors l'enfant hésite davantage, surtout jeune.
+    evidence: tendance publiée
+    params:
+      retrieval_difficulty: {label: "Difficulté de chaque type de détail", primary: true, range: [0, 1, 0.05]}
+      retrieval_peripheral_bonus: {label: "Difficulté ajoutée d'un détail périphérique", range: [0, 1, 0.05]}
+      retrieval_age_factor: {label: "Effet de l'âge sur l'effort de mémoire (×)", range: [0, 1.5, 0.05]}
+      retrieval_act_load: {label: "Effort de « je sais pas » et d'une invention", range: [0, 1, 0.05]}
+    when_off:
+      retrieval_difficulty: {who: 0, what: 0, where: 0, when: 0, frequency: 0}
+      retrieval_peripheral_bonus: 0
+      retrieval_act_load: {dont_know: 0, confabulate: 0}
+    refs: [friedman1993, lamb2008]
+
+  confusion:
+    title: Confusion devant une question compliquée
+    family: diction
+    summary: >
+      Si la question est composée, confuse ou propose beaucoup d'options, alors l'enfant
+      hésite et s'agite davantage.
+    evidence: tendance publiée
+    params:
+      confusion_load: {label: "Confusion par forme de question", primary: true, range: [0, 1, 0.05]}
+    when_off: {confusion_load: {confusion: 0, compound: 0, many_options: 0}}
+    refs: [lamb2008]
+
+  affect_hesitation:
+    title: L'émotion fait hésiter et baisser la voix
+    family: diction
+    summary: >
+      Si la réponse touche les faits, alors l'émotion (selon la réticence et l'activation)
+      fait hésiter l'enfant et baisser la voix jusqu'au chuchotement.
+    evidence: choix de modélisation
+    params:
+      affect_base: {label: "Émotion de base sur les faits", primary: true, range: [0, 1, 0.05]}
+      arousal_affect_weight: {label: "Émotion ajoutée par l'activation", primary: true, range: [0, 1, 0.05]}
+      affect_volume_thresholds: {label: "Émotion pour voix basse – chuchotement", range: [0, 1, 0.05]}
+    when_off: {affect_base: 0, arousal_affect_weight: 0}
+    refs: []
+
+  pauses_fillers:
+    title: Pauses, « euh » et débit ralenti
+    family: diction
+    summary: >
+      Si l'enfant hésite, alors il marque des pauses, dit « euh » et parle plus lentement.
+    evidence: choix de modélisation
+    params:
+      delivery_max_pauses: {label: "Pauses au plus", primary: true, range: [0, 6, 1]}
+      delivery_max_fillers: {label: "« Euh » au plus", primary: true, range: [0, 6, 1]}
+      delivery_pause_ms: {label: "Durée des pauses (ms)", range: [100, 4000, 50]}
+      delivery_rate_drop: {label: "Ralentissement maximal du débit", range: [0, 0.6, 0.01]}
+    when_off: {delivery_max_pauses: 0, delivery_max_fillers: 0, delivery_rate_drop: 0}
+    refs: [sporer_schwandt2006]
+
+  arousal_voice:
+    title: L'émotion dans la voix (débit, faux départs, tremblement)
+    family: diction
+    summary: >
+      Si l'enfant est très activé, alors il parle plus vite, bafouille et sa voix tremble,
+      selon son style d'expression.
+    evidence: choix de modélisation
+    params:
+      delivery_fast_arousal: {label: "Activation à partir de laquelle le débit s'accélère", range: [0, 1, 0.05]}
+      delivery_rate_rise: {label: "Accélération maximale du débit", primary: true, range: [0, 0.6, 0.01]}
+      false_start_weights: {label: "Poids des causes de faux départ", range: [0, 1, 0.05]}
+      delivery_max_false_starts: {label: "Faux départs au plus", primary: true, range: [0, 3, 1]}
+      tremor_affect_threshold: {label: "Émotion à partir de laquelle la voix tremble", primary: true, range: [0, 1, 0.05]}
+    when_off: {delivery_rate_rise: 0, delivery_max_false_starts: 0, tremor_affect_threshold: 1.0}
+    refs: [sporer_schwandt2006]
+
+  # --- Corps et regard -------------------------------------------------------------
+  gaze_recall:
+    title: Regard détourné pendant l'effort de mémoire
+    family: corps
+    summary: >
+      Si l'enfant cherche un souvenir difficile, alors il détourne les yeux pendant qu'il
+      réfléchit.
+    evidence: tendance publiée
+    params:
+      gaze_recall_weight: {label: "Poids de l'effort de mémoire dans le regard détourné", primary: true, range: [0, 2, 0.05]}
+    when_off: {gaze_recall_weight: 0}
+    refs: [doherty_sneddon2005, phelps2006]
+
+  gaze_emotion:
+    title: Regard fuyant ou baissé sous l'émotion
+    family: corps
+    summary: >
+      Si l'enfant est activé ou confus, alors il fuit le regard ou baisse les yeux ; calme,
+      il regarde l'interviewer.
+    evidence: tendance publiée
+    params:
+      gaze_averted_weights: {label: "Regard détourné : poids de l'activation et de la confusion", primary: true, range: [0, 2, 0.05]}
+      gaze_down_weights: {label: "Regard baissé : poids de l'activation et part de fond", primary: true, range: [0, 2, 0.05]}
+      gaze_steady_floor: {label: "Part minimale du regard posé", range: [0.01, 1, 0.01]}
+    when_off:
+      gaze_averted_weights: {arousal: 0, confusion: 0}
+      gaze_down_weights: {arousal: 0}
+    refs: [doherty_sneddon2005, katz2012]
+
+  withdrawal:
+    title: La réticence se voit dans le corps
+    family: corps
+    summary: >
+      Si l'enfant est réticent, alors il se replie (bras serrés, regard fuyant), même sans
+      forte émotion.
+    evidence: tendance publiée
+    params:
+      withdrawal_reluctance_weight: {label: "Repli dû à la réticence", primary: true, range: [0, 1, 0.05]}
+    refs: [katz2012]
+
+  body_cues:
+    title: Signes corporels de stress
+    family: corps
+    summary: >
+      Si l'activation dépasse le seuil d'une famille de signes (tension, respiration,
+      tremblement, retrait, figement, larmes), alors ce signe peut apparaître, d'autant plus
+      fort que l'activation est haute.
+    evidence: choix de modélisation
+    params:
+      demeanor_presence_gain: {label: "Fréquence des signes (×)", primary: true, range: [0, 3, 0.1]}
+      cue_arousal_thresholds: {label: "Seuil d'activation de chaque famille de signes", primary: true, range: [0, 1, 0.05]}
+      demeanor_tears_arousal: {label: "Activation à partir de laquelle viennent les larmes", range: [0, 1, 0.05]}
+      withdrawal_arousal_weight: {label: "Repli dû à l'activation", range: [0, 2, 0.05]}
+      demeanor_max_cues: {label: "Signes montrés au plus par tour", range: [0, 6, 1]}
+      demeanor_intensity_bounds: {label: "Niveau pour « net » – « fort »", range: [0, 1, 0.05]}
+    when_off: {demeanor_presence_gain: 0}
+    refs: [katz2012, sayfan2008]
+
+  fidget:
+    title: Agitation (jambes, mains, manche)
+    family: corps
+    summary: >
+      L'enfant bouge un peu même calme (surtout jeune), et davantage quand il est activé ou
+      confus.
+    evidence: choix de modélisation
+    params:
+      demeanor_fidget_base: {label: "Agitation de fond", primary: true, range: [0, 1, 0.05]}
+      fidget_weights: {label: "Agitation due à l'activation et à la confusion", range: [0, 2, 0.05]}
+    when_off: {demeanor_fidget_base: 0, fidget_weights: {arousal: 0, confusion: 0}}
+    refs: []
+
+  ease:
+    title: Détente et sourire quand l'enfant est calme
+    family: corps
+    summary: >
+      Si l'activation est basse, alors l'enfant paraît détendu, et sourit pendant les
+      échanges légers.
+    evidence: choix de modélisation
+    params:
+      demeanor_ease_arousal: {label: "Activation sous laquelle l'enfant paraît détendu", primary: true, range: [0, 1, 0.01]}
+    when_off: {demeanor_ease_arousal: 0}
+    refs: []

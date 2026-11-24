@@ -1,0 +1,12 @@
+name: Sans signaux non verbaux
+description: >
+  Le corps de l'enfant ne montre plus rien de son état : ni regard détourné (mémoire,
+  émotion, réticence), ni agitation, ni signes de stress, ni détente. Seuls la voix et les
+  mots portent l'information. Pour entraîner l'écoute, ou mesurer ce qu'apporte le corps.
+disabled:
+  - gaze_recall
+  - gaze_emotion
+  - withdrawal
+  - body_cues
+  - fidget
+  - ease

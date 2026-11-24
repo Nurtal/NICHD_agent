@@ -1,0 +1,20 @@
+name: Moteur de base
+description: >
+  Les dynamiques d'interaction tirées de la littérature (lots 0 à 5 des adaptations) sont
+  éteintes : il reste la mécanique de base du moteur v1 (dévoilement, suggestibilité, mensonge,
+  activation et corps). Utile pour comparer ou isoler l'effet d'une dynamique.
+disabled:
+  - reluctance_informativeness
+  - wait_turn
+  - repetition
+  - unelaborated_yes
+  - support_acquiescence
+  - ground_rules_practice
+  - episodic_practice
+  - refusal_reaction
+  - pressure_cost
+  - pre_disclosure
+  - promise
+  - leak
+  - expressivity
+  - withdrawal

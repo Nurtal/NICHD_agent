@@ -177,27 +177,29 @@ def make_demeanor(
     ease_below = p["demeanor_ease_arousal"]
     shows = 1.0 + p["expressivity_gain"] * max(0.0, min(1.0, expressivity))
     disengaged = p["withdrawal_reluctance_weight"] * max(0.0, min(1.0, reluctance))
+    thr, fidget = p["cue_arousal_thresholds"], p["fidget_weights"]
+    averted, down = p["gaze_averted_weights"], p["gaze_down_weights"]
 
     def above(x: float, lo: float) -> float:
         return max(0.0, (x - lo) / (1.0 - lo)) if x > lo else 0.0
 
     levels: dict[CueFamily, tuple[float, list[Cue]]] = {
         CueFamily.FIDGET: (
-            motor * (p["demeanor_fidget_base"] + 0.8 * a + 0.3 * confusion),
+            motor * (p["demeanor_fidget_base"] + fidget["arousal"] * a + fidget["confusion"] * confusion),
             [Cue.FIDGET_LEGS, Cue.FIDGET_HANDS, Cue.FIDGET_OBJECT],
         ),
-        CueFamily.TENSION: (shows * motor * above(a, 0.35), [Cue.TENSION_SHOULDERS, Cue.TENSION_FISTS, Cue.TENSION_JAW]),
+        CueFamily.TENSION: (shows * motor * above(a, thr["tension"]), [Cue.TENSION_SHOULDERS, Cue.TENSION_FISTS, Cue.TENSION_JAW]),
         CueFamily.BREATHING: (
-            above(a, 0.45),
+            above(a, thr["breathing"]),
             [Cue.BREATHING_FAST] if freeze_gain < 0.5 else [Cue.BREATHING_HELD] if motor < 0.5
             else [Cue.BREATHING_FAST, Cue.BREATHING_HELD],
         ),
-        CueFamily.TREMOR: (shows * motor * above(a, 0.6), [Cue.TREMOR_HANDS, Cue.TREMOR_CHIN]),
-        CueFamily.WITHDRAWAL: (0.7 * above(a, 0.3) + disengaged, [Cue.WITHDRAWAL_ARMS, Cue.WITHDRAWAL_CURLED]),
-        CueFamily.FREEZE: (freeze_gain * above(a, 0.4), [Cue.FREEZE_STILL, Cue.FREEZE_ABSENT]),
+        CueFamily.TREMOR: (shows * motor * above(a, thr["tremor"]), [Cue.TREMOR_HANDS, Cue.TREMOR_CHIN]),
+        CueFamily.WITHDRAWAL: (p["withdrawal_arousal_weight"] * above(a, thr["withdrawal"]) + disengaged, [Cue.WITHDRAWAL_ARMS, Cue.WITHDRAWAL_CURLED]),
+        CueFamily.FREEZE: (freeze_gain * above(a, thr["freeze"]), [Cue.FREEZE_STILL, Cue.FREEZE_ABSENT]),
         CueFamily.TEARS: (shows * (0.6 + 0.4 * motor) * above(a, tears_from), [Cue.TEARS_WET_EYES, Cue.TEARS_CRYING]),
         CueFamily.EASE: (
-            max(0.0, (ease_below - a) / ease_below) * (1.0 - 0.5 * confusion),
+            (max(0.0, (ease_below - a) / ease_below) if ease_below > 0 else 0.0) * (1.0 - 0.5 * confusion),
             [Cue.EASE_SMILE, Cue.EASE_RELAXED] if sociable else [Cue.EASE_RELAXED],
         ),
     }
@@ -217,10 +219,11 @@ def make_demeanor(
     # blank when frozen; steady when calm. Never from the lie.
     gaze = _pick(
         [
-            (Cue.GAZE_STEADY, max(0.05, (1.0 - a) * (1.0 - retrieval))),
-            (Cue.GAZE_AVERTED, 0.6 * retrieval + 0.3 * a + 0.2 * confusion + disengaged),
-            (Cue.GAZE_DOWN, 0.7 * a + 0.1),
-            (Cue.GAZE_BLANK, freeze_gain * above(a, 0.4)),
+            (Cue.GAZE_STEADY, max(p["gaze_steady_floor"], (1.0 - a) * (1.0 - retrieval))),
+            (Cue.GAZE_AVERTED,
+             p["gaze_recall_weight"] * retrieval + averted["arousal"] * a + averted["confusion"] * confusion + disengaged),
+            (Cue.GAZE_DOWN, down["arousal"] * a + down["base"]),
+            (Cue.GAZE_BLANK, freeze_gain * above(a, thr["freeze"])),
         ],
         rng.random(),
     )

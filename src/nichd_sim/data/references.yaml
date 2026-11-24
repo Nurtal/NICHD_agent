@@ -1,0 +1,127 @@
+# Bibliographie du catalogue des règles (rules.yaml). Chaque DOI a été vérifié sur Crossref
+# (titre et année). Une référence sans DOI (ouvrage) reste sans lien.
+
+ahern2014:
+  cite: "Ahern, Hershkowitz, Lamb, Blasbalg & Winstanley (2014). Support and reluctance in the pre-substantive phase of alleged child abuse victim investigative interviews. Behavioral Sciences & the Law, 32(6)."
+  doi: 10.1002/bsl.2149
+blasbalg2018:
+  cite: "Blasbalg, Hershkowitz & Karni-Visel (2018). Support, reluctance, and production in child abuse investigative interviews. Psychology, Public Policy, and Law, 24(4)."
+  doi: 10.1037/law0000183
+bottoms2002:
+  cite: "Bottoms, Goodman, Schwartz-Kenney & Thomas (2002). Understanding children's use of secrecy in the context of eyewitness reports. Law and Human Behavior, 26(3)."
+  doi: 10.1023/a:1015324304975
+brown_lamb2015:
+  cite: "Brown & Lamb (2015). Can children be useful witnesses? It depends how they are questioned. Child Development Perspectives, 9(4)."
+  doi: 10.1111/cdep.12142
+brubacher2011:
+  cite: "Brubacher, Roberts & Powell (2011). Effects of practicing episodic versus scripted recall on children's subsequent narratives of a repeated event. Psychology, Public Policy, and Law, 17(2)."
+  doi: 10.1037/a0022793
+brubacher2015:
+  cite: "Brubacher, Poole & Dickinson (2015). The use of ground rules in investigative interviews with children: A synthesis and call for research. Developmental Review, 36."
+  doi: 10.1016/j.dr.2015.01.001
+bruck_melnyk2004:
+  cite: "Bruck & Melnyk (2004). Individual differences in children's suggestibility: A review and synthesis. Applied Cognitive Psychology, 18(8)."
+  doi: 10.1002/acp.1070
+bucken2026:
+  cite: "Bücken, Erens, de Ruiter, Raymaekers & Otgaar (2026). Navigating reluctance in Dutch child forensic interviews. Psychology, Public Policy, and Law, 32(3)."
+  doi: 10.1037/law0000484
+casillas2016:
+  cite: "Casillas, Bobb & Clark (2016). Turn-taking, timing, and planning in early language acquisition. Journal of Child Language, 43(6)."
+  doi: 10.1017/s0305000915000689
+ceci_bruck1993:
+  cite: "Ceci & Bruck (1993). Suggestibility of the child witness: A historical review and synthesis. Psychological Bulletin, 113(3)."
+  doi: 10.1037/0033-2909.113.3.403
+depaulo2003:
+  cite: "DePaulo, Lindsay, Malone, Muhlenbruck, Charlton & Cooper (2003). Cues to deception. Psychological Bulletin, 129(1)."
+  doi: 10.1037/0033-2909.129.1.74
+dickinson2015:
+  cite: "Dickinson, Brubacher & Poole (2015). Children's performance on ground rules questions: Implications for forensic interviewing. Law and Human Behavior, 39(1)."
+  doi: 10.1037/lhb0000119
+doherty_sneddon2005:
+  cite: "Doherty-Sneddon & Phelps (2005). Gaze aversion: A response to cognitive or social difficulty? Memory & Cognition, 33(4)."
+  doi: 10.3758/BF03195338
+earhart2014:
+  cite: "Earhart, La Rooy, Brubacher & Lamb (2014). An examination of \"don't know\" responses in forensic interviews with children. Behavioral Sciences & the Law, 32(6)."
+  doi: 10.1002/bsl.2141
+evans2014:
+  cite: "Evans, Stolzenberg, Lee & Lyon (2014). Young children's difficulty with indirect speech acts: Implications for questioning child witnesses. Behavioral Sciences & the Law, 32(6)."
+  doi: 10.1002/bsl.2142
+evans2017:
+  cite: "Evans, Stolzenberg & Lyon (2017). Pragmatic failure and referential ambiguity when attorneys ask child witnesses \"do you know/remember\" questions. Psychology, Public Policy, and Law, 23(2)."
+  doi: 10.1037/law0000116
+friedman1993:
+  cite: "Friedman (1993). Memory for the time of past events. Psychological Bulletin, 113(1)."
+  doi: 10.1037/0033-2909.113.1.44
+fritzley_lee2003:
+  cite: "Fritzley & Lee (2003). Do young children always say yes to yes–no questions? A metadevelopmental study of the affirmation bias. Child Development, 74(5)."
+  doi: 10.1111/1467-8624.00608
+hershkowitz2006:
+  cite: "Hershkowitz, Orbach, Lamb, Sternberg & Horowitz (2006). Dynamics of forensic interviews with suspected abuse victims who do not disclose abuse. Child Abuse & Neglect, 30(7)."
+  doi: 10.1016/j.chiabu.2005.10.016
+hershkowitz2014:
+  cite: "Hershkowitz, Lamb & Katz (2014). Allegation rates in forensic child abuse investigations: Comparing the revised and standard NICHD protocols. Psychology, Public Policy, and Law, 20(3)."
+  doi: 10.1037/a0037391
+karni_visel2023:
+  cite: "Karni-Visel, Hershkowitz, Lamb & Blasbalg (2023). Nonverbal emotions while disclosing child abuse: The role of interviewer support. Child Maltreatment, 28(1)."
+  doi: 10.1177/10775595211063497
+katz2012:
+  cite: "Katz, Hershkowitz, Malloy, Lamb, Atabaki & Spindler (2012). Non-verbal behavior of children who disclose or do not disclose child abuse in investigative interviews. Child Abuse & Neglect, 36(1)."
+  doi: 10.1016/j.chiabu.2011.08.006
+krahenbuhl2009:
+  cite: "Krähenbühl, Blades & Eiser (2009). The effect of repeated questioning on children's accuracy and consistency in eyewitness testimony. Legal and Criminological Psychology, 14(2)."
+  doi: 10.1348/135532508X398549
+lamb2003:
+  cite: "Lamb, Sternberg, Orbach, Esplin, Stewart & Mitchell (2003). Age differences in young children's responses to open-ended invitations in the course of forensic interviews. Journal of Consulting and Clinical Psychology, 71(5)."
+  doi: 10.1037/0022-006X.71.5.926
+lamb2007:
+  cite: "Lamb, Orbach, Hershkowitz, Esplin & Horowitz (2007). A structured forensic interview protocol improves the quality and informativeness of investigative interviews with children. Child Abuse & Neglect, 31(11–12)."
+  doi: 10.1016/j.chiabu.2007.03.021
+lamb2008:
+  cite: "Lamb, Hershkowitz, Orbach & Esplin (2008). Tell Me What Happened: Structured Investigative Interviews of Child Victims and Witnesses. Wiley."
+lyon_dorado2008:
+  cite: "Lyon & Dorado (2008). Truth induction in young maltreated children: The effects of oath-taking and reassurance on true and false disclosures. Child Abuse & Neglect, 32(7)."
+  doi: 10.1016/j.chiabu.2007.08.008
+mehrani_peterson2015:
+  cite: "Mehrani & Peterson (2015). Recency tendency: Responses to forced-choice questions. Applied Cognitive Psychology, 29(3)."
+  doi: 10.1002/acp.3119
+okanda_itakura2010:
+  cite: "Okanda & Itakura (2010). When do children exhibit a \"yes\" bias? Child Development, 81(2)."
+  doi: 10.1111/j.1467-8624.2009.01416.x
+phelps2006:
+  cite: "Phelps, Doherty-Sneddon & Warnock (2006). Helping children think: Gaze aversion and teaching. British Journal of Developmental Psychology, 24(3)."
+  doi: 10.1348/026151005X49872
+rezmer2020:
+  cite: "Rezmer, Trager, Catlin & Poole (2020). Pause for effect: A 10-s interviewer wait time gives children time to respond to open-ended prompts. Journal of Experimental Child Psychology, 194."
+  doi: 10.1016/j.jecp.2020.104824
+sayfan2008:
+  cite: "Sayfan, Mitchell, Goodman, Eisen & Qin (2008). Children's expressed emotions when disclosing maltreatment. Child Abuse & Neglect, 32(11)."
+  doi: 10.1016/j.chiabu.2008.03.004
+saywitz2019:
+  cite: "Saywitz, Wells, Larson & Hobbs (2019). Effects of interviewer support on children's memory and suggestibility: Systematic review and meta-analyses. Trauma, Violence, & Abuse, 20(1)."
+  doi: 10.1177/1524838016683457
+sporer_schwandt2006:
+  cite: "Sporer & Schwandt (2006). Paraverbal indicators of deception: A meta-analytic synthesis. Applied Cognitive Psychology, 20(4)."
+  doi: 10.1002/acp.1190
+sternberg1997:
+  cite: "Sternberg, Lamb, Hershkowitz, Yudilevitch, Orbach, Esplin & Hovav (1997). Effects of introductory style on children's abilities to describe experiences of sexual abuse. Child Abuse & Neglect, 21(11)."
+  doi: 10.1016/s0145-2134(97)00071-9
+stivers2009:
+  cite: "Stivers et al. (2009). Universals and cultural variation in turn-taking in conversation. PNAS, 106(26)."
+  doi: 10.1073/pnas.0903616106
+talwar2004:
+  cite: "Talwar, Lee, Bala & Lindsay (2004). Children's lie-telling to conceal a parent's transgression: Legal implications. Law and Human Behavior, 28(4)."
+  doi: 10.1023/B:LAHU.0000039333.51399.f6
+talwar2007:
+  cite: "Talwar, Gordon & Lee (2007). Lying in the elementary school years: Verbal deception and its relation to second-order belief understanding. Developmental Psychology, 43(3)."
+  doi: 10.1037/0012-1649.43.3.804
+talwar_lee2002:
+  cite: "Talwar & Lee (2002). Development of lying to conceal a transgression: Children's control of expressive behaviour during verbal deception. International Journal of Behavioral Development, 26(5)."
+  doi: 10.1080/01650250143000373
+talwar_lee2008:
+  cite: "Talwar & Lee (2008). Social and cognitive correlates of children's lying behavior. Child Development, 79(4)."
+  doi: 10.1111/j.1467-8624.2008.01164.x
+vrij2008:
+  cite: "Vrij (2008). Detecting Lies and Deceit: Pitfalls and Opportunities (2e éd.). Wiley."
+waterman2001:
+  cite: "Waterman, Blades & Spencer (2001). Interviewing children and adults: The effect of question format on the tendency to speculate. Applied Cognitive Psychology, 15(5)."
+  doi: 10.1002/acp.741

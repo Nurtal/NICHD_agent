@@ -12,7 +12,7 @@ from nichd_sim.realization import Realization
 from nichd_sim.scenario import Scenario, ScenarioError, load_scenario
 from pydantic import BaseModel, ValidationError
 
-from nichd_sim.session import LOG_FORMAT, WAIT, Session, SessionLog
+from nichd_sim.session import LOG_FORMAT, WAIT, Session, SessionLog, apply_profile
 
 
 class ReplayError(RuntimeError):
@@ -87,8 +87,10 @@ class ReplayReport:
 
 def replay(log: SessionLog, scenario: Scenario) -> ReplayReport:
     """Re-run a session from its log and check every decision, response and phase matches."""
+    scenario = apply_profile(scenario, log.profile)
     params = Parameters.for_log(scenario.child_profile.age_band, log.parameters)
-    session = Session(scenario, _LoggedClassifier(log), _LoggedRealizer(log), seed=log.seed, params=params)
+    session = Session(scenario, _LoggedClassifier(log), _LoggedRealizer(log), seed=log.seed, params=params,
+                      rules=log.rules)
     report = ReplayReport(turns=len(log.turns))
     for original in log.turns:
         try:

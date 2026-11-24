@@ -21,9 +21,11 @@ FORMAT3_PARAMETERS = set((ROOT / "tests" / "fixtures" / "parameters_format3.txt"
 
 
 def test_every_parameter_added_after_format_3_has_a_neutral_value():
-    """Older logs do not list it: without a neutral value, its rule would change their decisions."""
+    """Older logs do not list it: without a neutral value (or, for a promoted constant, its former value),
+    its rule would change their decisions."""
     added = set(_default_table()) - FORMAT3_PARAMETERS
-    missing = sorted(name for name in added if not _default_table()[name].has_neutral)
+    table = _default_table()
+    missing = sorted(name for name in added if not (table[name].has_neutral or table[name].has_legacy))
     assert not missing, f"paramètres sans valeur neutre : {missing}"
 
 
