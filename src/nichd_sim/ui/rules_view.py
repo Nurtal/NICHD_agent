@@ -228,7 +228,7 @@ def _preset_bar(presets_dir: Path) -> None:
             saved = cfg.model_copy(update={"name": name.strip()})
             saved.save(presets_dir / f"{slug}.yaml")
             st.session_state.rule_config = saved
-            st.toast(f"Préréglage enregistré : {presets_dir / f'{slug}.yaml'}")
+            st.toast(f"Préréglage enregistré : {slug}.yaml")
     with reset_col:
         st.write("")
         st.write("")
