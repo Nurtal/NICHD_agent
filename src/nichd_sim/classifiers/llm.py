@@ -70,10 +70,34 @@ def build_user_prompt(utterance: str, context: ClassificationContext, history_tu
     )
 
 
-DEFAULT_CLASSIFIER_THINK = "medium"
-"""Thinking level of the classifier ("off", "low", "medium", "high"): precision vs latency.
-"medium" is the most accurate measured (docs/evaluations/README.md); precision is the
-priority for now, latency will be optimized later."""
+CASCADE = "cascade"
+DEFAULT_CLASSIFIER_THINK = CASCADE
+"""Thinking level of the classifier ("off", "low", "medium", "high", or "cascade"): precision vs latency.
+"cascade" answers fast without thinking and thinks again only where that first answer is risky. On the 133 test
+utterances it is as accurate as thinking on every turn (κ 0.956 vs 0.947 for "medium") with a median of 3.6 s instead
+of 15 s (docs/evaluations/latence.md)."""
+
+CASCADE_THINK = "low"
+"""Thinking level of the second pass ("low" measured better than "medium" there, and is faster)."""
+
+ESCALATE_TYPES: frozenset[QuestionType] = frozenset({
+    QuestionType.SUGGESTIVE, QuestionType.OPTION_POSING, QuestionType.DIRECTIVE, QuestionType.COMPOUND,
+    QuestionType.OTHER,
+})
+"""Fast answers checked again with thinking: the closed and leading types, which cost most when wrong and on which the
+fast pass errs (« tu sais… ? » read as a directive, wrong target), and "other". Out-of-scenario targets and invalid
+outputs are checked too. Invitations, ground rules, support and facilitators keep the fast answer."""
+
+
+def escalation_reason(c: Classification) -> str | None:
+    """Why the fast answer of the cascade must be checked with thinking, or None to keep it."""
+    if c.meta.get("error"):
+        return "error"
+    if c.type in ESCALATE_TYPES:
+        return f"type:{c.type.value}"
+    if c.target == OUT_OF_SCENARIO:
+        return "out_of_scenario"
+    return None
 
 
 class LLMClassifier:
@@ -91,13 +115,35 @@ class LLMClassifier:
     def skill_version(self) -> str:
         return self.skill.version
 
+    def warm_up(self) -> None:
+        """Load the model and read the system prompt once, before the first turn (a live session's start)."""
+        try:
+            self.client.chat([{"role": "system", "content": self._system}, {"role": "user", "content": "ok"}],
+                             temperature=0, seed=0, think=False)
+        except LLMError:
+            pass  # the first turn will report it
+
     def classify(self, utterance: str, context: ClassificationContext) -> Classification:
         messages = [
             {"role": "system", "content": self._system},
             {"role": "user", "content": build_user_prompt(utterance, context, self.history_turns)},
         ]
+        if self.think != CASCADE:
+            return self._ask(messages, context, self.think)
+        fast = self._ask(messages, context, False)
+        reason = escalation_reason(fast)
+        if reason is None:
+            fast.meta["cascade"] = "fast"
+            return fast
+        checked = self._ask(messages, context, CASCADE_THINK)
+        checked.meta.update(cascade="escalated", escalation=reason,
+                            fast={"type": fast.type.value, "target": fast.target,
+                                  "latency_s": fast.meta.get("latency_s")})
+        return checked
+
+    def _ask(self, messages: list[dict], context: ClassificationContext, think: bool | str) -> Classification:
         try:
-            result = self.client.chat(messages, temperature=0, seed=0, think=self.think, format=self.skill.schema)
+            result = self.client.chat(messages, temperature=0, seed=0, think=think, format=self.skill.schema)
         except LLMError as e:
             return _fallback(f"llm_error: {e}", {})
         meta = dict(result.meta)

@@ -43,7 +43,7 @@ def build_classifier(args: argparse.Namespace):
 
 
 def parse_think(value: str) -> bool | str:
-    """'off' → no thinking; otherwise an Ollama thinking level (low, medium, high)."""
+    """'off' → no thinking; otherwise an Ollama thinking level (low, medium, high) or 'cascade'."""
     return False if value in ("off", "false", "0") else value
 
 
@@ -70,6 +70,8 @@ def play(args: argparse.Namespace) -> int:
         rephraser=None if args.no_rephrase else LLMRephraser(OllamaClient(args.model, args.ollama_url)),
         summary_matcher=LLMSummaryMatcher(OllamaClient(args.model, args.ollama_url)) if args.summary else None,
     )
+    if hasattr(session.classifier, "warm_up"):
+        session.classifier.warm_up()  # load the model before the first question, not during it
     child = scenario.child_profile.name
     speaker = None
     if args.voice:
@@ -471,7 +473,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--classifier", default="manual", choices=["manual", "llm"])
     p.add_argument("--classifier-model", default=None, help="modèle Ollama du classifieur (défaut : --model)")
     p.add_argument("--classifier-think", default=DEFAULT_CLASSIFIER_THINK,
-                   help="réflexion du classifieur : off, low, medium, high")
+                   help="réflexion du classifieur : off, low, medium, high ou cascade (rapide, puis réflexion si le cas est risqué)")
     p.add_argument("--realizer", default="template", choices=["template", "llm"])
     p.add_argument("--model", default=DEFAULT_MODEL, help="modèle Ollama")
     p.add_argument("--ollama-url", default=DEFAULT_URL)
@@ -553,7 +555,7 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--ollama-url", default=DEFAULT_URL)
     v.add_argument("--scenarios-dir", default="scenarios")
     v.add_argument("--limit", type=int, default=None)
-    v.add_argument("--think", default=DEFAULT_CLASSIFIER_THINK, help="réflexion du classifieur : off, low, medium, high")
+    v.add_argument("--think", default=DEFAULT_CLASSIFIER_THINK, help="réflexion du classifieur : off, low, medium, high ou cascade (rapide, puis réflexion si le cas est risqué)")
     v.add_argument("-o", "--output", help="rapport Markdown")
     v.set_defaults(func=eval_cmd)
 

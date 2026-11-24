@@ -13,8 +13,18 @@ Jeu de test : `src/nichd_sim/skill/testset.jsonl` (104 énoncés sur les scénar
 | 0.1.0 | off | 0,956 | 96,2 % | 83,3 % | 96,2 % | 2,6 s / 8,0 s | [lien](classifier_skill-0.1.0_qwen3.8.md) |
 | 0.2.0 | off | 0,956 | 96,2 % | 90,7 % | 96,2 % | 3,6 s / 10,4 s | [lien](classifier_skill-0.2.0_qwen3.8.md) |
 | 0.2.0 | low | 0,945 | 95,2 % | 88,9 % | 98,1 % | 8,4 s / 48,6 s | [lien](classifier_skill-0.2.0_qwen3.8_think-low.md) |
-| **0.2.0** | **medium** | **0,978** | **98,1 %** | 90,7 % | 96,2 % | 13,1 s / 60,9 s | [lien](classifier_skill-0.2.0_qwen3.8_think-medium.md) |
+| 0.2.0 | medium | 0,978 | 98,1 % | 90,7 % | 96,2 % | 13,1 s / 60,9 s | [lien](classifier_skill-0.2.0_qwen3.8_think-medium.md) |
+| 0.3.0 (133 énoncés) | medium | 0,948 | 95,5 % | 86,4 % | 95,5 % | 13,6 s / 72,2 s | [lien](classifier_skill-0.3.0_qwen3.8.md) |
+| **0.3.0 (133 énoncés)** | **cascade** | **0,948** | **95,5 %** | 83,3 % | 97,0 % | **5,0 s / 66,3 s** | [lien](classifier_skill-0.3.0_qwen3.8_cascade.md) |
 
-**Réglage par défaut : skill 0.2.0, réflexion `medium`** — le plus précis mesuré (100 % sur les énoncés non ambigus). La priorité actuelle est de vérifier que l'approche fonctionne ; la latence (13 s médiane par classification, jusqu'à ~1 min) sera optimisée plus tard (`--classifier-think off` pour une démonstration fluide).
+**Réglage par défaut : skill 0.3.0, réflexion `cascade`** (lot L1, [latence](latence.md)).
+- **Fonctionnement.** Le classifieur répond d'abord sans réflexion, en environ 3,5 s. Il ne réfléchit à nouveau
+  (`low`) que si cette première réponse est risquée : suggestive, choix fermé, directive, composée, « autre », hors
+  scénario ou sortie invalide. Cela touche environ 43 % des énoncés du jeu de test, qui est riche en questions
+  difficiles.
+- **Type.** L'exactitude est la même que `medium` (κ 0,948).
+- **Cible.** Elle perd environ 3 points : quatre directives escaladées que la seconde passe a jugées hors scénario.
+- **Latence.** La médiane est divisée par près de trois.
+- **Retour à l'ancien réglage.** `--classifier-think medium`, ou `NICHD_CLASSIFIER_THINK=medium` pour l'interface.
 
 Prudence : sur 104 énoncés, les écarts entre réglages portent sur 2 à 3 énoncés ; une mesure sur un jeu plus large (scénarios s04–s07) affinerait la comparaison.
