@@ -195,3 +195,21 @@ def test_a_format_7_log_without_profile_or_promoted_parameters_still_replays(mon
     data["parameters"] = {k: v for k, v in data["parameters"].items() if k not in PROMOTED}
     log = SessionLog.model_validate(data)
     assert replay(log, find_scenario(log)).identical
+
+
+# -- command line ------------------------------------------------------------------------
+
+
+def test_play_with_a_preset_logs_its_rules(tmp_path, monkeypatch):
+    import io
+
+    from nichd_sim.cli import main
+    from nichd_sim.replay import load_log
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("/fin\n"))
+    preset = ROOT / "presets" / "moteur-de-base.yaml"
+    assert main(["play", str(S01), "--preset", str(preset), "--no-rephrase", "--log-dir", str(tmp_path)]) == 0
+    log = load_log(next(tmp_path.glob("*.json")))
+    assert log.rules["preset"] == "Moteur de base" and "leak" in log.rules["disabled"]
+    assert log.parameters["p_leak"] == 0
+    assert main(["play", str(S01), "--preset", str(tmp_path / "absent.yaml")]) == 2

@@ -17,6 +17,7 @@ from nichd_sim.engine import EngineState, SpeechAct
 from nichd_sim.feedback import PHASE_LABELS, SPEECH_ACT_LABELS, TYPE_LABELS
 from nichd_sim.phases import ORDER as PHASE_ORDER
 from nichd_sim.phases import VIOLATION_LABELS
+from nichd_sim.rules import load_catalogue
 from nichd_sim.scenario import Centrality, Scenario
 from nichd_sim.session import Session
 
@@ -257,8 +258,24 @@ def facts(session: Session) -> None:
             st.caption(f"✗ {cu.id} — {cu.value} (tour {cu.source_turn}{', intégré' if cu.integrated else ''})")
 
 
+def rules_in_play(session: Session) -> None:
+    """The rule configuration of this interview (model control panel), when it is not the default."""
+    rules = session.log.rules or {}
+    if not rules.get("disabled") and not rules.get("adjusted"):
+        return
+    catalogue = load_catalogue()
+    off = ", ".join(catalogue.rules[r].title for r in rules.get("disabled", []) if r in catalogue.rules)
+    parts = [f"préréglage « {rules['preset']} »"] if rules.get("preset") else []
+    if off:
+        parts.append(f"règles désactivées : {off}")
+    if rules.get("adjusted"):
+        parts.append(f"paramètres modifiés : {', '.join(rules['adjusted'])}")
+    st.caption("Règles du modèle de cet entretien — " + " · ".join(parts))
+
+
 def render(session: Session, type_colors: dict[str, str]) -> None:
     """The whole live view, for the current session."""
+    rules_in_play(session)
     st.markdown("#### État interne")
     state_metrics(session)
     if not session.log.turns:

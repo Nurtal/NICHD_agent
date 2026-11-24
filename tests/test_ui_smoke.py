@@ -135,3 +135,65 @@ def test_wait_button_adds_a_silent_turn(app, tmp_path):
     assert not at.exception, at.exception
     assert len(at.chat_message) == 4
     assert "attente silencieuse" in at.chat_message[2].markdown[0].value
+
+
+# -- model control panel (lot R2) ------------------------------------------------------
+
+
+@pytest.fixture
+def rules_app(tmp_path, monkeypatch):
+    monkeypatch.setenv("NICHD_OFFLINE", "1")
+    monkeypatch.setenv("NICHD_LOG_DIR", str(tmp_path / "logs"))
+    monkeypatch.setenv("NICHD_PRESETS", str(tmp_path / "presets"))
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    at.segmented_control(key="view").set_value("Règles du modèle").run()
+    assert not at.exception, at.exception
+    return at
+
+
+def _key(at, suffix):
+    return next(s.key for s in at.slider if s.key and s.key.endswith(suffix))
+
+
+def test_rules_view_shows_every_switchable_rule_with_its_sources(rules_app):
+    from nichd_sim.rules import load_catalogue
+
+    at = rules_app
+    catalogue = load_catalogue()
+    toggles = {c.key for c in at.checkbox if c.key and c.key.startswith("rule:")}
+    assert toggles == {f"rule:{r.id}" for r in catalogue.rules.values() if r.toggle}
+    text = "\n".join(m.value for m in at.markdown)
+    assert "https://doi.org/10.3758/BF03195338" in text  # Doherty-Sneddon & Phelps (2005), gaze aversion
+    assert {m.label for m in at.metric} >= {"Règles actives", "Paramètres modifiés"}
+
+
+def test_a_rule_switched_off_and_a_slider_apply_to_the_next_interview(rules_app):
+    at = rules_app
+    at.checkbox(key="rule:gaze_recall").uncheck().run()
+    at.slider(key=_key(at, ":p_yes_bias")).set_value(0.5).run()
+    at.segmented_control(key="view").set_value("Entretien").run()  # the settings survive another view
+    at.segmented_control(key="view").set_value("Règles du modèle").run()
+    assert at.checkbox(key="rule:gaze_recall").value is False
+    assert at.slider(key=_key(at, ":p_yes_bias")).value == 0.5
+    button(at, "Nouvel entretien").click().run()
+    assert not at.exception, at.exception
+    session = at.session_state["session"]
+    assert session.params["gaze_recall_weight"] == 0 and session.params["p_yes_bias"] == 0.5
+    assert session.log.rules["disabled"] == ["gaze_recall"] and session.log.rules["adjusted"] == ["p_yes_bias"]
+    assert session.log.parameters["gaze_recall_weight"] == 0
+
+
+def test_a_preset_is_saved_reset_and_loaded_back(rules_app, tmp_path):
+    at = rules_app
+    at.checkbox(key="rule:leak").uncheck().run()
+    at.text_input(key="preset_name").input("Enfant sans fuite").run()
+    button(at, "Enregistrer").click().run()
+    assert (tmp_path / "presets" / "enfant-sans-fuite.yaml").exists()
+    button(at, "Réinitialiser").click().run()
+    assert at.checkbox(key="rule:leak").value is True
+    at.selectbox(key="preset_choice").set_value("enfant-sans-fuite").run()
+    button(at, "Charger").click().run()
+    assert not at.exception, at.exception
+    assert at.checkbox(key="rule:leak").value is False
+    assert at.session_state["rule_config"].name == "Enfant sans fuite"

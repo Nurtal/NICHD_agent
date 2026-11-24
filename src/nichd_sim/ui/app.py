@@ -22,12 +22,14 @@ from nichd_sim.llm import DEFAULT_MODEL, DEFAULT_URL, LLMError, OllamaClient
 from nichd_sim.phases import ORDER as PHASE_ORDER
 from nichd_sim.phases import VIOLATION_LABELS
 from nichd_sim.realization import LLMRealizer, TemplateRealizer
+from nichd_sim.rules import RuleConfig
 from nichd_sim.scenario import ExpressionStyle
 from nichd_sim.session import Session
-from nichd_sim.ui import engine_view, flow_view
+from nichd_sim.ui import engine_view, flow_view, rules_view
 
 SCENARIOS_DIR = Path(os.environ.get("NICHD_SCENARIOS", Path(__file__).resolve().parents[3] / "scenarios"))
 LOG_DIR = os.environ.get("NICHD_LOG_DIR", "sessions")
+PRESETS_DIR = Path(os.environ.get("NICHD_PRESETS", Path(__file__).resolve().parents[3] / "presets"))
 OFFLINE = os.environ.get("NICHD_OFFLINE") == "1"  # template voice + manual classification, no LLM (demo without GPU, tests)
 
 TYPE_COLORS = {
@@ -58,7 +60,7 @@ def chip(text: str, color: str) -> str:
     )
 
 
-def new_session(scenario, seed: int, offline: bool) -> Session:
+def new_session(scenario, seed: int, offline: bool, rules: RuleConfig | None = None) -> Session:
     if offline:
         classifier, realizer, rephraser, matcher = ManualClassifier(), TemplateRealizer(), None, None
     else:
@@ -67,13 +69,16 @@ def new_session(scenario, seed: int, offline: bool) -> Session:
         classifier = LLMClassifier(client, think=False if think == "off" else think)
         realizer = LLMRealizer(client, seed=seed)
         rephraser, matcher = LLMRephraser(client), LLMSummaryMatcher(client)
+    rules = rules or RuleConfig()
+    params = rules.parameters(scenario.child_profile.age_band, scenario.parameter_overrides)
     return Session(
-        scenario, classifier, realizer, seed=seed, rephraser=rephraser, summary_matcher=matcher, log_dir=LOG_DIR
+        scenario, classifier, realizer, seed=seed, rephraser=rephraser, summary_matcher=matcher, log_dir=LOG_DIR,
+        params=params, rules=rules.summary(),
     )
 
 
 def reset():
-    for key in ("session", "turns", "ending", "feedback"):
+    for key in ("session", "turns", "ending", "feedback", "session_rules"):
         st.session_state.pop(key, None)
 
 
@@ -117,9 +122,14 @@ with st.sidebar:
     offline = st.toggle("Mode hors ligne (sans LLM)", value=OFFLINE, key="offline",
                         help="Voix gabarit et classification manuelle par préfixes.")
     trainer = st.toggle("Mode formateur", value=False, key="trainer")
+    rule_config = rules_view.config()
+    if not rule_config.is_default:
+        st.caption(f"Règles du modèle : {rule_config.name or 'réglages personnalisés'} · "
+                   f"{len(rule_config.disabled)} désactivée(s) · {len(rule_config.overrides)} paramètre(s) modifié(s)")
     if st.button("Nouvel entretien", type="primary", use_container_width=True):
         reset()
-        st.session_state.session = new_session(adjusted, int(seed), offline)
+        st.session_state.session = new_session(adjusted, int(seed), offline, rule_config)
+        st.session_state.session_rules = rule_config
         st.session_state.turns = []
         st.rerun()
     if "session" in st.session_state and "feedback" not in st.session_state:
@@ -128,6 +138,15 @@ with st.sidebar:
             st.rerun()
 
 session: Session | None = st.session_state.get("session")
+
+VIEWS = ["Entretien", "Moteur en direct", "Graphe du système", "Règles du modèle"]
+view = st.segmented_control("Vue", VIEWS, default="Entretien", key="view", label_visibility="collapsed")
+
+if view == "Règles du modèle":
+    st.caption("Panneau de configuration du modèle : les règles qui dirigent le comportement de l'enfant, tirées "
+               "de la littérature. Cochez ou décochez une règle, réglez ses coefficients, lisez ses sources.")
+    rules_view.render(profile.age_band, PRESETS_DIR, st.session_state.get("session_rules"))
+    st.stop()
 
 if session is None:
     st.header("Entraînement à l'audition d'enfant — protocole NICHD")
@@ -302,11 +321,6 @@ def live_map(slot):
 
     return on_step
 
-
-view = st.segmented_control(
-    "Vue", ["Entretien", "Moteur en direct", "Graphe du système"], default="Entretien", key="view",
-    label_visibility="collapsed",
-)
 
 if view == "Graphe du système":
     st.caption("Carte du système : le chemin du tour s'allume pendant qu'il est traité. Bleu : règles déterministes · "
