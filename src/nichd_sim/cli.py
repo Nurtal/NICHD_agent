@@ -26,6 +26,7 @@ from nichd_sim.replay import (
     load_log,
     replay,
 )
+from nichd_sim.rules import RuleConfig, RuleError
 from nichd_sim.scenario import ScenarioError, load_scenario
 from nichd_sim.session import Session
 
@@ -55,10 +56,20 @@ def build_realizer(args: argparse.Namespace):
     raise SystemExit(f"realizer inconnu : {args.realizer}")
 
 
+def rule_settings(preset: str | None, scenario) -> dict:
+    """Session arguments for a rule preset (model control panel); none without one."""
+    if not preset:
+        return {}
+    config = RuleConfig.load(preset)
+    return {"params": config.parameters(scenario.child_profile.age_band, scenario.parameter_overrides),
+            "rules": config.summary()}
+
+
 def play(args: argparse.Namespace) -> int:
     try:
         scenario = load_scenario(args.scenario)
-    except ScenarioError as e:
+        rules = rule_settings(args.preset, scenario)
+    except (ScenarioError, RuleError) as e:
         print(e, file=sys.stderr)
         return 2
     session = Session(
@@ -69,6 +80,7 @@ def play(args: argparse.Namespace) -> int:
         log_dir=args.log_dir,
         rephraser=None if args.no_rephrase else LLMRephraser(OllamaClient(args.model, args.ollama_url)),
         summary_matcher=LLMSummaryMatcher(OllamaClient(args.model, args.ollama_url)) if args.summary else None,
+        **rules,
     )
     if hasattr(session.classifier, "warm_up"):
         session.classifier.warm_up()  # load the model before the first question, not during it
@@ -342,11 +354,12 @@ def converse_cmd(args: argparse.Namespace) -> int:
     out = Path(args.output)
     try:
         scenario = load_scenario(spec["scenario"])
-    except ScenarioError as e:
+        rules = rule_settings(args.preset, scenario)
+    except (ScenarioError, RuleError) as e:
         print(e, file=sys.stderr)
         return 2
     session = Session(scenario, build_classifier(args), build_realizer(args), seed=spec.get("seed", 0),
-                      rephraser=None, log_dir=out)
+                      rephraser=None, log_dir=out, **rules)
     try:
         speaker = make_speaker(args.speaker, scenario.child_profile)
         interviewer = _interviewer_voice(speaker)
@@ -470,6 +483,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("play", help="mener un entretien dans le terminal")
     p.add_argument("scenario", help="fichier de scénario YAML")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--preset", help="préréglage des règles du modèle (YAML, ex. presets/moteur-de-base.yaml)")
     p.add_argument("--classifier", default="manual", choices=["manual", "llm"])
     p.add_argument("--classifier-model", default=None, help="modèle Ollama du classifieur (défaut : --model)")
     p.add_argument("--classifier-think", default=DEFAULT_CLASSIFIER_THINK,
@@ -528,6 +542,7 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--ollama-url", default=DEFAULT_URL)
     c.add_argument("--speaker", default=None, help="voix de l'enfant (défaut : qwen, sinon kokoro, si installé)")
     c.add_argument("--seed", type=int, default=0, help="seed du réaliseur LLM")
+    c.add_argument("--preset", help="préréglage des règles du modèle (YAML)")
     c.add_argument("--trainer", action="store_true")
     c.set_defaults(func=converse_cmd)
 

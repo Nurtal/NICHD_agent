@@ -20,6 +20,16 @@ uv run nichd-sim ui
 NICHD_OFFLINE=1 uv run nichd-sim ui
 ```
 
+La vue **Règles du modèle** est le panneau de configuration de l'enfant simulé. Elle liste les 44 règles de
+comportement, tirées de la littérature (regard détourné pendant l'effort de mémoire, biais du « oui », fuite de la
+vérité…), avec leurs sources et un lien DOI. Pour chaque règle, on peut :
+- la décocher pour la désactiver ;
+- régler ses coefficients ;
+- enregistrer la configuration dans un préréglage nommé (`presets/`, ou le dossier donné par `NICHD_PRESETS`).
+
+Les réglages s'appliquent au prochain entretien et sont écrits dans son journal. L'entretien se rejoue donc à
+l'identique. En ligne de commande, l'équivalent est `--preset presets/moteur-de-base.yaml`.
+
 L'interface n'écoute que sur `127.0.0.1`. Depuis un autre poste, passez par un tunnel SSH
 (`ssh -L 8501:127.0.0.1:8501 serveur`) plutôt que d'exposer le port (`--host` à vos risques).
 
@@ -91,4 +101,6 @@ uv run nichd-sim transcribe mon_enregistrement.wav
 | `src/nichd_sim/phases.py` | suivi des phases et écarts au protocole |
 | `src/nichd_sim/skill/` | skill NICHD versionné : spécification, exemples, schéma, jeu de test |
 | `src/nichd_sim/data/parameters.yaml` | paramètres de comportement sourcés |
+| `src/nichd_sim/data/rules.yaml` | catalogue des règles : paramètres regroupés par comportement, références (`references.yaml`) |
+| `presets/` | préréglages des règles du modèle (panneau de configuration, `--preset`) |
 | `docs/evaluations/` | rapports d'évaluation du classifieur |
