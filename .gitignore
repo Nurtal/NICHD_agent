@@ -25,3 +25,4 @@ experiments/voices/v2/listening/design*.json
 experiments/voices/v2/listening/tasks.json
 experiments/voices/v2/listening/ratings/
 experiments/voices/v2/results/bank/*/
+experiments/latency/results/clips/

@@ -2,6 +2,7 @@
 
 - [Ablation : enfant hybride vs enfant 100 % LLM](ablation-hybride-vs-llm.md) : 8 modèles locaux de 6 familles, 504 entretiens scriptés identiques. L'hybride ne laisse sortir aucun fait central trop tôt, quel que soit le modèle. Le LLM seul en laisse sortir dans 10 % à 100 % des entretiens selon le modèle (55 % en moyenne). Seul `gemma4:31b` approche l'hybride, mais il est mal calibré sur les suggestions et instable selon la consigne. L'hybride suit le profil de l'enfant (réticence ρ = +0,94, suggestibilité ρ = +0,94) avec un comportement identique d'un modèle à l'autre.
 - [Voix de l'enfant v2](voix-v2.md) : 7 moteurs de synthèse, clonage sur références ouvertes ou synthétiques, assemblage plus naturel. Qwen3-TTS, Fish S2 Pro et Higgs sont les plus propres. Écoute à l'aveugle : la voix actuelle obtient 1/5 en naturel. Qwen3-TTS avec une fille de 8 ans conçue par description obtient 4,8/5 en naturel et 5/5 en fluidité (un seul auditeur).
+- [Latence d'un tour vocal en direct](latence.md) : environ 25 s en médiane (jusqu'à 61 s) avant que l'enfant parle. La réflexion du classifieur (11 s) et la voix Qwen, plus lente que le temps réel (8,7 s), font presque tout le temps.
 
 ## Classifieur
 
