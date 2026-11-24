@@ -53,7 +53,7 @@ def test_current_format_log_round_trips_through_replay(tmp_path, monkeypatch):
     for i, c in enumerate([C("support"), C("invitation"), C("invitation"), C("directive", "b_dimanche"), C("other")]):
         ask(s, clf, f"u{i}", c)
     log = SessionLog.model_validate_json(s.end().model_dump_json())
-    assert log.log_format == LOG_FORMAT == 7
+    assert log.log_format == LOG_FORMAT == 8
     assert all(t.decision.delivery is not None and t.decision.demeanor is not None for t in log.turns)
     assert replay(log, find_scenario(log)).identical
 

@@ -8,6 +8,10 @@
 # Tout paramètre ajouté après le format de journal 3 déclare `neutral:`, la valeur qui
 # désactive sa règle : un journal plus ancien, qui ne le liste pas, se rejoue avec elle
 # (docs/plans/adaptations-litterature.md, lot 0).
+# Une constante du code promue en paramètre déclare plutôt `legacy:`, son ancienne valeur.
+#
+# Chaque paramètre appartient à une règle du catalogue (rules.yaml), qui le regroupe avec
+# ceux du même comportement, donne ses références et dit comment l'éteindre.
 
 units_per_invitation:
   description: >
@@ -807,3 +811,76 @@ wait_turn_ms:
   source: Rezmer et al. (2020), voir p_wait_elaboration (attente de 10 s) ; seuil choisi plus court.
   estimated: true
 
+
+
+# --- Constantes du corps promues en paramètres (panneau des règles) -----------
+# Ces valeurs étaient écrites dans demeanor.py. Elles deviennent réglables avec la même
+# valeur par défaut. `legacy:` donne la valeur avec laquelle se rejoue un journal plus
+# ancien, qui ne les liste pas : l'ancienne constante (et non une règle éteinte).
+# Une règle s'éteint par le catalogue des règles (rules.yaml), pas par `neutral`.
+
+gaze_recall_weight:
+  description: >
+    Poids de l'effort de mémoire (charge de récupération) dans le choix du regard
+    détourné : l'enfant détourne les yeux pendant qu'il cherche un souvenir.
+  value: 0.6
+  legacy: 0.6
+  source: >
+    Doherty-Sneddon & Phelps (2005), Gaze aversion: A response to cognitive or social
+    difficulty?, Memory & Cognition 33(4) ; Phelps, Doherty-Sneddon & Warnock (2006),
+    British Journal of Developmental Psychology 24(3) — les enfants détournent le regard
+    davantage quand la question est difficile, et cela les aide à réfléchir ; valeur choisie.
+  estimated: true
+
+gaze_averted_weights:
+  description: >
+    Poids de l'activation (arousal) et de la confusion dans le choix du regard détourné,
+    en plus de l'effort de mémoire.
+  value: {arousal: 0.3, confusion: 0.2}
+  legacy: {arousal: 0.3, confusion: 0.2}
+  source: >
+    Doherty-Sneddon & Phelps (2005), voir gaze_recall_weight — difficulté sociale autant
+    que cognitive ; valeurs choisies.
+  estimated: true
+
+gaze_down_weights:
+  description: >
+    Regard baissé : poids de l'activation et part de fond (même sans activation).
+  value: {arousal: 0.7, base: 0.1}
+  legacy: {arousal: 0.7, base: 0.1}
+  source: >
+    Katz, Hershkowitz, Malloy, Lamb, Atabaki & Spindler (2012), Child Abuse & Neglect
+    36(1) — signes de désengagement chez les enfants qui ne dévoilent pas ; valeurs choisies.
+  estimated: true
+
+gaze_steady_floor:
+  description: Poids minimal du regard posé sur l'interviewer, même très activé.
+  value: 0.05
+  legacy: 0.05
+  source: Choix de modélisation.
+  estimated: true
+
+cue_arousal_thresholds:
+  description: >
+    Activation à partir de laquelle chaque famille de signes corporels peut apparaître
+    (tension, respiration, tremblement, retrait, figement et regard vide).
+  value: {tension: 0.35, breathing: 0.45, tremor: 0.6, withdrawal: 0.3, freeze: 0.4}
+  legacy: {tension: 0.35, breathing: 0.45, tremor: 0.6, withdrawal: 0.3, freeze: 0.4}
+  source: Choix de modélisation (ordre d'apparition des signes de stress, ADR 0003).
+  estimated: true
+
+withdrawal_arousal_weight:
+  description: Poids de l'activation dans le retrait (bras serrés, recroquevillé).
+  value: 0.7
+  legacy: 0.7
+  source: Choix de modélisation.
+  estimated: true
+
+fidget_weights:
+  description: >
+    Agitation (jambes, mains, manche) : poids de l'activation et de la confusion,
+    en plus de l'agitation de fond.
+  value: {arousal: 0.8, confusion: 0.3}
+  legacy: {arousal: 0.8, confusion: 0.3}
+  source: Choix de modélisation.
+  estimated: true

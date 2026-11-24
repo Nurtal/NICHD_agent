@@ -19,7 +19,7 @@ from nichd_sim.output_filter import OutputFilter
 from nichd_sim.parameters import Parameters
 from nichd_sim.phases import Phase, PhaseTracker, PhaseViolation, ViolationKind
 from nichd_sim.realization import Realizer, TemplateRealizer
-from nichd_sim.scenario import Scenario
+from nichd_sim.scenario import ChildProfile, Scenario
 from nichd_sim.text import mentions, normalize
 
 MAX_REALIZATION_ATTEMPTS = 2  # first try + one regeneration, then fallback response
@@ -103,12 +103,13 @@ class TurnRecord(BaseModel):
         return self.attempts[-1].prompt if self.attempts else None
 
 
-LOG_FORMAT = 7
+LOG_FORMAT = 8
 """2: decisions carry a delivery (ADR 0002). 3: arousal and demeanor (ADR 0003); the delivery now
 depends on arousal. 4: the engine remembers the previous turn and the closed questions asked, and
 parameters added since carry a neutral value (docs/plans/adaptations-litterature.md). 5: the promise to tell
 the truth and the slips of the truth (speech act `leak`). 6: expressivity (what the child dares
-to show) and the body announcing a disclosure (ADR 0003 addendum). 7: wait turns (`kind = wait`).
+to show) and the body announcing a disclosure (ADR 0003 addendum). 7: wait turns (`kind = wait`). 8: the
+child profile as played (control panel) and the rule configuration.
 Older logs still
 replay: decisions are compared, newer fields ignored, newer parameters neutral."""
 
@@ -123,6 +124,12 @@ class SessionLog(BaseModel):
     seed: int
     parameters: dict
     components: dict[str, str]
+    profile: dict | None = None
+    """The child profile as played (`child_profile`, `deception_strength`): the control panel can change it
+    from the scenario sheet's. Absent before format 8 (the sheet's profile)."""
+    rules: dict | None = None
+    """The rule configuration (preset, rules switched off, adjusted parameters), for reading only: the
+    resolved values are in `parameters`."""
     turns: list[TurnRecord] = []
     phase_violations: list[PhaseViolation] = []
     feedback: FeedbackReport | None = None
@@ -145,6 +152,24 @@ class TurnResult(BaseModel):
     """The response cut into speech and silences according to the decision's delivery (voice, display)."""
 
 
+def profile_snapshot(scenario: Scenario) -> dict:
+    """The child profile a session plays (log format 8)."""
+    return {
+        "child_profile": scenario.child_profile.model_dump(mode="json", exclude_none=True),
+        "deception_strength": scenario.deception.strength if scenario.deception else None,
+    }
+
+
+def apply_profile(scenario: Scenario, profile: dict | None) -> Scenario:
+    """The scenario with a logged profile (replay); unchanged without one (logs older than format 8)."""
+    if not profile:
+        return scenario
+    update: dict[str, Any] = {"child_profile": ChildProfile.model_validate(profile["child_profile"])}
+    if scenario.deception is not None and profile.get("deception_strength") is not None:
+        update["deception"] = scenario.deception.model_copy(update={"strength": profile["deception_strength"]})
+    return scenario.model_copy(update=update)
+
+
 class SessionEnded(RuntimeError):
     pass
 
@@ -162,6 +187,7 @@ class Session:
         rephraser: Rephraser | None = None,
         summary_matcher: SummaryMatcher | None = None,
         log_dir: str | Path | None = None,
+        rules: dict | None = None,
     ):
         self.scenario = scenario
         self.classifier = classifier
@@ -182,6 +208,8 @@ class Session:
             scenario_version=scenario.version,
             seed=seed,
             parameters=self.params.snapshot(),
+            profile=profile_snapshot(scenario),
+            rules=rules,
             components={
                 "classifier": _describe(classifier),
                 "realizer": _describe(realizer),

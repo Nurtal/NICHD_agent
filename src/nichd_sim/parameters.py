@@ -28,6 +28,10 @@ class Parameter(BaseModel):
     neutral: Any = None
     """Value that switches the parameter's rule off. Required for every parameter added after log
     format 3: an older log, which does not list it, replays with this value (see `for_log`)."""
+    legacy: Any = None
+    """For a constant promoted into the registry (it existed in the code before it was a parameter):
+    the value older logs, which do not list it, replay with — the former constant. Takes precedence
+    over `neutral` in `for_log`; the rule switches off through the rule catalogue (rules.yaml)."""
 
     @model_validator(mode="after")
     def _one_of(self) -> Parameter:
@@ -43,6 +47,10 @@ class Parameter(BaseModel):
     @property
     def has_neutral(self) -> bool:
         return "neutral" in self.model_fields_set
+
+    @property
+    def has_legacy(self) -> bool:
+        return "legacy" in self.model_fields_set
 
 
 class Parameters:
@@ -67,9 +75,14 @@ class Parameters:
     @classmethod
     def for_log(cls, band: AgeBand, logged: Mapping[str, Any], path: str | Path | None = None) -> Parameters:
         """Parameters of a logged session. A parameter the log does not list did not exist then: its
-        rule is switched off (neutral value), so that older logs replay the decisions they recorded."""
+        rule is switched off (neutral value), or, for a promoted constant, it takes the constant's
+        former value (legacy), so that older logs replay the decisions they recorded."""
         table = _default_table() if path is None else _parse(Path(path).read_text(encoding="utf-8"))
-        missing = {name: p.neutral for name, p in table.items() if name not in logged and p.has_neutral}
+        missing = {
+            name: p.legacy if p.has_legacy else p.neutral
+            for name, p in table.items()
+            if name not in logged and (p.has_legacy or p.has_neutral)
+        }
         return cls(table, band, {**missing, **logged})
 
     @staticmethod
